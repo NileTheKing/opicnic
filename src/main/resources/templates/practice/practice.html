@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Opicnic - OPIc 영어 학습 플랫폼</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans flex">
+<div th:replace="fragments/sidebar :: sidebar"></div>
+
+<div class="flex-1 flex flex-col">
+    <header th:replace="fragments/header :: header"></header>
+
+    <div class="p-8">
+        <h1 class="text-center text-3xl font-bold mb-8 text-gray-800">AI OPIc 연습 플랫폼</h1>
+        <p class="text-center text-gray-600 mb-12">AI를 활용한 효과적인 OPIc 시험 준비</p>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">빠른 연습</h2>
+                <p class="text-gray-600 mb-4">랜덤 주제로 바로 연습을 시작하세요</p>
+                <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    시작하기
+                </button>
+            </div>
+
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">맞춤 연습</h2>
+                <form id="customPracticeForm" action="/practice/combo" method="get">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">주제</label>
+                        <select id="topicSelect" name="topic" class="w-full border rounded-lg px-3 py-2 text-gray-700">
+                            <option>취미/여가</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">난이도</label>
+                        <select id="difficultySelect" name="difficulty" class="w-full border rounded-lg px-3 py-2 text-gray-700">
+                            <option>중급 (IM)</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="algorithm" value="fixedQuestionSelector">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        맞춤 연습 시작
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">모의 테스트</h2>
+                <p class="text-gray-600 mb-4">실제 OPIc 시험과 동일한 형식으로 연습</p>
+                <p class="text-sm text-gray-500 mb-4">12-15개 질문, 약 30분 소요</p>
+                <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    모의 테스트 시작
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            © 2025 Opicnic. All rights reserved.
+        </div>
+    </div>
+</div>
+</body>
+</html>

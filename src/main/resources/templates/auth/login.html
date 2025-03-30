@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Opicnic - 로그인</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans flex items-center justify-center">
+<div class="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-md">
+    <div class="text-center">
+        <img src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" alt="Opicnic" class="mx-auto h-12 w-auto mb-4"/>
+        <h2 class="text-2xl font-bold text-gray-800">Opicnic 로그인</h2>
+        <p class="mt-2 text-sm text-gray-600">OPIc 학습의 새로운 기준</p>
+    </div>
+
+    <form class="space-y-6">
+        <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">이메일</label>
+            <input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
+        </div>
+
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">비밀번호</label>
+            <input type="password" id="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
+        </div>
+
+        <div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                로그인
+            </button>
+        </div>
+
+        <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-white text-gray-500">또는</span>
+            </div>
+        </div>
+
+        <div>
+            <button type="button" class="w-full bg-yellow-400 text-black py-2 px-4 rounded-md flex items-center justify-center hover:bg-yellow-500">
+                <i class="fab fa-kickstarter-k mr-2"></i>
+                카카오로 로그인
+            </button>
+        </div>
+    </form>
+
+    <div class="text-center">
+        <p class="mt-2 text-sm text-gray-600">
+            아직 회원이 아니신가요?
+            <a href="/members/new" class="font-medium text-blue-600 hover:text-blue-500">
+                회원가입
+            </a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

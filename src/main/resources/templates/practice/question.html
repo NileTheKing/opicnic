@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Opicnic - 말하기 연습</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .recording {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .question-sidebar {
+            width: 250px;
+        }
+        .question-sidebar-item {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .question-sidebar-item:hover {
+            background-color: #f7fafc;
+        }
+        .question-sidebar-item.active {
+            background-color: #e0f2fe;
+            color: #1e40af;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans flex">
+<div class="question-sidebar bg-white shadow-md">
+    <h2 class="p-4 font-semibold text-lg border-bottom border-gray-200">Questions</h2>
+    <div id="questionList" class="overflow-y-auto h-[calc(100vh-64px)]">
+        <div class="question-sidebar-item"
+             th:each="question, iterStat : ${questions}"
+             th:data-index="${iterStat.index}"
+             th:classappend="${iterStat.first} ? 'active' : ''"
+             th:onclick="'selectQuestion(' + ${iterStat.index} + ')'"
+        >
+            <span th:text="'Question ' + ${iterStat.count}"></span>
+        </div>
+    </div>
+</div>
+
+<div class="flex-1 flex flex-col">
+    <nav th:replace="fragments/header::header"></nav>
+
+    <div class="max-w-2xl mx-auto mt-10 px-4 w-full">
+        <div id="questionContainer" class="bg-white rounded-xl shadow-md p-8">
+            <div class="mb-8">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 text-blue-600 rounded-full w-12 h-12 flex items-center justify-center mr-4">
+                        <i class="fas fa-language text-xl"></i>
+                    </div>
+                    <h2 id="questionTitle" class="text-xl font-semibold text-gray-800" th:text="${questions[0].topic} + ' 연습'"></h2>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p id="questionText" class="text-gray-700" th:text="${questions[0].text}">문제 내용</p>
+                    <p id="questionHint" class="text-sm text-gray-500 mt-2"></p>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center space-y-6">
+                <div class="flex space-x-6">
+                    <button id="playButton" class="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center hover:bg-blue-600 transition-colors group" disabled>
+                        <i class="fas fa-play text-2xl"></i>
+                        <span class="sr-only">문제 재생</span>
+                    </button>
+                    <button id="recordButton" class="bg-red-500 text-white rounded-full w-20 h-20 flex items-center justify-center hover:bg-red-600 transition-colors group">
+                        <i class="fas fa-microphone text-2xl"></i>
+                        <span class="sr-only">녹음 시작</span>
+                    </button>
+                    <button id="stopButton" class="bg-gray-500 text-white rounded-full w-20 h-20 flex items-center justify-center hover:bg-gray-600 transition-colors group hidden" disabled>
+                        <i class="fas fa-stop text-2xl"></i>
+                        <span class="sr-only">녹음 정지</span>
+                    </button>
+                </div>
+                <div id="timerDisplay" class="text-gray-600 text-lg font-medium">
+                    00:00
+                </div>
+                <div id="recordingStatus" class="text-sm text-gray-500 italic">
+                    준비된 주제에 대해 말씀해주세요
+                </div>
+            </div>
+        </div>
+
+        <div id="progressContainer" class="mt-6 flex justify-center space-x-2">
+        </div>
+
+        <div class="mt-6 text-center">
+            <button id="nextButton" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                다음
+            </button>
+            <button href="/" id="submitButton" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors hidden">
+                제출
+            </button>
+        </div>
+    </div>
+</div>
+<script th:inline="javascript">
+    // Initialize questions array from Thymeleaf model
+    const questions = /*[[${questions}]]*/ [];
+
+    // UI Elements
+    const questionTitle = document.getElementById('questionTitle');
+    const questionText = document.getElementById('questionText');
+    const questionHint = document.getElementById('questionHint');
+    const progressContainer = document.getElementById('progressContainer');
+    const nextButton = document.getElementById('nextButton');
+    const submitButton = document.getElementById('submitButton');
+    const recordButton = document.getElementById('recordButton');
+    const stopButton = document.getElementById('stopButton');
+    const playButton = document.getElementById('playButton');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const recordingStatus = document.getElementById('recordingStatus');
+
+    let currentQuestionIndex = 0;
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioPlayer;
+    let isRecording = false;
+    let startTime;
+    let timerInterval;
+    let recordedAudioBlob;
+    let recordings = [];
+
+    // Initialize the application
+    function initializeApp() {
+        // Create progress indicators
+        questions.forEach((_, index) => {
+            const progressDot = document.createElement('div');
+            progressDot.classList.add('w-4', 'h-4', 'rounded-full', 'bg-gray-300');
+            progressDot.setAttribute('data-question', index);
+            progressContainer.appendChild(progressDot);
+        });
+
+        updateProgressIndicators();
+        loadQuestion(currentQuestionIndex);
+        setupEventListeners();
+    }
+
+    function updateProgressIndicators() {
+        const progressDots = document.querySelectorAll('[data-question]');
+        progressDots.forEach((dot, index) => {
+            dot.classList.remove('bg-blue-600', 'bg-gray-300');
+            if (index < currentQuestionIndex) {
+                dot.classList.add('bg-blue-600');
+            } else if (index === currentQuestionIndex) {
+                dot.classList.add('bg-blue-600');
+            } else {
+                dot.classList.add('bg-gray-300');
+            }
+        });
+    }
+
+    function loadQuestion(index) {
+        const question = questions[index];
+        questionTitle.textContent =  question.topic + ' 연습';
+        questionText.textContent = question.text;
+        questionHint.textContent =  '';
+
+        resetRecordingUI();
+
+        nextButton.style.display = index < questions.length - 1 ? 'inline-block' : 'none';
+        submitButton.style.display = index === questions.length - 1 ? 'inline-block' : 'none';
+    }
+
+    function setupEventListeners() {
+        recordButton.addEventListener('click', () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        stopButton.addEventListener('click', stopRecording);
+        playButton.addEventListener('click', playRecording);
+        nextButton.addEventListener('click', advanceToNextQuestion);
+        submitButton.addEventListener('click', submitAllRecordings);
+    }
+
+    function advanceToNextQuestion() {
+        if (recordedAudioBlob) {
+            recordings[currentQuestionIndex] = recordedAudioBlob;
+            currentQuestionIndex++;
+            loadQuestion(currentQuestionIndex);
+            updateProgressIndicators();
+        } else {
+            alert('먼저 녹음해주세요.');
+        }
+    }
+
+    function submitAllRecordings() {
+        if (recordedAudioBlob) {
+            recordings[currentQuestionIndex] = recordedAudioBlob;
+        }
+
+        if (recordings.length !== questions.length) {
+            alert('모든 문제를 녹음해주세요.');
+            return;
+        }
+
+        let formData = new FormData();
+        recordings.forEach((blob, index) => {
+            formData.append(`files`, blob, `file_ ${index + 1}.wav`);
+        });
+
+        fetch('/feedback', {
+            method: 'POST',
+            body: formData,
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Feedback:', data);
+                alert('제출 완료!');
+            })
+            .catch(error => {
+                console.error('Error submitting recordings:', error);
+            });
+    }
+
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(recordedAudioBlob);
+                    audioPlayer = new Audio();
+                    audioPlayer.src = audioUrl;
+                    playButton.disabled = false;
+                };
+                audioChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.classList.remove('bg-red-500');
+                recordButton.classList.add('bg-red-600', 'recording', 'hidden');
+                if (stopButton) {
+                    stopButton.disabled = false;
+                    stopButton.classList.remove('hidden');
+                }
+                recordingStatus.textContent = '녹음 중입니다...';
+                startTime = new Date();
+                timerInterval = setInterval(updateTimer, 1000);
+            })
+            .catch(error => {
+                console.error('Error accessing microphone:', error);
+                recordingStatus.textContent = '마이크 접근 오류: ' + error.message;
+            });
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        isRecording = false;
+        recordButton.classList.remove('hidden');
+        stopButton.classList.add('hidden');
+        clearInterval(timerInterval);
+        timerInterval = null;
+        recordingStatus.textContent = '녹음이 완료되었습니다.';
+    }
+
+    function playRecording() {
+        if (audioPlayer) {
+            audioPlayer.play();
+        }
+    }
+
+    function resetRecordingUI() {
+        recordButton.classList.remove('hidden', 'recording', 'bg-red-600');
+        recordButton.classList.add('bg-red-500');
+        stopButton.classList.add('hidden');
+        playButton.disabled = true;
+        recordedAudioBlob = null;
+        audioChunks = [];
+        timerDisplay.textContent = '00:00';
+        recordingStatus.textContent = '준비된 주제에 대해 말씀해주세요';
+    }
+
+    function updateTimer() {
+        if (!isRecording) return;
+        const currentTime = new Date();
+        const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+        const minutes = Math.floor(elapsedTime / 60);
+        const seconds = elapsedTime % 60;
+        timerDisplay.textContent = `${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function pad(number) {
+        return (number < 10 ? '0' : '') + number;
+    }
+
+    // Initialize the application when the page loads
+    initializeApp();
+</script>
+</body>
+</html>
