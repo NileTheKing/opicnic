@@ -55,10 +55,10 @@ public class GeminiService {
             // Gemini 모델에 요청 보내고 응답 받기
             ChatResponse response = chatModel.call(prompt);
 
-            // 응답에서 텍스트 추출 (다양한 방법 시도)
+            // 응답에서 텍스트 추출
             String responseContent;
 
-            // 방법 1: 직접 첫 번째 메시지 내용 가져오기
+            //직접 첫 번째 메시지 내용 가져오기
             AssistantMessage assistantMessage = (AssistantMessage) response.getResult().getOutput();
             responseContent = assistantMessage.getText();
 

@@ -23,16 +23,16 @@ public class PracticeController {
     private final PracticeService practiceService;
     private final FeedbackService feedbackService;
 
-    @GetMapping("/combo") // Change to GetMapping.  /combo?topic=xx&difficulty=xx&algorithm=xx
+    @GetMapping("/combo") //  /combo?topic=xx&difficulty=xx&algorithm=xx
     public String startPractice(
             @RequestParam("topic") String topic,
             @RequestParam("difficulty") String difficulty,
             @RequestParam("algorithm") String algorithm,
-            Model model) { // Add Model parameter
+            Model model) {
         log.info("combo controller");
         List<Question> questions = practiceService.getComboQuestions(topic, difficulty, algorithm);
-        model.addAttribute("questions", questions); // Pass questions to the template
-        return "/practice/question"; // Return the name of your Thymeleaf template (practice.html)
+        model.addAttribute("questions", questions); //
+        return "/practice/question"; //
     }
 
     @PostMapping("/combo/feedback")
