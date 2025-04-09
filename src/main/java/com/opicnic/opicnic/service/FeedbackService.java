@@ -33,7 +33,7 @@ public class FeedbackService {
             // 3. STT 결과도 함께 반환
             Map<String, String> feedbackMap = new HashMap<>();
             feedbackMap.put("sttText", sttResult);  // STT 결과 추가
-            feedbackMap.putAll(geminiFeedback);    // Gemini 피드백 추가
+            feedbackMap.putAll(geminiFeedback);    // Gemini 피드백 추가. 이거 추가가 안되는 듯..
 
             comboFeedbackList.add(feedbackMap);
         }
