@@ -10,7 +10,7 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,10 +23,8 @@ public class GeminiService {
 
     private final VertexAiGeminiChatModel chatModel;
 
-    @Value("${spring.ai.vertex.ai.gemini.model-name:gemini-pro}")
-    private String modelName;
-
-    private static final String SYSTEM_PROMPT = """
+    private static final String SYSTEM_PROMPT =
+            """
             당신은 OPIC 영어 시험 평가자입니다.
             사용자의 영어 음성 텍스트를 분석하고 다음 요소를 평가해주세요:
 
