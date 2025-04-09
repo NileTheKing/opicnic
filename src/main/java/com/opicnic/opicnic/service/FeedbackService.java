@@ -37,6 +37,7 @@ public class FeedbackService {
 
             comboFeedbackList.add(feedbackMap);
         }
+        log.info("피드백 리스트: {}", comboFeedbackList);
         return comboFeedbackList;
     }
 }

@@ -31,15 +31,19 @@ public class PracticeController {
             Model model) {
         log.info("combo controller");
         List<Question> questions = practiceService.getComboQuestions(topic, difficulty, algorithm);
-        model.addAttribute("questions", questions); //
-        return "/practice/question"; //
+        model.addAttribute("questions", questions);
+        return "/practice/question";
     }
 
     @PostMapping("/combo/feedback")
-    @ResponseBody
-    public List<Map<String, String>> getComboFeedback(
-            @RequestParam("files") List<MultipartFile> files) throws IOException {
-        return feedbackService.getComboFeedback(files);
+    public String getComboFeedback(
+            @RequestParam("files") List<MultipartFile> files,
+            Model model) throws IOException {
+        log.info("feedback controller");
+
+        List<Map<String, String>> feedbackList = feedbackService.getComboFeedback(files);
+        model.addAttribute("feedbackList", feedbackList); // 피드백 리스트를 모델에 추가
+        return "/practice/feedback";
     }
 
     }

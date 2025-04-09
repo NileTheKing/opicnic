@@ -16,7 +16,6 @@ public class HomeController {
 
     @GetMapping("/practice")
     public String practicePage() {
-        log.info("practice controller");
         // practice.html 템플릿을 렌더링
         return "/practice/practice";
     }

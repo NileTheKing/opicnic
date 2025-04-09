@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Opicnic - 말하기 연습 결과</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .feedback-container {
+            display: none;
+        }
+
+        .feedback-container.active {
+            display: block;
+        }
+
+        .question-navigator button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 0 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .question-navigator button:hover {
+            background-color: #f2f2f2;
+        }
+
+        .feedback-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background-color: #f7fafc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .feedback-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 12px;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .feedback-content {
+            font-size: 1rem;
+            color: #334155;
+            line-height: 1.7;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .feedback-category {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .question-number-button {
+            padding: 10px;
+            border-radius: 50%;
+            background-color: #e0f2fe;
+            color: #1e40af;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .question-number-button:hover {
+            background-color: #bae6fd;
+        }
+
+        .question-number-button.active {
+            background-color: #1e40af;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+<div class="container mx-auto mt-8 p-4">
+    <h1 class="text-2xl font-semibold text-center text-gray-800 mb-6 font-family: 'Noto Sans KR', sans-serif;">피드백 결과</h1>
+
+    <div class="question-navigator flex justify-center mb-6">
+        <button id="prevQuestion" class="bg-gray-200 text-gray-700 hover:bg-gray-300">
+            <i class="fas fa-arrow-left"></i> 이전
+        </button>
+        <div id="questionNumberContainer" class="flex">
+        </div>
+        <button id="nextQuestion" class="bg-gray-200 text-gray-700 hover:bg-gray-300">
+            다음 <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+</div>
+
+<script th:inline="javascript">
+    const feedbackList = /*[[${feedbackList}]]*/ [];
+    const questionNumberContainer = document.getElementById('questionNumberContainer');
+    const prevButton = document.getElementById('prevQuestion');
+    const nextButton = document.getElementById('nextQuestion');
+    const mainContainer = document.querySelector('.container');
+
+    let currentQuestionIndex = 0;
+    let questionNumberButtons = [];
+    let feedbackContainers = [];
+
+    function createFeedbackContainers() {
+        feedbackList.forEach((feedback, index) => {
+            const container = document.createElement('div');
+            container.classList.add('feedback-container');
+            if (index === 0) {
+                container.classList.add('active');
+            }
+
+            const title = document.createElement('h2');
+            title.classList.add('feedback-title');
+            title.textContent = `Question ${index + 1} 피드백`;
+            container.appendChild(title);
+
+            const sttTextDiv = document.createElement('div');
+            sttTextDiv.classList.add('feedback-section');
+            sttTextDiv.innerHTML = `<h3 class="feedback-category">STT 결과</h3><p class="feedback-content">${feedback.sttText || '없음'}</p>`;
+            container.appendChild(sttTextDiv);
+
+            const vocabularyDiv = document.createElement('div');
+            vocabularyDiv.classList.add('feedback-section');
+            vocabularyDiv.innerHTML = `<h3 class="feedback-category">어휘</h3><p class="feedback-content">${feedback.vocabulary || '없음'}</p>`;
+            container.appendChild(vocabularyDiv);
+
+            const grammarDiv = document.createElement('div');
+            grammarDiv.classList.add('feedback-section');
+            grammarDiv.innerHTML = `<h3 class="feedback-category">문법</h3><p class="feedback-content">${feedback.grammar || '없음'}</p>`;
+            container.appendChild(grammarDiv);
+
+            const pronunciationDiv = document.createElement('div');
+            pronunciationDiv.classList.add('feedback-section');
+            pronunciationDiv.innerHTML = `<h3 class="feedback-category">발음</h3><p class="feedback-content">${feedback.pronunciation || '없음'}</p>`;
+            container.appendChild(pronunciationDiv);
+
+            const fluencyDiv = document.createElement('div');
+            fluencyDiv.classList.add('feedback-section');
+            fluencyDiv.innerHTML = `<h3 class="feedback-category">유창성</h3><p class="feedback-content">${feedback.fluency || '없음'}</p>`;
+            container.appendChild(fluencyDiv);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('feedback-section');
+            contentDiv.innerHTML = `<h3 class="feedback-category">내용</h3><p class="feedback-content">${feedback.content || '없음'}</p>`;
+            container.appendChild(contentDiv);
+
+            const overallDiv = document.createElement('div');
+            overallDiv.classList.add('feedback-section');
+            overallDiv.innerHTML = `<h3 class="feedback-category">총평</h3><p class="feedback-content">${feedback.overall || '없음'}</p>`;
+            container.appendChild(overallDiv);
+
+            const improvementsDiv = document.createElement('div');
+            improvementsDiv.classList.add('feedback-section');
+            improvementsDiv.innerHTML = `<h3 class="feedback-category">개선점</h3><p class="feedback-content">${feedback.improvements || '없음'}</p>`;
+            container.appendChild(improvementsDiv);
+
+            mainContainer.appendChild(container);
+            feedbackContainers.push(container);
+        });
+    }
+
+    function createQuestionNumberButtons() {
+        feedbackList.forEach((_, index) => {
+            const button = document.createElement('button');
+            button.classList.add('question-number-button');
+            if (index === 0) {
+                button.classList.add('active');
+            }
+            button.textContent = index + 1;
+            button.addEventListener('click', () => {
+                showQuestion(index);
+            });
+            questionNumberContainer.appendChild(button);
+            questionNumberButtons.push(button);
+        });
+    }
+
+    function showQuestion(index) {
+        if (index < 0 || index >= feedbackList.length) return;
+
+        feedbackContainers.forEach((container, i) => {
+            container.classList.remove('active');
+            if (i === index) {
+                container.classList.add('active');
+            }
+        });
+
+        questionNumberButtons.forEach((button, i) => {
+            button.classList.remove('active');
+            if (i === index) {
+                button.classList.add('active');
+            }
+        });
+
+        currentQuestionIndex = index;
+        updateNavigationButtons();
+    }
+
+    function updateNavigationButtons() {
+        prevButton.disabled = currentQuestionIndex === 0;
+        nextButton.disabled = currentQuestionIndex === feedbackList.length - 1;
+        prevButton.style.backgroundColor = currentQuestionIndex === 0 ? '#e2e8f0' : '#f2f2f2';
+        nextButton.style.backgroundColor = currentQuestionIndex === feedbackList.length - 1 ? '#e2e8f0' : '#f2f2f2';
+    }
+
+    prevButton.addEventListener('click', () => {
+        showQuestion(currentQuestionIndex - 1);
+    });
+
+    nextButton.addEventListener('click', () => {
+        showQuestion(currentQuestionIndex + 1);
+    });
+
+    createFeedbackContainers();
+    createQuestionNumberButtons();
+    updateNavigationButtons();
+</script>
+</body>
+</html>

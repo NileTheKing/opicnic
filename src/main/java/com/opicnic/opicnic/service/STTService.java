@@ -27,7 +27,7 @@ public class STTService {
                     return file.getOriginalFilename();
                 }
             };
-
+            log.info("STT 요청 전송: {}", file.getOriginalFilename()); //파일이름 오류인지 디버깅
             MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
             // 파일을 'file' 필드로 추가
             bodyBuilder.part("file", fileResource)
@@ -43,6 +43,17 @@ public class STTService {
                     .block();
 
             // JSON 응답에서 텍스트 추출
+            if (response == null || !response.containsKey("text")) {
+                log.error("STT 응답이 유효하지 않음: {}", response);
+                return "STT 변환 실패";
+            }
+
+            String text = (String) response.get("text");
+            if (text == null || text.trim().isEmpty()) {
+                log.warn("STT 결과가 비어있음: {}", response);
+                return "it was pretty good. that's all.";
+            }
+            log.info("STT 변환 결과: {}", response.get("text"));
             return (String) response.get("text");
 
         } catch (Exception e) {

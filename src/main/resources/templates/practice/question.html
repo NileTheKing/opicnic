@@ -214,7 +214,7 @@
             formData.append(`files`, blob, `file_ ${index + 1}.wav`);
         });
 
-        fetch('/combo/feedback', {
+        fetch('/practice/combo/feedback', {
             method: 'POST',
             body: formData,
         })
