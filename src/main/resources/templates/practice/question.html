@@ -104,6 +104,8 @@
             </button>
         </div>
     </div>
+    <form id="feedbackForm" action="/practice/combo/feedback" method="POST"
+          enctype="multipart/form-data" style="display:none;"></form> <!-- Hidden form for feedback submission -->
 </div>
 <script th:inline="javascript">
     // Initialize questions array from Thymeleaf model
@@ -198,7 +200,6 @@
             alert('먼저 녹음해주세요.');
         }
     }
-
     function submitAllRecordings() {
         if (recordedAudioBlob) {
             recordings[currentQuestionIndex] = recordedAudioBlob;
@@ -209,23 +210,24 @@
             return;
         }
 
-        let formData = new FormData();
+        // 숨겨진 form 가져오기
+        const form = document.getElementById('feedbackForm');
+        form.innerHTML = ''; // 기존 input 초기화
+
         recordings.forEach((blob, index) => {
-            formData.append(`files`, blob, `file_ ${index + 1}.wav`);
+            const file = new File([blob], `file_${index + 1}.wav`, { type: 'audio/wav' });
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.name = 'files';
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+
+            form.appendChild(fileInput);
         });
 
-        fetch('/practice/combo/feedback', {
-            method: 'POST',
-            body: formData,
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Feedback:', data);
-                alert('제출 완료!');
-            })
-            .catch(error => {
-                console.error('Error submitting recordings:', error);
-            });
+        form.submit();
     }
 
     function startRecording() {

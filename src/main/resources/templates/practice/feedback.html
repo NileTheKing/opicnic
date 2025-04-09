@@ -17,103 +17,230 @@
         }
 
         .question-navigator button {
-            padding: 8px 16px;
-            border-radius: 4px;
-            margin: 0 4px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 0 8px;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.3s ease;
             font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 500;
+            background-color: #f0f4f8;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .question-navigator button:hover {
-            background-color: #f2f2f2;
+            background-color: #e0f2fe;
+            color: #1a82ce;
+            border-color: #bae6fd;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-navigator button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f0f0f0;
+            color: #6b7280;
+            border-color: #e0e0e0;
+            box-shadow: none;
+            transform: none;
         }
 
         .feedback-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            background-color: #f7fafc;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            padding: 24px;
+            border-radius: 16px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
             border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .feedback-section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
 
         .feedback-title {
-            font-size: 1.4rem;
+            font-size: 2rem;
             font-weight: 700;
-            color: #1e40af;
-            margin-bottom: 12px;
+            color: #1a82ce;
+            margin-bottom: 24px;
             font-family: 'Noto Sans KR', sans-serif;
+            text-align: left;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 16px;
         }
 
         .feedback-content {
-            font-size: 1rem;
-            color: #334155;
-            line-height: 1.7;
+            font-size: 1.1rem;
+            color: #374151;
+            line-height: 1.8;
             font-family: 'Noto Sans KR', sans-serif;
+            margin-bottom: 0;
         }
 
         .feedback-category {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            color: #4b5563;
-            margin-bottom: 8px;
+            color: #1a82ce;
+            margin-bottom: 16px;
             font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            align-items: center;
+        }
+
+        .feedback-category i {
+            margin-right: 12px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .question-number-button {
-            padding: 10px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            background-color: #e0f2fe;
-            color: #1e40af;
-            margin: 0 5px;
+            background-color: #e0f7fa;
+            color: #1a82ce;
+            margin: 0 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
             font-weight: 600;
             border: none;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
             font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #b0f0f5;
         }
 
         .question-number-button:hover {
             background-color: #bae6fd;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: #88e1f0;
         }
 
         .question-number-button.active {
-            background-color: #1e40af;
+            background-color: #1a82ce;
             color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 10px rgba(26, 130, 206, 0.3);
+            border-color: #1a82ce;
+            transform: scale(1.1);
+        }
+
+        .page-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 20px 0;
+            margin-bottom: 32px;
+        }
+
+        .page-header .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-header img {
+            height: 40px;
+            width: auto;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a82ce;
+            margin-left: 16px;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        #progressContainer {
+            margin-top: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        #progressContainer .progress-bar {
+            width: 60%;
+            height: 12px;
+            background-color: #e2e8f0;
+            border-radius: 8px;
+            position: relative;
+            margin: 0 10px;
+        }
+
+        #progressContainer .progress-bar-fill {
+            height: 100%;
+            background-color: #1a82ce;
+            border-radius: 8px;
+            width: 0;
+            transition: width 0.5s ease;
+        }
+
+        #progressContainer .progress-text {
+            font-size: 1.1rem;
+            color: #374151;
+            font-family: 'Noto Sans KR', sans-serif;
+            min-width: 80px;
+            text-align: center;
         }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
-<div class="container mx-auto mt-8 p-4">
-    <h1 class="text-2xl font-semibold text-center text-gray-800 mb-6 font-family: 'Noto Sans KR', sans-serif;">피드백 결과</h1>
+<header class="page-header">
+    <div class="container">
+        <img src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" alt="Opicnic" />
+        <h1>Opicnic</h1>
+    </div>
+</header>
 
-    <div class="question-navigator flex justify-center mb-6">
-        <button id="prevQuestion" class="bg-gray-200 text-gray-700 hover:bg-gray-300">
+<div class="container mx-auto px-4">
+    <h1 class="text-3xl font-semibold text-center text-gray-800 mb-8 font-family: 'Noto Sans KR', sans-serif;">말하기 연습 피드백 결과</h1>
+
+    <div id="questionNumberContainer" class="flex justify-center mb-8">
+        <button id="prevQuestion" class="question-navigator-button" disabled>
             <i class="fas fa-arrow-left"></i> 이전
         </button>
-        <div id="questionNumberContainer" class="flex">
+        <div class="flex mx-2">
         </div>
-        <button id="nextQuestion" class="bg-gray-200 text-gray-700 hover:bg-gray-300">
+        <button id="nextQuestion" class="question-navigator-button">
             다음 <i class="fas fa-arrow-right"></i>
         </button>
     </div>
 
+    <div id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-bar-fill"></div>
+        </div>
+        <span class="progress-text">1 / 3</span>
+    </div>
 </div>
 
 <script th:inline="javascript">
     const feedbackList = /*[[${feedbackList}]]*/ [];
+    const questions = /*[[${questions}]]*/ [];
     const questionNumberContainer = document.getElementById('questionNumberContainer');
     const prevButton = document.getElementById('prevQuestion');
     const nextButton = document.getElementById('nextQuestion');
     const mainContainer = document.querySelector('.container');
+    const progressBarFill = document.querySelector('.progress-bar-fill');
+    const progressText = document.querySelector('.progress-text');
 
     let currentQuestionIndex = 0;
     let questionNumberButtons = [];
     let feedbackContainers = [];
+    const totalQuestions = feedbackList.length;
 
     function createFeedbackContainers() {
         feedbackList.forEach((feedback, index) => {
@@ -125,47 +252,52 @@
 
             const title = document.createElement('h2');
             title.classList.add('feedback-title');
-            title.textContent = `Question ${index + 1} 피드백`;
+            title.textContent = `질문 ${index + 1} 피드백`;
             container.appendChild(title);
+
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('feedback-section');
+            questionDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-question-circle"></i> 문제 내용</h3><p class="feedback-content">${questions[index].text || '질문이 없습니다.'}</p>`;
+            container.appendChild(questionDiv);
 
             const sttTextDiv = document.createElement('div');
             sttTextDiv.classList.add('feedback-section');
-            sttTextDiv.innerHTML = `<h3 class="feedback-category">STT 결과</h3><p class="feedback-content">${feedback.sttText || '없음'}</p>`;
+            sttTextDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-comment-alt"></i> STT 결과</h3><p class="feedback-content">${feedback.sttText || 'STT 결과가 없습니다.'}</p>`;
             container.appendChild(sttTextDiv);
 
             const vocabularyDiv = document.createElement('div');
             vocabularyDiv.classList.add('feedback-section');
-            vocabularyDiv.innerHTML = `<h3 class="feedback-category">어휘</h3><p class="feedback-content">${feedback.vocabulary || '없음'}</p>`;
+            vocabularyDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-book"></i> 어휘</h3><p class="feedback-content">${feedback.vocabulary || '어휘 피드백이 없습니다.'}</p>`;
             container.appendChild(vocabularyDiv);
 
             const grammarDiv = document.createElement('div');
             grammarDiv.classList.add('feedback-section');
-            grammarDiv.innerHTML = `<h3 class="feedback-category">문법</h3><p class="feedback-content">${feedback.grammar || '없음'}</p>`;
+            grammarDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-pencil-alt"></i> 문법</h3><p class="feedback-content">${feedback.grammar || '문법 피드백이 없습니다.'}</p>`;
             container.appendChild(grammarDiv);
 
             const pronunciationDiv = document.createElement('div');
             pronunciationDiv.classList.add('feedback-section');
-            pronunciationDiv.innerHTML = `<h3 class="feedback-category">발음</h3><p class="feedback-content">${feedback.pronunciation || '없음'}</p>`;
+            pronunciationDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-microphone"></i> 발음</h3><p class="feedback-content">${feedback.pronunciation || '발음 피드백이 없습니다.'}</p>`;
             container.appendChild(pronunciationDiv);
 
             const fluencyDiv = document.createElement('div');
             fluencyDiv.classList.add('feedback-section');
-            fluencyDiv.innerHTML = `<h3 class="feedback-category">유창성</h3><p class="feedback-content">${feedback.fluency || '없음'}</p>`;
+            fluencyDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-tachometer-alt"></i> 유창성</h3><p class="feedback-content">${feedback.fluency || '유창성 피드백이 없습니다.'}</p>`;
             container.appendChild(fluencyDiv);
 
             const contentDiv = document.createElement('div');
             contentDiv.classList.add('feedback-section');
-            contentDiv.innerHTML = `<h3 class="feedback-category">내용</h3><p class="feedback-content">${feedback.content || '없음'}</p>`;
+            contentDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-align-left"></i> 내용</h3><p class="feedback-content">${feedback.content || '내용 피드백이 없습니다.'}</p>`;
             container.appendChild(contentDiv);
 
             const overallDiv = document.createElement('div');
             overallDiv.classList.add('feedback-section');
-            overallDiv.innerHTML = `<h3 class="feedback-category">총평</h3><p class="feedback-content">${feedback.overall || '없음'}</p>`;
+            overallDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-star"></i> 총평</h3><p class="feedback-content">${feedback.overall || '총평이 없습니다.'}</p>`;
             container.appendChild(overallDiv);
 
             const improvementsDiv = document.createElement('div');
             improvementsDiv.classList.add('feedback-section');
-            improvementsDiv.innerHTML = `<h3 class="feedback-category">개선점</h3><p class="feedback-content">${feedback.improvements || '없음'}</p>`;
+            improvementsDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-lightbulb"></i> 개선점</h3><p class="feedback-content">${feedback.improvements || '개선점이 없습니다.'}</p>`;
             container.appendChild(improvementsDiv);
 
             mainContainer.appendChild(container);
@@ -208,26 +340,38 @@
 
         currentQuestionIndex = index;
         updateNavigationButtons();
+        updateProgressBar();
     }
 
     function updateNavigationButtons() {
         prevButton.disabled = currentQuestionIndex === 0;
         nextButton.disabled = currentQuestionIndex === feedbackList.length - 1;
-        prevButton.style.backgroundColor = currentQuestionIndex === 0 ? '#e2e8f0' : '#f2f2f2';
-        nextButton.style.backgroundColor = currentQuestionIndex === feedbackList.length - 1 ? '#e2e8f0' : '#f2f2f2';
+        prevButton.style.opacity = currentQuestionIndex === 0 ? '0.5' : '1';
+        nextButton.style.opacity = currentQuestionIndex === feedbackList.length - 1 ? '0.5' : '1';
+    }
+
+    function updateProgressBar() {
+        const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+        progressBarFill.style.width = `${progress}%`;
+        progressText.textContent = `${currentQuestionIndex + 1} / ${totalQuestions}`;
     }
 
     prevButton.addEventListener('click', () => {
-        showQuestion(currentQuestionIndex - 1);
+        if (currentQuestionIndex > 0) {
+            showQuestion(currentQuestionIndex - 1);
+        }
     });
 
     nextButton.addEventListener('click', () => {
-        showQuestion(currentQuestionIndex + 1);
+        if (currentQuestionIndex < feedbackList.length - 1) {
+            showQuestion(currentQuestionIndex + 1);
+        }
     });
 
     createFeedbackContainers();
     createQuestionNumberButtons();
     updateNavigationButtons();
+    updateProgressBar();
 </script>
 </body>
 </html>
