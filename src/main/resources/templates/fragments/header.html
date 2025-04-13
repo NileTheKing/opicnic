@@ -1,31 +1,70 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>헤더 디자인</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#6366F1'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#6366F1'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        :where([class^="ri-"])::before { content: "\f3c2"; }
         body {
             font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
         }
+
+        /* 드롭다운 스타일 */
         .dropdown {
+            display: none; /* 초기 상태 숨김 */
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
             transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.25rem;
+            min-width: 200px;
+            background-color: white;
+            border-radius: 0.375rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            border: 1px solid #e2e8f0;
         }
+
         .dropdown.active {
+            display: block; /* 활성화 상태 표시 */
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
         }
+
         .notification-badge {
             position: absolute;
             top: -2px;
@@ -40,6 +79,9 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* 기존의 show 클래스 제거 -> active 로 변경 */
+
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -52,66 +94,25 @@
                 </a>
             </div>
 
-            <div id="guest-menu" class="flex items-center space-x-1">
-                <a href="/auth/login" class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">로그인</a>
-                <a href="/members/new" class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">회원가입</a>
+            <div sec:authorize="!isAuthenticated()" class="flex items-center space-x-4">
+                <a href="/auth/login"
+                   class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">로그인</a>
+                <a href="/members/new"
+                   class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">회원가입</a>
             </div>
 
-            <div id="user-menu" class="hidden flex items-center space-x-4">
+            <div sec:authorize="isAuthenticated()" class="flex items-center space-x-4">
                 <div class="relative">
-                    <button id="notification-btn" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 relative transition-colors">
+                    <button id="notification-btn"
+                            class="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 relative transition-colors">
                         <i class="ri-notification-3-line ri-lg"></i>
                         <span class="notification-badge">3</span>
                     </button>
 
-                    <div id="notification-dropdown" class="dropdown absolute right-0 mt-2 w-80 bg-white rounded shadow-lg py-2 border border-gray-100">
+                    <div id="notification-dropdown"
+                         class="dropdown">
                         <div class="px-4 py-2 border-b border-gray-100">
                             <h3 class="font-semibold text-gray-800">알림</h3>
-                        </div>
-                        <div class="max-h-96 overflow-y-auto">
-                            <div class="px-4 py-3 hover:bg-gray-50 border-l-4 border-blue-500 flex items-start">
-                                <div class="w-8 h-8 mr-3 flex items-center justify-center bg-blue-100 rounded-full text-blue-500">
-                                    <i class="ri-calendar-event-line"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-800">토익 시험 일정 알림</p>
-                                    <p class="text-xs text-gray-500 mt-1">내일 오전 9시에 시험이 예정되어 있습니다.</p>
-                                    <p class="text-xs text-gray-400 mt-1">10분 전</p>
-                                </div>
-                            </div>
-
-                            <div class="px-4 py-3 hover:bg-gray-50 border-l-4 border-green-500 flex items-start">
-                                <div class="w-8 h-8 mr-3 flex items-center justify-center bg-green-100 rounded-full text-green-500">
-                                    <i class="ri-team-line"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-800">영어 회화 스터디 새 게시글</p>
-                                    <p class="text-xs text-gray-500 mt-1">김민준님이 새 게시글을 작성했습니다.</p>
-                                    <p class="text-xs text-gray-400 mt-1">1시간 전</p>
-                                </div>
-                            </div>
-
-                            <div class="px-4 py-3 hover:bg-gray-50 border-l-4 border-purple-500 flex items-start">
-                                <div class="w-8 h-8 mr-3 flex items-center justify-center bg-purple-100 rounded-full text-purple-500">
-                                    <i class="ri-chat-1-line"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-800">새 댓글 알림</p>
-                                    <p class="text-xs text-gray-500 mt-1">이서연님이 회원님의 게시글에 댓글을 남겼습니다.</p>
-                                    <p class="text-xs text-gray-400 mt-1">3시간 전</p>
-                                </div>
-                            </div>
-
-                            <div class="px-4 py-3 hover:bg-gray-50 border-l-4 border-amber-500 flex items-start">
-                                <div class="w-8 h-8 mr-3 flex items-center justify-center bg-amber-100 rounded-full text-amber-500">
-                                    <i class="ri-book-open-line"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-800">복습 알림</p>
-                                    <p class="text-xs text-gray-500 mt-1">오늘의 단어 복습 시간입니다.</p>
-                                    <p class="text-xs text-gray-400 mt-1">5시간 전</p>
-                                </div>
-                            </div>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-100 text-center">
                             <a href="/notifications" class="text-sm text-primary hover:underline">모든 알림 보기</a>
@@ -120,35 +121,41 @@
                 </div>
 
                 <div class="relative">
-                    <button id="profile-btn" class="flex items-center space-x-2 text-gray-700 hover:text-primary px-3 py-2 rounded-md transition-colors">
+                    <button id="profile-btn"
+                            class="flex items-center space-x-2 text-gray-700 hover:text-primary px-3 py-2 rounded-md transition-colors">
                         <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            <span>박</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full overflow-hidden bg-primary/10">
+                                    <img th:src="${#authentication.principal.attributes['kakao_account']['profile']['profile_image_url']}"
+                                         alt="profile"
+                                         class="w-full h-full object-cover">
+                                </div>
+
+                                <span class="text-sm font-medium"
+                                      th:text="${#authentication.principal.attributes['kakao_account']['profile']['nickname']}">
+        사용자
+    </span>
+                            </div>
                         </div>
-                        <span class="text-sm font-medium">박지민</span>
                         <div class="w-4 h-4 flex items-center justify-center">
                             <i class="ri-arrow-down-s-line"></i>
                         </div>
                     </button>
 
-                    <div id="profile-dropdown" class="dropdown absolute right-0 mt-2 w-48 bg-white rounded shadow-lg py-2 border border-gray-100">
-                        <a href="/mypage" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
-                            <div class="w-5 h-5 mr-3 flex items-center justify-center text-gray-500">
-                                <i class="ri-user-line"></i>
-                            </div>
-                            마이페이지
+                    <div id="profile-dropdown"
+                         class="dropdown">
+                        <a href="/mypage"
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                            <i class="ri-user-line w-5 h-5 mr-3 text-gray-500"></i> 마이페이지
                         </a>
-                        <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
-                            <div class="w-5 h-5 mr-3 flex items-center justify-center text-gray-500">
-                                <i class="ri-settings-3-line"></i>
-                            </div>
-                            설정
+                        <a href="/settings"
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                            <i class="ri-settings-3-line w-5 h-5 mr-3 text-gray-500"></i> 설정
                         </a>
                         <div class="border-t border-gray-100 my-1"></div>
-                        <a href="/auth/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center">
-                            <div class="w-5 h-5 mr-3 flex items-center justify-center text-red-500">
-                                <i class="ri-logout-box-r-line"></i>
-                            </div>
-                            로그아웃
+                        <a href="/auth/logout"
+                           class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center">
+                            <i class="ri-logout-box-r-line w-5 h-5 mr-3 text-red-500"></i> 로그아웃
                         </a>
                     </div>
                 </div>
@@ -159,69 +166,43 @@
 
 <div class="max-w-7xl mx-auto p-8 text-center">
     <h1 class="text-3xl font-bold text-gray-800 mb-4">헤더 디자인 예시</h1>
-    <p class="text-gray-600 mb-6">로그인 상태를 토글하려면 아래 버튼을 클릭하세요.</p>
-    <button id="toggle-login" class="bg-primary text-white px-4 py-2 rounded-button hover:bg-primary/90 transition-colors whitespace-nowrap">로그인 상태 전환</button>
+    <p class="text-gray-600 mb-6">로그인 상태에 따라 동적으로 메뉴가 표시됩니다.</p>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const guestMenu = document.getElementById('guest-menu');
-        const userMenu = document.getElementById('user-menu');
-        const toggleLoginBtn = document.getElementById('toggle-login');
+    document.addEventListener('DOMContentLoaded', function () {
         const notificationBtn = document.getElementById('notification-btn');
         const notificationDropdown = document.getElementById('notification-dropdown');
         const profileBtn = document.getElementById('profile-btn');
         const profileDropdown = document.getElementById('profile-dropdown');
-        let isLoggedIn = false; // 로그인 상태를 추적하는 변수
 
-        // 초기 상태 설정
-        if (isLoggedIn) {
-            guestMenu.classList.add('hidden');
-            userMenu.classList.remove('hidden');
-        } else {
-            guestMenu.classList.remove('hidden');
-            userMenu.classList.add('hidden');
+        // 드롭다운 토글 함수
+        function toggleDropdown(button, dropdown) {
+            if (button && dropdown) {
+                button.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('active'); // 'active' 클래스 사용
+                    if (button === notificationBtn && profileDropdown.classList.contains('active')) {
+                        profileDropdown.classList.remove('active');
+                    } else if (button === profileBtn && notificationDropdown.classList.contains('active')) {
+                        notificationDropdown.classList.remove('active');
+                    }
+                });
+            }
         }
 
-        // 로그인 상태 토글
-        toggleLoginBtn.addEventListener('click', function() {
-            isLoggedIn = !isLoggedIn; // 로그인 상태 반전
+        // 드롭다운 토글 연결
+        toggleDropdown(notificationBtn, notificationDropdown);
+        toggleDropdown(profileBtn, profileDropdown);
 
-            if (isLoggedIn) {
-                guestMenu.classList.add('hidden');
-                userMenu.classList.remove('hidden');
-            } else {
-                guestMenu.classList.remove('hidden');
-                userMenu.classList.add('hidden');
+        // 바깥 클릭 시 닫기
+        document.addEventListener('click', function () {
+            if (notificationDropdown) {
+                notificationDropdown.classList.remove('active'); // 'active' 클래스 사용
             }
-        });
-
-        // 알림 드롭다운 토글
-        notificationBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle('active');
-
-            // 프로필 드롭다운 닫기
-            if (profileDropdown.classList.contains('active')) {
-                profileDropdown.classList.remove('active');
+            if (profileDropdown) {
+                profileDropdown.classList.remove('active'); // 'active' 클래스 사용
             }
-        });
-
-        // 프로필 드롭다운 토글
-        profileBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            profileDropdown.classList.toggle('active');
-
-            // 알림 드롭다운 닫기
-            if (notificationDropdown.classList.contains('active')) {
-                notificationDropdown.classList.remove('active');
-            }
-        });
-
-        // 외부 클릭 시 드롭다운 닫기
-        document.addEventListener('click', function() {
-            notificationDropdown.classList.remove('active');
-            profileDropdown.classList.remove('active');
         });
     });
 </script>

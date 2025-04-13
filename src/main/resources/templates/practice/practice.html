@@ -9,11 +9,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen font-sans flex">
-<div th:replace="fragments/sidebar :: sidebar"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <div class="flex-1 flex flex-col">
-    <header th:replace="fragments/header :: header"></header>
-
+    <header th:replace="~{fragments/header :: header}"></header>
     <div class="p-8">
         <h1 class="text-center text-3xl font-bold mb-8 text-gray-800">AI OPIc 연습 플랫폼</h1>
         <p class="text-center text-gray-600 mb-12">AI를 활용한 효과적인 OPIc 시험 준비</p>

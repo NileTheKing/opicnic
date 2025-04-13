@@ -22,10 +22,21 @@ public class MemberRepository {
         return em.find(Member.class, id);
     }
 
-    public Optional<Member> findByUserId(String userId) {
+    public Optional<Member> findByNickname(String nickname) {
         try {
-            return Optional.of(em.createQuery("select m from Member m where m.userId = :userId", Member.class)
-                    .setParameter("userId", userId)
+            return Optional.of(em.createQuery("select m from Member m where m.nickname = :nickname", Member.class)
+                    .setParameter("nickname", nickname)
+                    .getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Member> findByProviderAndProviderId(String provider, String providerId) {
+        try {
+            return Optional.of(em.createQuery("select m from Member m where m.provider = :provider and m.providerId = :providerId", Member.class)
+                    .setParameter("provider", provider)
+                    .setParameter("providerId", providerId)
                     .getSingleResult());
         } catch (NoResultException e) {
             return Optional.empty();

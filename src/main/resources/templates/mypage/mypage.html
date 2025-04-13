@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        .profile-card {
+            transition: all 0.3s ease;
+        }
+
+        .toggle-button {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-button input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #4F46E5;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .section-card {
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="container mx-auto px-4 py-8">
+    <header class="mb-10">
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-indigo-600">마이페이지</h1>
+            <div class="text-right">
+                <p class="text-gray-500">최종 업데이트: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">2025-04-10</span></p>
+            </div>
+        </div>
+    </header>
+
+    <!-- 프로필 섹션 -->
+    <div class="mb-10">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden profile-card">
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
+                <h2 class="text-xl font-semibold text-white">내 프로필</h2>
+            </div>
+
+            <div class="p-6">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="flex-shrink-0 mb-4 md:mb-0">
+                        <div class="relative">
+                            <div class="h-32 w-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                                <img th:src="${user != null && user.profileImage != null ? user.profileImage : '/img/default-profile.png'}"
+                                     src="/img/default-profile.png"
+                                     alt="프로필 이미지"
+                                     class="h-full w-full object-cover" />
+                            </div>
+                            <button class="absolute bottom-0 right-0 bg-indigo-600 text-white rounded-full p-2 shadow-lg hover:bg-indigo-700 focus:outline-none">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ml-0 md:ml-8 flex-grow">
+                        <div class="mb-4">
+                            <h3 class="text-2xl font-bold text-gray-800" th:text="${user != null ? user.name : '사용자 이름'}">사용자 이름</h3>
+                            <p class="text-gray-600" th:text="${user != null ? user.email : 'user@example.com'}">user@example.com</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-4">
+                            <button class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-pen mr-2"></i>
+                                프로필 수정
+                            </button>
+
+                            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-lock mr-2"></i>
+                                비밀번호 변경
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 설정 섹션 -->
+    <div class="mb-10">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden section-card">
+            <div class="bg-gradient-to-r from-blue-500 to-teal-500 p-6">
+                <h2 class="text-xl font-semibold text-white">알림 설정</h2>
+            </div>
+
+            <div class="p-6">
+                <p class="text-gray-600 mb-6">알림을 받을 항목을 선택하세요. 변경사항은 자동으로 저장됩니다.</p>
+
+                <div class="space-y-6">
+                    <!-- 시험일정 알림 -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">시험 일정 알림</h3>
+                            <p class="text-gray-600">시험 일정 및 마감일 알림을 받습니다.</p>
+                        </div>
+                        <label class="toggle-button">
+                            <input type="checkbox" th:checked="${notifications != null && notifications.examSchedule}" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- 스터디게시판 알림 -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">스터디 게시판 알림</h3>
+                            <p class="text-gray-600">새로운 게시글과 댓글 알림을 받습니다.</p>
+                        </div>
+                        <label class="toggle-button">
+                            <input type="checkbox" th:checked="${notifications != null && notifications.studyBoard}" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- 복습 알림 -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">복습 알림</h3>
+                            <p class="text-gray-600">학습 내용 복습 시간 알림을 받습니다.</p>
+                        </div>
+                        <label class="toggle-button">
+                            <input type="checkbox" th:checked="${notifications != null && notifications.reviewReminder}" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 학습 통계 섹션 -->
+    <div class="mb-10">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden section-card">
+            <div class="bg-gradient-to-r from-orange-500 to-pink-500 p-6">
+                <h2 class="text-xl font-semibold text-white">학습 통계</h2>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <i class="fas fa-book text-blue-500 text-3xl mb-2"></i>
+                        <h3 class="text-lg font-medium text-gray-700">완료한 문제</h3>
+                        <p class="text-2xl font-bold text-indigo-600" th:text="${stats != null ? stats.completedProblems : '42'}">42</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <i class="fas fa-clock text-green-500 text-3xl mb-2"></i>
+                        <h3 class="text-lg font-medium text-gray-700">학습 시간</h3>
+                        <p class="text-2xl font-bold text-indigo-600" th:text="${stats != null ? stats.studyHours : '12'}">12</p>
+                        <p class="text-gray-500">시간</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <i class="fas fa-chart-line text-purple-500 text-3xl mb-2"></i>
+                        <h3 class="text-lg font-medium text-gray-700">평균 점수</h3>
+                        <p class="text-2xl font-bold text-indigo-600" th:text="${stats != null ? stats.averageScore : '85'}">85</p>
+                        <p class="text-gray-500">점</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 활동 내역 섹션 -->
+    <div class="mb-10">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden section-card">
+            <div class="bg-gradient-to-r from-green-500 to-teal-500 p-6">
+                <h2 class="text-xl font-semibold text-white">최근 활동</h2>
+            </div>
+
+            <div class="p-6">
+                <div class="divide-y divide-gray-200">
+                    <div class="py-4 flex items-center" th:each="activity, activityStat : ${activities}" th:if="${activityStat.index < 5}">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <i class="fas fa-check text-indigo-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-800" th:text="${activity != null ? activity.description : '토픽 1 문제 완료'}">토픽 1 문제 완료</p>
+                            <p class="text-sm text-gray-500" th:text="${activity != null ? activity.date : '2025-04-10 14:32'}">2025-04-10 14:32</p>
+                        </div>
+                    </div>
+
+                    <!-- 샘플 활동 -->
+                    <div class="py-4 flex items-center">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <i class="fas fa-check text-indigo-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-800">토픽 1 문제 완료</p>
+                            <p class="text-sm text-gray-500">2025-04-10 14:32</p>
+                        </div>
+                    </div>
+
+                    <div class="py-4 flex items-center">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-comment text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-800">스터디 게시판에 댓글 작성</p>
+                            <p class="text-sm text-gray-500">2025-04-09 10:15</p>
+                        </div>
+                    </div>
+
+                    <div class="py-4 flex items-center">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-book-open text-green-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-800">토픽 2 학습 시작</p>
+                            <p class="text-sm text-gray-500">2025-04-08 16:45</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        모든 활동 보기
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 알림 설정 토글 이벤트
+        const toggleButtons = document.querySelectorAll('.toggle-button input');
+        toggleButtons.forEach(button => {
+            button.addEventListener('change', function(e) {
+                const notificationType = e.target.closest('.flex').querySelector('h3').textContent;
+                const isEnabled = e.target.checked;
+
+                // 여기서 API 호출 또는 알림 설정 업데이트 로직을 추가할 수 있습니다
+                console.log(`${notificationType} 알림이 ${isEnabled ? '활성화' : '비활성화'}되었습니다.`);
+
+                // 성공 메시지 표시 (실제 구현 시 API 응답 후에 표시)
+                showToast(`${notificationType} 설정이 저장되었습니다.`);
+            });
+        });
+
+        // 토스트 메시지 표시 함수
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.replace('opacity-0', 'opacity-100'), 10);
+            setTimeout(() => {
+                toast.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 프로필 사진 변경 버튼 이벤트
+        const profileImageButton = document.querySelector('.relative button');
+        if (profileImageButton) {
+            profileImageButton.addEventListener('click', function() {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.click();
+
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        // 여기서 이미지 업로드 로직을 추가할 수 있습니다
+                        const file = e.target.files[0];
+                        console.log('선택된 파일:', file.name);
+
+                        // 미리보기 업데이트 (실제 구현에서는 이미지 업로드 후 업데이트)
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            document.querySelector('.rounded-full img').src = e.target.result;
+                            showToast('프로필 이미지가 업데이트되었습니다.');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        }
+    });
+</script>
+</body>
+</html>
