@@ -26,7 +26,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final MemberRepository memberRepository; // Repository를 직접 사용
 
     @Override
-    @Transactional
+    @Transactional // 트랜잭션 처리!
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         try {
             OAuth2User oAuth2User = super.loadUser(userRequest);
@@ -68,6 +68,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             Map<String, Object> customAttributes = new HashMap<>(attributes);
             customAttributes.put("providerId", providerId);
+            customAttributes.put("provider", registrationId); // 혹은 registrationId]
 
             return new DefaultOAuth2User(
                     Collections.singleton(new SimpleGrantedAuthority(member.getRole().name())),

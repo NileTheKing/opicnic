@@ -1,14 +1,14 @@
 package com.opicnic.opicnic.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class NotificationSetting {
     @Id
     @GeneratedValue
@@ -20,5 +20,6 @@ public class NotificationSetting {
 
     @OneToOne
     @JoinColumn(name = "member_id")
+    @Setter
     private Member member;
 }
