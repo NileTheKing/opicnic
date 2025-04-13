@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opicnic.opicnic.domain.Question;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
@@ -27,30 +28,28 @@ public class GeminiService {
 
 
     private static final String SYSTEM_PROMPT =
-            """
-            당신은 OPIC 영어 시험 평가자입니다.
-            사용자의 영어 음성 텍스트를 분석하고 다음 형식의 JSON으로 응답해주세요
-            주의: 응답은 반드시 JSON 코드 블록 없이 JSON 형식 그대로 전달해주세요. 백틱(```)을 포함하지 마세요.
-            :
-            {
-              "vocabulary": "어휘에 대한 평가",
-              "grammar": "문법에 대한 평가",
-              "pronunciation": "발음에 대한 평가",
-              "fluency": "유창성에 대한 평가",
-              "content": "내용 구성에 대한 평가",
-              "overall": "전반적인 영어 능력 평가 (IL, IM, IH, AL 중 하나 포함)",
-              "improvements": "개선점에 대한 구체적인 조언"
-            }
-        
-            가능한 모든 항목에 구체적인 평가를 한국어로 작성해주세요.
-            """;
+            "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 적절한 filler word는 감점 요소가 아닙니다.)\n" +
+                    "문제에 대한 사용자의 영어 음성 응답 텍스트를 분석하고 다음 형식을 철저히 지켜 JSON 으로 응답해주세요\n" +
+                    "{\n" +
+                    "  \"vocabulary\": \"어휘에 대한 평가\",\n" +
+                    "  \"grammar\": \"문법에 대한 평가\",\n" +
+                    "  \"pronunciation\": \"발음에 대한 평가\",\n" +
+                    "  \"fluency\": \"유창성에 대한 평가\",\n" +
+                    "  \"content\": \"내용 구성에 대한 평가\",\n" +
+                    "  \"overall\": \"전반적인 영어 능력 평가 (IL, IM, IH, AL 중 하나 포함)\",\n" +
+                    "  \"improvements\": \"개선점에 대한 구체적인 조언\"\n" +
+                    "}";
 
-    public Map<String, String> getOpicFeedback(String speechText) {
-        log.info("Gemini API에 요청 전송: {}", speechText);
+    public Map<String, String> getOpicFeedback(String speechText, Question question) {
+
 
         // 시스템 프롬프트 및 사용자 메시지 생성
         Message systemMessage = new SystemMessage(SYSTEM_PROMPT);
-        Message userMessage = new UserMessage(speechText);
+        Message userMessage = new UserMessage(
+                "다음 질문에 대한 답변입니다: " + question.getText() + "\n" +
+                        "사용자의 응답: " + speechText
+        );
+
 
         // 프롬프트 생성
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
@@ -64,7 +63,9 @@ public class GeminiService {
 
             //직접 첫 번째 메시지 내용 가져오기
             AssistantMessage assistantMessage = (AssistantMessage) response.getResult().getOutput();
-            responseContent = assistantMessage.getText();
+            responseContent = assistantMessage.getText()
+                    .replaceAll("(?m)^```json\\s*", "")  // ```json 윗줄 제거
+                    .replaceAll("(?m)^```\\s*", "");     // ``` 아랫줄 제거;
 
             log.info("Gemini API 응답: {}", responseContent);
             return parseResponse(responseContent);

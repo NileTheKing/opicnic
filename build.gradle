@@ -43,6 +43,10 @@ dependencies {
 	// Spring AI dependencies
 	implementation "org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter:${springAiVersion}"
 
+	//security dependencies
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 

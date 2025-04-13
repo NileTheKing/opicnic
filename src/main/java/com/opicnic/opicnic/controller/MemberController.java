@@ -22,7 +22,7 @@ public class MemberController {
     @GetMapping("/members/new")
     public String createForm(Model model) {
         model.addAttribute("memberForm", new MemberDTO());
-        log.info("회원가입 폼 호출");
+        //log.info("회원가입 폼 호출");
         return "members/createMemberForm";
     }
 

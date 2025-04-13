@@ -1,377 +1,131 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Opicnic - 말하기 연습 결과</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영어 학습 피드백</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        .feedback-container {
-            display: none;
-        }
-
-        .feedback-container.active {
-            display: block;
-        }
-
-        .question-navigator button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 0 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Noto Sans KR', sans-serif;
-            font-weight: 500;
-            background-color: #f0f4f8;
-            color: #1e293b;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .question-navigator button:hover {
-            background-color: #e0f2fe;
-            color: #1a82ce;
-            border-color: #bae6fd;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .question-navigator button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background-color: #f0f0f0;
-            color: #6b7280;
-            border-color: #e0e0e0;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .feedback-section {
-            margin-bottom: 24px;
-            padding: 24px;
-            border-radius: 16px;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e2e8f0;
+        .feedback-card {
             transition: all 0.3s ease;
         }
-
-        .feedback-section:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        .feedback-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-
-        .feedback-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1a82ce;
-            margin-bottom: 24px;
-            font-family: 'Noto Sans KR', sans-serif;
-            text-align: left;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 16px;
-        }
-
-        .feedback-content {
-            font-size: 1.1rem;
-            color: #374151;
-            line-height: 1.8;
-            font-family: 'Noto Sans KR', sans-serif;
-            margin-bottom: 0;
-        }
-
-        .feedback-category {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1a82ce;
-            margin-bottom: 16px;
-            font-family: 'Noto Sans KR', sans-serif;
-            display: flex;
-            align-items: center;
-        }
-
-        .feedback-category i {
-            margin-right: 12px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .question-number-button {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: #e0f7fa;
-            color: #1a82ce;
-            margin: 0 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border: none;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-            font-family: 'Noto Sans KR', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #b0f0f5;
-        }
-
-        .question-number-button:hover {
-            background-color: #bae6fd;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            border-color: #88e1f0;
-        }
-
-        .question-number-button.active {
-            background-color: #1a82ce;
-            color: white;
-            box-shadow: 0 4px 10px rgba(26, 130, 206, 0.3);
-            border-color: #1a82ce;
-            transform: scale(1.1);
-        }
-
-        .page-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            padding: 20px 0;
-            margin-bottom: 32px;
-        }
-
-        .page-header .container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .page-header img {
-            height: 40px;
-            width: auto;
-        }
-
-        .page-header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1a82ce;
-            margin-left: 16px;
-            font-family: 'Noto Sans KR', sans-serif;
-        }
-
-        #progressContainer {
-            margin-top: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-
-        #progressContainer .progress-bar {
-            width: 60%;
-            height: 12px;
-            background-color: #e2e8f0;
-            border-radius: 8px;
-            position: relative;
-            margin: 0 10px;
-        }
-
-        #progressContainer .progress-bar-fill {
-            height: 100%;
-            background-color: #1a82ce;
-            border-radius: 8px;
-            width: 0;
-            transition: width 0.5s ease;
-        }
-
-        #progressContainer .progress-text {
-            font-size: 1.1rem;
-            color: #374151;
-            font-family: 'Noto Sans KR', sans-serif;
-            min-width: 80px;
-            text-align: center;
-        }
+        .level-IL { color: #6366F1; }
+        .level-IM { color: #8B5CF6; }
+        .level-IH { color: #EC4899; }
+        .level-AL { color: #F59E0B; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
-<header class="page-header">
-    <div class="container">
-        <img src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" alt="Opicnic" />
-        <h1>Opicnic</h1>
-    </div>
-</header>
-
-<div class="container mx-auto px-4">
-    <h1 class="text-3xl font-semibold text-center text-gray-800 mb-8 font-family: 'Noto Sans KR', sans-serif;">말하기 연습 피드백 결과</h1>
-
-    <div id="questionNumberContainer" class="flex justify-center mb-8">
-        <button id="prevQuestion" class="question-navigator-button" disabled>
-            <i class="fas fa-arrow-left"></i> 이전
-        </button>
-        <div class="flex mx-2">
+<body class="bg-gray-50 min-h-screen">
+<div class="container mx-auto px-4 py-8">
+    <header class="mb-10">
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-indigo-600">영어 학습 피드백 결과</h1>
+            <div class="text-right">
+                <p class="text-gray-500">평가일: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">2025-04-10</span></p>
+            </div>
         </div>
-        <button id="nextQuestion" class="question-navigator-button">
-            다음 <i class="fas fa-arrow-right"></i>
-        </button>
+        <div class="mt-4 bg-white p-6 rounded-lg shadow-md">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                <p class="text-gray-700">각 문제에 대한 상세 피드백입니다. 각 영역별 평가를 확인하고 개선점을 참고하세요.</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="space-y-8">
+        <div class="feedback-card bg-white rounded-xl shadow-md overflow-hidden"
+             th:each="feedback, iterStat : ${feedbackList}">
+            <div class="bg-indigo-600 p-4">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <span class="mr-2">Question</span>
+                    <span class="bg-white text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center"
+                          th:text="${iterStat.count}">1</span>
+                </h2>
+            </div>
+
+            <div class="p-6">
+                <!-- 문제 내용 -->
+                <div class="mb-6 bg-indigo-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">문제</h3>
+                    <p class="text-gray-700" th:text="${feedback.question.text}">문제 텍스트</p>
+                </div>
+
+                <!-- 피드백 영역 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-book text-indigo-500 mr-2"></i>어휘</h4>
+                        <p class="text-gray-600" th:text="${feedback.vocabulary}">어휘 피드백</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-pen text-indigo-500 mr-2"></i>문법</h4>
+                        <p class="text-gray-600" th:text="${feedback.grammar}">문법 피드백</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-microphone text-indigo-500 mr-2"></i>발음</h4>
+                        <p class="text-gray-600" th:text="${feedback.pronunciation}">발음 피드백</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-comment-dots text-indigo-500 mr-2"></i>유창성</h4>
+                        <p class="text-gray-600" th:text="${feedback.fluency}">유창성 피드백</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-file-alt text-indigo-500 mr-2"></i>내용 구성</h4>
+                        <p class="text-gray-600" th:text="${feedback.content}">내용 피드백</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700"><i class="fas fa-star text-indigo-500 mr-2"></i>전반적 평가</h4>
+                        <p class="text-gray-600">
+                            <span th:text="${feedback.overall}"
+                                  th:classappend="|
+                                      ${feedback.overall.contains('IL')} ? 'font-bold level-IL' :
+                                      ${feedback.overall.contains('IM')} ? 'font-bold level-IM' :
+                                      ${feedback.overall.contains('IH')} ? 'font-bold level-IH' :
+                                      ${feedback.overall.contains('AL')} ? 'font-bold level-AL' : ''
+                                  |">
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 개선점 -->
+                <div class="mt-6 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-yellow-800">개선점</h3>
+                            <p class="mt-2 text-sm text-yellow-700" th:text="${feedback.improvements}">개선점 텍스트</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="progressContainer">
-        <div class="progress-bar">
-            <div class="progress-bar-fill"></div>
-        </div>
-        <span class="progress-text">1 / 3</span>
+    <!-- 돌아가기 버튼 -->
+    <div class="mt-12 mb-6 flex justify-center">
+        <a href="/" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+            <i class="fas fa-chevron-left mr-2"></i> 홈으로 돌아가기
+        </a>
     </div>
 </div>
 
-<script th:inline="javascript">
-    const feedbackList = /*[[${feedbackList}]]*/ [];
-    const questions = /*[[${questions}]]*/ [];
-    const questionNumberContainer = document.getElementById('questionNumberContainer');
-    const prevButton = document.getElementById('prevQuestion');
-    const nextButton = document.getElementById('nextQuestion');
-    const mainContainer = document.querySelector('.container');
-    const progressBarFill = document.querySelector('.progress-bar-fill');
-    const progressText = document.querySelector('.progress-text');
-
-    let currentQuestionIndex = 0;
-    let questionNumberButtons = [];
-    let feedbackContainers = [];
-    const totalQuestions = feedbackList.length;
-
-    function createFeedbackContainers() {
-        feedbackList.forEach((feedback, index) => {
-            const container = document.createElement('div');
-            container.classList.add('feedback-container');
-            if (index === 0) {
-                container.classList.add('active');
-            }
-
-            const title = document.createElement('h2');
-            title.classList.add('feedback-title');
-            title.textContent = `질문 ${index + 1} 피드백`;
-            container.appendChild(title);
-
-            const questionDiv = document.createElement('div');
-            questionDiv.classList.add('feedback-section');
-            questionDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-question-circle"></i> 문제 내용</h3><p class="feedback-content">${questions[index].text || '질문이 없습니다.'}</p>`;
-            container.appendChild(questionDiv);
-
-            const sttTextDiv = document.createElement('div');
-            sttTextDiv.classList.add('feedback-section');
-            sttTextDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-comment-alt"></i> STT 결과</h3><p class="feedback-content">${feedback.sttText || 'STT 결과가 없습니다.'}</p>`;
-            container.appendChild(sttTextDiv);
-
-            const vocabularyDiv = document.createElement('div');
-            vocabularyDiv.classList.add('feedback-section');
-            vocabularyDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-book"></i> 어휘</h3><p class="feedback-content">${feedback.vocabulary || '어휘 피드백이 없습니다.'}</p>`;
-            container.appendChild(vocabularyDiv);
-
-            const grammarDiv = document.createElement('div');
-            grammarDiv.classList.add('feedback-section');
-            grammarDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-pencil-alt"></i> 문법</h3><p class="feedback-content">${feedback.grammar || '문법 피드백이 없습니다.'}</p>`;
-            container.appendChild(grammarDiv);
-
-            const pronunciationDiv = document.createElement('div');
-            pronunciationDiv.classList.add('feedback-section');
-            pronunciationDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-microphone"></i> 발음</h3><p class="feedback-content">${feedback.pronunciation || '발음 피드백이 없습니다.'}</p>`;
-            container.appendChild(pronunciationDiv);
-
-            const fluencyDiv = document.createElement('div');
-            fluencyDiv.classList.add('feedback-section');
-            fluencyDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-tachometer-alt"></i> 유창성</h3><p class="feedback-content">${feedback.fluency || '유창성 피드백이 없습니다.'}</p>`;
-            container.appendChild(fluencyDiv);
-
-            const contentDiv = document.createElement('div');
-            contentDiv.classList.add('feedback-section');
-            contentDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-align-left"></i> 내용</h3><p class="feedback-content">${feedback.content || '내용 피드백이 없습니다.'}</p>`;
-            container.appendChild(contentDiv);
-
-            const overallDiv = document.createElement('div');
-            overallDiv.classList.add('feedback-section');
-            overallDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-star"></i> 총평</h3><p class="feedback-content">${feedback.overall || '총평이 없습니다.'}</p>`;
-            container.appendChild(overallDiv);
-
-            const improvementsDiv = document.createElement('div');
-            improvementsDiv.classList.add('feedback-section');
-            improvementsDiv.innerHTML = `<h3 class="feedback-category"><i class="fas fa-lightbulb"></i> 개선점</h3><p class="feedback-content">${feedback.improvements || '개선점이 없습니다.'}</p>`;
-            container.appendChild(improvementsDiv);
-
-            mainContainer.appendChild(container);
-            feedbackContainers.push(container);
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cards = document.querySelectorAll('.feedback-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 * index);
         });
-    }
-
-    function createQuestionNumberButtons() {
-        feedbackList.forEach((_, index) => {
-            const button = document.createElement('button');
-            button.classList.add('question-number-button');
-            if (index === 0) {
-                button.classList.add('active');
-            }
-            button.textContent = index + 1;
-            button.addEventListener('click', () => {
-                showQuestion(index);
-            });
-            questionNumberContainer.appendChild(button);
-            questionNumberButtons.push(button);
-        });
-    }
-
-    function showQuestion(index) {
-        if (index < 0 || index >= feedbackList.length) return;
-
-        feedbackContainers.forEach((container, i) => {
-            container.classList.remove('active');
-            if (i === index) {
-                container.classList.add('active');
-            }
-        });
-
-        questionNumberButtons.forEach((button, i) => {
-            button.classList.remove('active');
-            if (i === index) {
-                button.classList.add('active');
-            }
-        });
-
-        currentQuestionIndex = index;
-        updateNavigationButtons();
-        updateProgressBar();
-    }
-
-    function updateNavigationButtons() {
-        prevButton.disabled = currentQuestionIndex === 0;
-        nextButton.disabled = currentQuestionIndex === feedbackList.length - 1;
-        prevButton.style.opacity = currentQuestionIndex === 0 ? '0.5' : '1';
-        nextButton.style.opacity = currentQuestionIndex === feedbackList.length - 1 ? '0.5' : '1';
-    }
-
-    function updateProgressBar() {
-        const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
-        progressBarFill.style.width = `${progress}%`;
-        progressText.textContent = `${currentQuestionIndex + 1} / ${totalQuestions}`;
-    }
-
-    prevButton.addEventListener('click', () => {
-        if (currentQuestionIndex > 0) {
-            showQuestion(currentQuestionIndex - 1);
-        }
     });
-
-    nextButton.addEventListener('click', () => {
-        if (currentQuestionIndex < feedbackList.length - 1) {
-            showQuestion(currentQuestionIndex + 1);
-        }
-    });
-
-    createFeedbackContainers();
-    createQuestionNumberButtons();
-    updateNavigationButtons();
-    updateProgressBar();
 </script>
 </body>
 </html>
