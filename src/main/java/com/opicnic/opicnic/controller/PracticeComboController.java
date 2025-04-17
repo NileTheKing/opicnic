@@ -20,7 +20,7 @@ import java.util.List;
 @RequestMapping("/practice")
 @RequiredArgsConstructor
 @Slf4j
-class PracticeController {
+class PracticeComboController {
 
     private final PracticeService practiceService;
     private final FeedbackService feedbackService;
@@ -30,7 +30,7 @@ class PracticeController {
      * 문제생성 후 문제화면으로 이동
      */
     @GetMapping("/combo")
-    public String startPractice(
+    public String startComboPractice(
             @RequestParam("topic") String topic,
             @RequestParam("difficulty") String difficulty,
             @RequestParam("algorithm") String algorithm,
@@ -51,11 +51,11 @@ class PracticeController {
     @PostMapping("/combo/feedback")
     public String getComboFeedback(
             @RequestParam("files") List<MultipartFile> files,
-            @ModelAttribute QuestionWrapperDto questionWrapperDto,  // ✅ wrapper로 받아야 함
+            @ModelAttribute QuestionWrapperDto questionWrapperDto,  // wrapper로 받아야 함
             Model model
     ) throws IOException {
         List<Question> questions = questionWrapperDto.getQuestions();
-        List<FeedbackDto> feedbackList = feedbackService.getComboFeedback(files, questions);
+        List<FeedbackDto> feedbackList = feedbackService.getComboFeedbackParallel(files, questions);
         model.addAttribute("feedbackList", feedbackList);
         return "/practice/feedback";
     }

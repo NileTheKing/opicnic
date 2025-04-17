@@ -40,7 +40,10 @@ public class SecurityConfig {
                         .failureUrl("/auth/login?error")
                 )
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/")
+                        .logoutUrl("/auth/logout") // 여기를 원하는 주소로 설정
+                        .logoutSuccessUrl("/")     // 로그아웃 후 이동할 URL
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                 )
                 .csrf(csrf -> csrf.disable());
 
