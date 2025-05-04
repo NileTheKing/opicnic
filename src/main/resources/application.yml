@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: opicnic
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/opicnic
+    username: root
+    password: dksk1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+  ai:
+    vertex:
+      ai:
+        gemini:
+          chat:
+            options:
+              model: gemini-1.5-flash-002
+          project-id: compelling-moon-456116-m8
+          location: asia-northeast3
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: 6c7274effddb5ca04eefc044be19bdec
+            # client-secret: jmPQawUQHjZRicBJm4RebjVdrYfqFa0a # ??? ? (?? ??)
+            client-name: Kakao
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            scope: profile_nickname,profile_image
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+#logging:
+#  level:
+#    org:
+#      springframework:
+#        security: DEBUG
+#      security.oauth2: DEBUG
+#      web.client.RestTemplate: DEBUG
