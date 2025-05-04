@@ -2,7 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.NotificationSetting;
-import com.opicnic.opicnic.domain.Role;
+import com.opicnic.opicnic.domain.enums.Role;
 import com.opicnic.opicnic.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

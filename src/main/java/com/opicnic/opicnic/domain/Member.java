@@ -1,14 +1,9 @@
 package com.opicnic.opicnic.domain;
 
 
-import jakarta.annotation.Nullable;
+import com.opicnic.opicnic.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
-
-import javax.validation.constraints.Null;
-import java.util.ArrayList;
-import java.util.List;
 
 
 @Builder
