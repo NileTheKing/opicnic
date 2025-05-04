@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Service("fixedQuestionSelector")
-public class FixedQuestionSelector implements QuestionSelector {
+public class FixedComboQuestionStrategy implements ComboQuestionStrategy {
 
 
     @Override

@@ -7,17 +7,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class PracticeService {
+public class ComboPracticeService {
 
-    private final QuestionSelectorFactory questionSelectorFactory;
+    private final ComboQuestionStrategyFactory questionSelectorFactory;
 
     @Autowired
-    public PracticeService(QuestionSelectorFactory questionSelectorFactory) {
+    public ComboPracticeService(ComboQuestionStrategyFactory questionSelectorFactory) {
         this.questionSelectorFactory = questionSelectorFactory;
     }
 
     public List<Question> getComboQuestions(String topic, String difficulty, String algorithm) {
-        QuestionSelector questionSelector = questionSelectorFactory.getQuestionSelector(algorithm);
+        ComboQuestionStrategy questionSelector = questionSelectorFactory.getQuestionSelector(algorithm);
         return questionSelector.selectQuestions(topic, difficulty);
     }
 

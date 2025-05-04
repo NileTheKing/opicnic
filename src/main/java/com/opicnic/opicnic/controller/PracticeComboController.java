@@ -4,7 +4,7 @@ import com.opicnic.opicnic.domain.Question;
 import com.opicnic.opicnic.dto.FeedbackDto;
 import com.opicnic.opicnic.dto.QuestionWrapperDto;
 import com.opicnic.opicnic.service.FeedbackService;
-import com.opicnic.opicnic.service.PracticeService;
+import com.opicnic.opicnic.service.ComboPracticeService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 class PracticeComboController {
 
-    private final PracticeService practiceService;
+    private final ComboPracticeService practiceService;
     private final FeedbackService feedbackService;
 
     /*
@@ -49,7 +49,7 @@ class PracticeComboController {
     }
 
     @PostMapping("/combo/feedback")
-    public String getComboFeedback(
+    public String submitComboAnswers (
             @RequestParam("files") List<MultipartFile> files,
             @ModelAttribute QuestionWrapperDto questionWrapperDto,  // wrapper로 받아야 함
             Model model

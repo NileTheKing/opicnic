@@ -4,6 +4,6 @@ import com.opicnic.opicnic.domain.Question;
 
 import java.util.List;
 
-public interface QuestionSelector {
+public interface ComboQuestionStrategy {
     List<Question> selectQuestions(String topic, String difficulty);
 }
