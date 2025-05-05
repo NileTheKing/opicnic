@@ -55,6 +55,12 @@
                     <p class="text-gray-700" th:text="${feedback.question.text}">문제 텍스트</p>
                 </div>
 
+                <!-- 사용자 응답 내용 -->
+                <div class="mb-6 bg-indigo-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">응답</h3>
+                    <p class="text-gray-700" th:text="${feedback.sttText}">문제 텍스트</p>
+                </div>
+
                 <!-- 피드백 영역 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-gray-50 p-4 rounded-lg">

@@ -19,12 +19,12 @@ public class AuthController {
     }
     @GetMapping("/test-auth")
     public String testAuthentication(Model model, Authentication authentication) {
-        log.info("테[스트 호출");
+        log.info("테스트 호출");
         if (authentication != null) {
-            System.out.println("✅ 로그인됨: " + authentication.getName());
+            System.out.println("로그인됨: " + authentication.getName());
             model.addAttribute("nickname", authentication.getName());
         } else {
-            System.out.println("❌ 인증 없음");
+            System.out.println("인증 없음");
         }
         return "/auth/test";
     }

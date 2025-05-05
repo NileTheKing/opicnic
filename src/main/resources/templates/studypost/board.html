@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스터디 모집</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#6B7280',
+                        success: '#10B981',
+                        danger: '#EF4444',
+                        warning: '#F59E0B',
+                        info: '#3B82F6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dropdown-content {
+            display: none;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+<!-- 헤더 영역 -->
+<header class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-primary">스터디 모임</h1>
+        <div class="flex items-center space-x-4">
+            <!-- 사용자가 로그인하지 않은 경우 -->
+            <div th:if="${#authentication == null || !#authentication.isAuthenticated()}">
+                <a href="/login" class="text-gray-600 hover:text-primary">로그인</a>
+                <a href="/register" class="ml-4 text-gray-600 hover:text-primary">회원가입</a>
+            </div>
+            <!-- 사용자가 로그인한 경우 -->
+            <div th:if="${#authentication != null && #authentication.isAuthenticated()}" class="relative dropdown">
+                <button class="flex items-center text-gray-600 hover:text-primary">
+                    <span th:text="${#authentication.name}">사용자</span>
+                    <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                </button>
+                <div class="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                    <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">프로필</a>
+                    <a href="/my-studies" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">내 스터디</a>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">로그아웃</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 메인 컨텐츠 -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 필터 및 검색 영역 -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <form id="filterForm" th:action="@{/studies}" method="get" class="space-y-4">
+            <!-- 필터 상단 제목 -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-medium">필터</h2>
+                <button type="button" id="resetFilter" class="text-sm text-gray-600 hover:text-primary">
+                    <i class="fas fa-redo-alt mr-1"></i> 초기화
+                </button>
+            </div>
+
+            <!-- 지역 필터 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">지역 (최대 5개)</label>
+                <div class="grid grid-cols-5 gap-2">
+                    <div th:each="district : ${seoulDistricts}" class="flex items-center">
+                        <input type="checkbox" th:id="${'district-' + district}"
+                               th:name="districts" th:value="${district}"
+                               th:checked="${#lists.contains(selectedDistricts, district)}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label th:for="${'district-' + district}" th:text="${district}"
+                               class="ml-2 block text-sm text-gray-600"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 스터디 종류 필터 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">스터디 종류</label>
+                <div class="flex space-x-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="type-project" name="studyTypes" value="PROJECT"
+                               th:checked="${#lists.contains(selectedStudyTypes, 'PROJECT')}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="type-project" class="ml-2 block text-sm text-gray-600">프로젝트</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="type-algorithm" name="studyTypes" value="ALGORITHM"
+                               th:checked="${#lists.contains(selectedStudyTypes, 'ALGORITHM')}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="type-algorithm" class="ml-2 block text-sm text-gray-600">알고리즘</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="type-tech" name="studyTypes" value="TECH_STACK"
+                               th:checked="${#lists.contains(selectedStudyTypes, 'TECH_STACK')}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="type-tech" class="ml-2 block text-sm text-gray-600">기술스택</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 모집 상태 필터 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">모집 상태</label>
+                <div class="flex space-x-4">
+                    <div class="flex items-center">
+                        <input type="radio" id="status-all" name="status" value=""
+                               th:checked="${status == null || status.isEmpty()}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="status-all" class="ml-2 block text-sm text-gray-600">전체</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="status-recruiting" name="status" value="RECRUITING"
+                               th:checked="${status == 'RECRUITING'}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="status-recruiting" class="ml-2 block text-sm text-gray-600">모집 중</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="status-completed" name="status" value="COMPLETED"
+                               th:checked="${status == 'COMPLETED'}"
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="status-completed" class="ml-2 block text-sm text-gray-600">모집 완료</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 검색창 -->
+            <div class="flex">
+                <div class="relative flex-grow">
+                    <input type="text" id="searchKeyword" name="keyword" th:value="${keyword}"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                           placeholder="제목 또는 내용으로 검색">
+                    <button type="submit" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <button type="submit" class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    검색
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 글 목록 상단 영역 -->
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">스터디 목록</h2>
+        <!-- 정렬 및 뷰 타입 선택 -->
+        <div class="flex items-center space-x-4">
+            <!-- 정렬 방식 선택 -->
+            <select id="sortOption" name="sort" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    onchange="document.getElementById('sortField').value = this.value; document.getElementById('filterForm').submit();">
+                <option value="createdAt,desc" th:selected="${sort == 'createdAt,desc'}">최신순</option>
+                <option value="createdAt,asc" th:selected="${sort == 'createdAt,asc'}">오래된순</option>
+                <option value="viewCount,desc" th:selected="${sort == 'viewCount,desc'}">조회수순</option>
+            </select>
+            <input type="hidden" id="sortField" name="sort" form="filterForm" th:value="${sort}">
+
+            <!-- 뷰 타입 선택 (카드/리스트) -->
+            <div class="flex space-x-2">
+                <button type="button" id="cardView" class="p-2 text-primary" aria-label="카드 보기">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" id="listView" class="p-2 text-gray-400 hover:text-primary" aria-label="리스트 보기">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 글 작성 버튼 (로그인한 경우만 표시) -->
+    <div class="flex justify-end mb-4" th:if="${#authentication != null && #authentication.isAuthenticated()}">
+        <a href="/study-post/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <i class="fas fa-plus mr-2"></i> 새 글 작성
+        </a>
+    </div>
+
+    <!-- 게시글 목록 (카드 형태) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <!-- 각 스터디 카드 -->
+        <div th:each="study : ${studies}" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow duration-300">
+            <a th:href="@{'/study-post/' + ${study.id}}">
+                <!-- 썸네일 이미지 -->
+                <div class="h-40 bg-gray-200 overflow-hidden">
+                    <img th:if="${study.thumbnailUrl != null}" th:src="${study.thumbnailUrl}"
+                         class="w-full h-full object-cover" alt="스터디 썸네일">
+                    <div th:unless="${study.thumbnailUrl != null}" class="w-full h-full flex items-center justify-center bg-gray-100">
+                        <i class="fas fa-users text-4xl text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- 카드 내용 -->
+                <div class="p-4">
+                    <!-- 제목 및 상태 -->
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-medium text-gray-900 line-clamp-2" th:text="${study.title}">스터디 제목</h3>
+                        <span th:if="${study.status == 'RECRUITING'}" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">모집중</span>
+                        <span th:if="${study.status == 'COMPLETED'}" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">모집완료</span>
+                    </div>
+
+                    <!-- 스터디 정보 -->
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div class="flex items-center">
+                            <i class="fas fa-user mr-2 w-4"></i>
+                            <span th:text="${study.author.nickname}">작성자</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-2 w-4"></i>
+                            <span th:text="${#temporals.format(study.createdAt, 'yyyy-MM-dd')}">2023-05-04</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2 w-4"></i>
+                            <span th:text="${study.district}">지역구</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-users mr-2 w-4"></i>
+                            <span th:text="${study.currentMembers + '/' + study.maxMembers}">3/5</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-tag mr-2 w-4"></i>
+                            <span th:text="${study.studyType.displayName}">프로젝트</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 데이터가 없는 경우 -->
+        <div th:if="${#lists.isEmpty(studies)}" class="col-span-full py-8 text-center text-gray-500">
+            <i class="fas fa-search text-4xl mb-2"></i>
+            <p>검색 결과가 없습니다.</p>
+        </div>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="flex justify-center" th:if="${!#lists.isEmpty(studies)}">
+        <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <!-- 이전 페이지 -->
+            <a th:href="${page.number > 0 ? '?page=' + (page.number - 1) + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '') : '#'}"
+               th:class="${page.number > 0 ? 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50' : 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed'}">
+                <span class="sr-only">이전</span>
+                <i class="fas fa-chevron-left"></i>
+            </a>
+
+            <!-- 페이지 번호 -->
+            <th:block th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+                <a th:if="${i >= page.number - 2 && i <= page.number + 2}"
+                   th:href="${'?page=' + i + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '')}"
+                   th:text="${i + 1}"
+                   th:class="${i == page.number ? 'relative inline-flex items-center px-4 py-2 border border-primary bg-primary text-sm font-medium text-white hover:bg-indigo-700' : 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'}">
+                </a>
+            </th:block>
+
+            <!-- 다음 페이지 -->
+            <a th:href="${page.number < page.totalPages - 1 ? '?page=' + (page.number + 1) + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '') : '#'}"
+               th:class="${page.number < page.totalPages - 1 ? 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50' : 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed'}">
+                <span class="sr-only">다음</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </nav>
+    </div>
+</main>
+
+<!-- 푸터 영역 -->
+<footer class="bg-white mt-8 py-8 border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-lg font-bold text-primary">스터디 모임</h3>
+                <p class="text-sm text-gray-600">함께 성장하는 개발자 커뮤니티</p>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="text-gray-500 hover:text-primary">
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-500 hover:text-primary">
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-500 hover:text-primary">
+                    <i class="fab fa-instagram text-xl"></i>
+                </a>
+            </div>
+        </div>
+        <div class="mt-4 text-center text-sm text-gray-500">
+            &copy; 2025 스터디 모임. All rights reserved.
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 필터 초기화
+        document.getElementById('resetFilter').addEventListener('click', function() {
+            const form = document.getElementById('filterForm');
+            const inputs = form.querySelectorAll('input:not([type="hidden"])');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+
+            // 모집 상태 '전체' 선택
+            document.getElementById('status-all').checked = true;
+
+            // 폼 제출
+            form.submit();
+        });
+
+        // 뷰 타입 전환 (카드/리스트)
+        const cardView = document.getElementById('cardView');
+        const listView = document.getElementById('listView');
+
+        cardView.addEventListener('click', function() {
+            this.classList.add('text-primary');
+            this.classList.remove('text-gray-400');
+            listView.classList.add('text-gray-400');
+            listView.classList.remove('text-primary');
+            // 여기에 카드 뷰로 전환하는 로직 추가
+        });
+
+        listView.addEventListener('click', function() {
+            this.classList.add('text-primary');
+            this.classList.remove('text-gray-400');
+            cardView.classList.add('text-gray-400');
+            cardView.classList.remove('text-primary');
+            // 여기에 리스트 뷰로 전환하는 로직 추가
+        });
+    });
+</script>
+</body>
+</html>
