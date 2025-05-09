@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스터디 모집</title>
+    <title>스터디 모집 (정적 - 필터 개선)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -11,268 +11,350 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#4F46E5',
-                        secondary: '#6B7280',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        warning: '#F59E0B',
-                        info: '#3B82F6',
+                        primary: '#4F46E5', // Indigo 600
+                        secondary: '#6B7280', // Gray 500
+                        success: '#10B981', // Emerald 500
+                        danger: '#EF4444', // Red 500
+                        warning: '#F59E0B', // Amber 500
+                        info: '#3B82F6', // Blue 500
+                        'primary-light': '#E0E7FF', // Indigo 100
+                        'primary-dark': '#4338CA', // Indigo 700
                     }
                 }
             }
         }
     </script>
     <style>
+        /* 드롭다운 기본 숨김 */
         .dropdown-content {
             display: none;
+            max-height: 200px; /* 스크롤을 위한 최대 높이 */
+            overflow-y: auto; /* 내용 많을 시 스크롤 */
+            z-index: 10; /* 다른 요소 위에 오도록 */
         }
+        /* 드롭다운 버튼 호버 시 메뉴 표시 */
         .dropdown:hover .dropdown-content {
             display: block;
+        }
+        /* 또는 JS로 제어할 경우 */
+        .dropdown.open .dropdown-content {
+            display: block;
+        }
+
+        /* 체크박스 버튼 그룹 - 활성 상태 */
+        .btn-checkbox.active {
+            background-color: theme('colors.primary');
+            color: white;
+            border-color: theme('colors.primary');
+        }
+        /* 라디오 버튼 그룹 - 활성 상태 */
+        .btn-radio.active {
+            background-color: theme('colors.primary');
+            color: white;
+            border-color: theme('colors.primary');
+        }
+
+        /* 스크롤바 스타일링 (선택사항) */
+        .dropdown-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dropdown-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .dropdown-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        .dropdown-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        /* Thymeleaf line-clamp 대신 사용 */
+        .line-clamp-2 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
         }
     </style>
 </head>
 <body class="bg-gray-50">
-<!-- 헤더 영역 -->
-<header class="bg-white shadow">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-primary">스터디 모임</h1>
-        <div class="flex items-center space-x-4">
-            <!-- 사용자가 로그인하지 않은 경우 -->
-            <div th:if="${#authentication == null || !#authentication.isAuthenticated()}">
-                <a href="/login" class="text-gray-600 hover:text-primary">로그인</a>
-                <a href="/register" class="ml-4 text-gray-600 hover:text-primary">회원가입</a>
-            </div>
-            <!-- 사용자가 로그인한 경우 -->
-            <div th:if="${#authentication != null && #authentication.isAuthenticated()}" class="relative dropdown">
-                <button class="flex items-center text-gray-600 hover:text-primary">
-                    <span th:text="${#authentication.name}">사용자</span>
-                    <i class="fas fa-chevron-down ml-1 text-xs"></i>
-                </button>
-                <div class="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                    <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">프로필</a>
-                    <a href="/my-studies" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">내 스터디</a>
-                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">로그아웃</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
-
-<!-- 메인 컨텐츠 -->
+<header th:replace ="~{fragments/header :: header}"></header>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- 필터 및 검색 영역 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <form id="filterForm" th:action="@{/studies}" method="get" class="space-y-4">
-            <!-- 필터 상단 제목 -->
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-medium">필터</h2>
-                <button type="button" id="resetFilter" class="text-sm text-gray-600 hover:text-primary">
+        <form id="filterForm" action="#" method="get" class="space-y-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">필터 설정</h2>
+                <button type="button" id="resetFilter" class="text-sm text-gray-600 hover:text-primary transition duration-150 ease-in-out">
                     <i class="fas fa-redo-alt mr-1"></i> 초기화
                 </button>
             </div>
 
-            <!-- 지역 필터 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">지역 (최대 5개)</label>
-                <div class="grid grid-cols-5 gap-2">
-                    <div th:each="district : ${seoulDistricts}" class="flex items-center">
-                        <input type="checkbox" th:id="${'district-' + district}"
-                               th:name="districts" th:value="${district}"
-                               th:checked="${#lists.contains(selectedDistricts, district)}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <label th:for="${'district-' + district}" th:text="${district}"
-                               class="ml-2 block text-sm text-gray-600"></label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">지역 선택</label>
+                    <div class="relative dropdown">
+                        <button type="button" class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 inline-flex justify-between items-center text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            <span>지역을 선택하세요</span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div class="absolute mt-1 w-full rounded-md bg-white shadow-lg border border-gray-200 dropdown-content">
+                            <div class="p-2 grid grid-cols-2 gap-2">
+                                <div class="flex items-center"><input type="checkbox" id="district-gangnam" name="districts" value="강남구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gangnam" class="ml-2 text-sm text-gray-600">강남구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-gangdong" name="districts" value="강동구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gangdong" class="ml-2 text-sm text-gray-600">강동구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-gangbuk" name="districts" value="강북구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gangbuk" class="ml-2 text-sm text-gray-600">강북구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-gangseo" name="districts" value="강서구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gangseo" class="ml-2 text-sm text-gray-600">강서구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-gwanak" name="districts" value="관악구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gwanak" class="ml-2 text-sm text-gray-600">관악구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-gwangjin" name="districts" value="광진구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-gwangjin" class="ml-2 text-sm text-gray-600">광진구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-guro" name="districts" value="구로구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-guro" class="ml-2 text-sm text-gray-600">구로구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-geumcheon" name="districts" value="금천구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-geumcheon" class="ml-2 text-sm text-gray-600">금천구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-nowon" name="districts" value="노원구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-nowon" class="ml-2 text-sm text-gray-600">노원구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-dobong" name="districts" value="도봉구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-dobong" class="ml-2 text-sm text-gray-600">도봉구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-dongdaemun" name="districts" value="동대문구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-dongdaemun" class="ml-2 text-sm text-gray-600">동대문구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-dongjak" name="districts" value="동작구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-dongjak" class="ml-2 text-sm text-gray-600">동작구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-mapo" name="districts" value="마포구" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-mapo" class="ml-2 text-sm text-gray-600">마포구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-seodaemun" name="districts" value="서대문구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-seodaemun" class="ml-2 text-sm text-gray-600">서대문구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-seocho" name="districts" value="서초구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-seocho" class="ml-2 text-sm text-gray-600">서초구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-seongdong" name="districts" value="성동구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-seongdong" class="ml-2 text-sm text-gray-600">성동구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-seongbuk" name="districts" value="성북구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-seongbuk" class="ml-2 text-sm text-gray-600">성북구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-songpa" name="districts" value="송파구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-songpa" class="ml-2 text-sm text-gray-600">송파구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-yangcheon" name="districts" value="양천구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-yangcheon" class="ml-2 text-sm text-gray-600">양천구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-yeongdeungpo" name="districts" value="영등포구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-yeongdeungpo" class="ml-2 text-sm text-gray-600">영등포구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-yongsan" name="districts" value="용산구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-yongsan" class="ml-2 text-sm text-gray-600">용산구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-eunpyeong" name="districts" value="은평구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-eunpyeong" class="ml-2 text-sm text-gray-600">은평구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-jongno" name="districts" value="종로구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-jongno" class="ml-2 text-sm text-gray-600">종로구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-junggu" name="districts" value="중구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-junggu" class="ml-2 text-sm text-gray-600">중구</label></div>
+                                <div class="flex items-center"><input type="checkbox" id="district-jungnang" name="districts" value="중랑구" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"><label for="district-jungnang" class="ml-2 text-sm text-gray-600">중랑구</label></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">스터디 종류</label>
+                    <div class="flex space-x-2">
+                        <button type="button" data-value="PROJECT" class="btn-checkbox flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary active"> 프로젝트
+                        </button>
+                        <button type="button" data-value="ALGORITHM" class="btn-checkbox flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary">
+                            알고리즘
+                        </button>
+                        <button type="button" data-value="TECH_STACK" class="btn-checkbox flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary">
+                            기술스택
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">모집 상태</label>
+                    <div class="flex space-x-2">
+                        <button type="button" data-value="" class="btn-radio flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary active"> 전체
+                        </button>
+                        <button type="button" data-value="RECRUITING" class="btn-radio flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary">
+                            모집 중
+                        </button>
+                        <button type="button" data-value="COMPLETED" class="btn-radio flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary">
+                            모집 완료
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 스터디 종류 필터 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">스터디 종류</label>
-                <div class="flex space-x-4">
-                    <div class="flex items-center">
-                        <input type="checkbox" id="type-project" name="studyTypes" value="PROJECT"
-                               th:checked="${#lists.contains(selectedStudyTypes, 'PROJECT')}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <label for="type-project" class="ml-2 block text-sm text-gray-600">프로젝트</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="type-algorithm" name="studyTypes" value="ALGORITHM"
-                               th:checked="${#lists.contains(selectedStudyTypes, 'ALGORITHM')}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <label for="type-algorithm" class="ml-2 block text-sm text-gray-600">알고리즘</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="type-tech" name="studyTypes" value="TECH_STACK"
-                               th:checked="${#lists.contains(selectedStudyTypes, 'TECH_STACK')}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <label for="type-tech" class="ml-2 block text-sm text-gray-600">기술스택</label>
+            <div class="flex items-end pt-4 border-t mt-4">
+                <div class="flex-grow mr-4">
+                    <label for="searchKeyword" class="block text-sm font-medium text-gray-700 mb-1">검색어</label>
+                    <div class="relative">
+                        <input type="text" id="searchKeyword" name="keyword" value=""
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                               placeholder="스터디 제목 또는 내용을 입력하세요">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- 모집 상태 필터 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">모집 상태</label>
-                <div class="flex space-x-4">
-                    <div class="flex items-center">
-                        <input type="radio" id="status-all" name="status" value=""
-                               th:checked="${status == null || status.isEmpty()}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
-                        <label for="status-all" class="ml-2 block text-sm text-gray-600">전체</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="radio" id="status-recruiting" name="status" value="RECRUITING"
-                               th:checked="${status == 'RECRUITING'}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
-                        <label for="status-recruiting" class="ml-2 block text-sm text-gray-600">모집 중</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="radio" id="status-completed" name="status" value="COMPLETED"
-                               th:checked="${status == 'COMPLETED'}"
-                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
-                        <label for="status-completed" class="ml-2 block text-sm text-gray-600">모집 완료</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 검색창 -->
-            <div class="flex">
-                <div class="relative flex-grow">
-                    <input type="text" id="searchKeyword" name="keyword" th:value="${keyword}"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                           placeholder="제목 또는 내용으로 검색">
-                    <button type="submit" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-primary">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                <button type="submit" class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    검색
+                <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    검색하기
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- 글 목록 상단 영역 -->
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">스터디 목록</h2>
-        <!-- 정렬 및 뷰 타입 선택 -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+        <h2 class="text-xl font-bold text-gray-900">스터디 목록</h2>
         <div class="flex items-center space-x-4">
-            <!-- 정렬 방식 선택 -->
             <select id="sortOption" name="sort" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                    onchange="document.getElementById('sortField').value = this.value; document.getElementById('filterForm').submit();">
-                <option value="createdAt,desc" th:selected="${sort == 'createdAt,desc'}">최신순</option>
-                <option value="createdAt,asc" th:selected="${sort == 'createdAt,asc'}">오래된순</option>
-                <option value="viewCount,desc" th:selected="${sort == 'viewCount,desc'}">조회수순</option>
+                    onchange="console.log('정렬 변경:', this.value)">
+                <option value="createdAt,desc" selected>최신순</option>
+                <option value="createdAt,asc">오래된순</option>
+                <option value="viewCount,desc">조회수순</option>
             </select>
-            <input type="hidden" id="sortField" name="sort" form="filterForm" th:value="${sort}">
-
-            <!-- 뷰 타입 선택 (카드/리스트) -->
-            <div class="flex space-x-2">
-                <button type="button" id="cardView" class="p-2 text-primary" aria-label="카드 보기">
-                    <i class="fas fa-th-large"></i>
+            <div class="flex rounded-md border border-gray-300">
+                <button type="button" id="cardView" class="p-2 border-r border-gray-300 text-primary bg-primary-light" aria-label="카드 보기">
+                    <i class="fas fa-th-large w-4 h-4"></i>
                 </button>
-                <button type="button" id="listView" class="p-2 text-gray-400 hover:text-primary" aria-label="리스트 보기">
-                    <i class="fas fa-list"></i>
+                <button type="button" id="listView" class="p-2 text-gray-500 hover:bg-gray-100 hover:text-primary" aria-label="리스트 보기">
+                    <i class="fas fa-list w-4 h-4"></i>
                 </button>
             </div>
+            <a href="#" class="md:hidden inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                <i class="fas fa-plus mr-1"></i> 글쓰기
+            </a>
         </div>
     </div>
 
-    <!-- 글 작성 버튼 (로그인한 경우만 표시) -->
-    <div class="flex justify-end mb-4" th:if="${#authentication != null && #authentication.isAuthenticated()}">
-        <a href="/study-post/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+    <div class="hidden md:flex justify-end mb-4">
+        <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
             <i class="fas fa-plus mr-2"></i> 새 글 작성
         </a>
     </div>
 
-    <!-- 게시글 목록 (카드 형태) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <!-- 각 스터디 카드 -->
-        <div th:each="study : ${studies}" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow duration-300">
-            <a th:href="@{'/study-post/' + ${study.id}}">
-                <!-- 썸네일 이미지 -->
+        <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow duration-300">
+            <a href="#">
                 <div class="h-40 bg-gray-200 overflow-hidden">
-                    <img th:if="${study.thumbnailUrl != null}" th:src="${study.thumbnailUrl}"
+                    <img src="https://via.placeholder.com/400x200/EBF4FF/7F9CF5?text=Study+Thumbnail+1"
                          class="w-full h-full object-cover" alt="스터디 썸네일">
-                    <div th:unless="${study.thumbnailUrl != null}" class="w-full h-full flex items-center justify-center bg-gray-100">
-                        <i class="fas fa-users text-4xl text-gray-400"></i>
-                    </div>
                 </div>
-
-                <!-- 카드 내용 -->
                 <div class="p-4">
-                    <!-- 제목 및 상태 -->
                     <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-lg font-medium text-gray-900 line-clamp-2" th:text="${study.title}">스터디 제목</h3>
-                        <span th:if="${study.status == 'RECRUITING'}" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">모집중</span>
-                        <span th:if="${study.status == 'COMPLETED'}" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">모집완료</span>
+                        <h3 class="text-lg font-medium text-gray-900 line-clamp-2">React 심화 스터디 모집합니다! 주말반 모집중</h3>
+                        <span class="flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">모집중</span>
                     </div>
-
-                    <!-- 스터디 정보 -->
-                    <div class="text-sm text-gray-600 space-y-1">
-                        <div class="flex items-center">
-                            <i class="fas fa-user mr-2 w-4"></i>
-                            <span th:text="${study.author.nickname}">작성자</span>
+                    <div class="text-sm text-gray-600 space-y-1 mt-3">
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-user mr-2 w-4 text-gray-400"></i>
+                            <span>개발왕김코딩</span>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-calendar-alt mr-2 w-4"></i>
-                            <span th:text="${#temporals.format(study.createdAt, 'yyyy-MM-dd')}">2023-05-04</span>
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-calendar-alt mr-2 w-4 text-gray-400"></i>
+                            <span>2025-05-04</span>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt mr-2 w-4"></i>
-                            <span th:text="${study.district}">지역구</span>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-map-marker-alt mr-2 w-4 text-gray-400"></i>
+                            <span>강남구</span>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-users mr-2 w-4"></i>
-                            <span th:text="${study.currentMembers + '/' + study.maxMembers}">3/5</span>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-users mr-2 w-4 text-gray-400"></i>
+                            <span>3 / 5 명</span>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-tag mr-2 w-4"></i>
-                            <span th:text="${study.studyType.displayName}">프로젝트</span>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-tag mr-2 w-4 text-gray-400"></i>
+                            <span>기술스택</span>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
 
-        <!-- 데이터가 없는 경우 -->
-        <div th:if="${#lists.isEmpty(studies)}" class="col-span-full py-8 text-center text-gray-500">
-            <i class="fas fa-search text-4xl mb-2"></i>
-            <p>검색 결과가 없습니다.</p>
+        <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow duration-300">
+            <a href="#">
+                <div class="h-40 bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-users text-4xl text-gray-400"></i>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-medium text-gray-900 line-clamp-2">코딩테스트 알고리즘 스터디 (Python)</h3>
+                        <span class="flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">모집완료</span>
+                    </div>
+                    <div class="text-sm text-gray-600 space-y-1 mt-3">
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-user mr-2 w-4 text-gray-400"></i>
+                            <span>알고리즘마스터</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-calendar-alt mr-2 w-4 text-gray-400"></i>
+                            <span>2025-05-01</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-map-marker-alt mr-2 w-4 text-gray-400"></i>
+                            <span>온라인</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-users mr-2 w-4 text-gray-400"></i>
+                            <span>6 / 6 명</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-tag mr-2 w-4 text-gray-400"></i>
+                            <span>알고리즘</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow duration-300">
+            <a href="#">
+                <div class="h-40 bg-gray-200 overflow-hidden">
+                    <img src="https://via.placeholder.com/400x200/FEF3C7/F59E0B?text=Side+Project"
+                         class="w-full h-full object-cover" alt="스터디 썸네일">
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-medium text-gray-900 line-clamp-2">사이드 프로젝트 함께 하실 분? (백엔드, 프론트엔드)</h3>
+                        <span class="flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">모집중</span>
+                    </div>
+                    <div class="text-sm text-gray-600 space-y-1 mt-3">
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-user mr-2 w-4 text-gray-400"></i>
+                            <span>프로젝트매니저</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="far fa-calendar-alt mr-2 w-4 text-gray-400"></i>
+                            <span>2025-04-28</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-map-marker-alt mr-2 w-4 text-gray-400"></i>
+                            <span>마포구</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-users mr-2 w-4 text-gray-400"></i>
+                            <span>2 / 4 명</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <i class="fas fa-tag mr-2 w-4 text-gray-400"></i>
+                            <span>프로젝트</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- 페이지네이션 -->
-    <div class="flex justify-center" th:if="${!#lists.isEmpty(studies)}">
+    <div class="flex justify-center">
         <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-            <!-- 이전 페이지 -->
-            <a th:href="${page.number > 0 ? '?page=' + (page.number - 1) + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '') : '#'}"
-               th:class="${page.number > 0 ? 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50' : 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed'}">
+            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
                 <span class="sr-only">이전</span>
-                <i class="fas fa-chevron-left"></i>
+                <i class="fas fa-chevron-left w-5 h-5"></i>
             </a>
-
-            <!-- 페이지 번호 -->
-            <th:block th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
-                <a th:if="${i >= page.number - 2 && i <= page.number + 2}"
-                   th:href="${'?page=' + i + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '')}"
-                   th:text="${i + 1}"
-                   th:class="${i == page.number ? 'relative inline-flex items-center px-4 py-2 border border-primary bg-primary text-sm font-medium text-white hover:bg-indigo-700' : 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'}">
-                </a>
-            </th:block>
-
-            <!-- 다음 페이지 -->
-            <a th:href="${page.number < page.totalPages - 1 ? '?page=' + (page.number + 1) + '&' + #httpServletRequest.getQueryString().replaceAll('page=[0-9]+&?', '') : '#'}"
-               th:class="${page.number < page.totalPages - 1 ? 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50' : 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed'}">
+            <a href="#" aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 border border-primary bg-primary text-sm font-medium text-white hover:bg-primary-dark">
+                1
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                2
+            </a>
+            <a href="#" class="relative hidden md:inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                3
+            </a>
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+              ...
+            </span>
+            <a href="#" class="relative hidden md:inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                8
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                9
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                10
+            </a>
+            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 <span class="sr-only">다음</span>
-                <i class="fas fa-chevron-right"></i>
+                <i class="fas fa-chevron-right w-5 h-5"></i>
             </a>
         </nav>
     </div>
 </main>
 
-<!-- 푸터 영역 -->
 <footer class="bg-white mt-8 py-8 border-t">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row justify-between items-center">
@@ -300,43 +382,96 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- 필터 관련 로직 (디자인 확인용, 실제 동작은 추가 구현 필요) ---
+
         // 필터 초기화
         document.getElementById('resetFilter').addEventListener('click', function() {
-            const form = document.getElementById('filterForm');
-            const inputs = form.querySelectorAll('input:not([type="hidden"])');
-            inputs.forEach(input => {
-                if (input.type === 'checkbox' || input.type === 'radio') {
-                    input.checked = false;
-                } else {
-                    input.value = '';
-                }
-            });
-
-            // 모집 상태 '전체' 선택
-            document.getElementById('status-all').checked = true;
-
-            // 폼 제출
-            form.submit();
+            // 드롭다운 초기화 (체크박스 해제)
+            document.querySelectorAll('#filterForm input[name="districts"]').forEach(cb => cb.checked = false);
+            // 버튼 그룹 초기화
+            document.querySelectorAll('.btn-checkbox').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.btn-radio').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.btn-radio[data-value=""]').classList.add('active'); // '전체' 기본 선택
+            // 검색어 초기화
+            document.getElementById('searchKeyword').value = '';
+            console.log("필터 초기화됨 (정적)");
         });
 
-        // 뷰 타입 전환 (카드/리스트)
+        // 지역 드롭다운 토글 (간단 예시 - 클릭 시 열고 닫기)
+        const dropdownButton = document.querySelector('.dropdown button');
+        const dropdownContent = document.querySelector('.dropdown .dropdown-content');
+        const dropdown = document.querySelector('.dropdown');
+
+        dropdownButton.addEventListener('click', (event) => {
+            event.stopPropagation(); // 버튼 클릭이 body 클릭으로 전파되는 것 방지
+            dropdown.classList.toggle('open');
+        });
+
+        // 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', (event) => {
+            if (!dropdown.contains(event.target) && dropdown.classList.contains('open')) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // 드롭다운 내부 클릭 시 닫히지 않도록 (체크박스 선택 가능하게)
+        dropdownContent.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+
+
+        // 스터디 종류 버튼 그룹 (체크박스처럼 동작)
+        document.querySelectorAll('.btn-checkbox').forEach(button => {
+            button.addEventListener('click', function() {
+                this.classList.toggle('active');
+                // 실제 값 업데이트 로직 필요
+                const selectedTypes = Array.from(document.querySelectorAll('.btn-checkbox.active'))
+                    .map(btn => btn.dataset.value);
+                console.log("선택된 스터디 종류:", selectedTypes);
+            });
+        });
+
+        // 모집 상태 버튼 그룹 (라디오처럼 동작)
+        const radioButtons = document.querySelectorAll('.btn-radio');
+        radioButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // 모든 버튼에서 active 클래스 제거
+                radioButtons.forEach(btn => btn.classList.remove('active'));
+                // 클릭된 버튼에 active 클래스 추가
+                this.classList.add('active');
+                // 실제 값 업데이트 로직 필요
+                const selectedStatus = this.dataset.value;
+                // document.getElementById('statusInput').value = selectedStatus; // hidden input 업데이트 예시
+                console.log("선택된 모집 상태:", selectedStatus);
+            });
+        });
+
+        // --- 뷰 타입 전환 (이전 코드와 유사) ---
         const cardView = document.getElementById('cardView');
         const listView = document.getElementById('listView');
+        const cardViewIcon = cardView.querySelector('i');
+        const listViewIcon = listView.querySelector('i');
 
         cardView.addEventListener('click', function() {
-            this.classList.add('text-primary');
-            this.classList.remove('text-gray-400');
-            listView.classList.add('text-gray-400');
-            listView.classList.remove('text-primary');
-            // 여기에 카드 뷰로 전환하는 로직 추가
+            if (!this.classList.contains('text-primary')) {
+                this.classList.add('text-primary', 'bg-primary-light');
+                this.classList.remove('text-gray-500', 'hover:bg-gray-100');
+                listView.classList.remove('text-primary', 'bg-primary-light');
+                listView.classList.add('text-gray-500', 'hover:bg-gray-100');
+                console.log("카드 뷰 선택됨");
+                // 카드 뷰 전환 로직
+            }
         });
 
         listView.addEventListener('click', function() {
-            this.classList.add('text-primary');
-            this.classList.remove('text-gray-400');
-            cardView.classList.add('text-gray-400');
-            cardView.classList.remove('text-primary');
-            // 여기에 리스트 뷰로 전환하는 로직 추가
+            if (!this.classList.contains('text-primary')) {
+                this.classList.add('text-primary', 'bg-primary-light');
+                this.classList.remove('text-gray-500', 'hover:bg-gray-100');
+                cardView.classList.remove('text-primary', 'bg-primary-light');
+                cardView.classList.add('text-gray-500', 'hover:bg-gray-100');
+                console.log("리스트 뷰 선택됨");
+                // 리스트 뷰 전환 로직
+            }
         });
     });
 </script>

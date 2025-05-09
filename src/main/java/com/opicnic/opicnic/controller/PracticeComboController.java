@@ -1,8 +1,8 @@
 package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.Question;
-import com.opicnic.opicnic.dto.FeedbackDto;
-import com.opicnic.opicnic.dto.QuestionWrapperDto;
+import com.opicnic.opicnic.dto.FeedbackDTO;
+import com.opicnic.opicnic.dto.QuestionWrapperDTO;
 import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.ComboPracticeService;
 import jakarta.servlet.http.HttpSession;
@@ -51,11 +51,11 @@ class PracticeComboController {
     @PostMapping("/combo/feedback")
     public String submitComboAnswers (
             @RequestParam("files") List<MultipartFile> files,
-            @ModelAttribute QuestionWrapperDto questionWrapperDto,  // wrapper로 받아야 함
+            @ModelAttribute QuestionWrapperDTO questionWrapperDto,  // wrapper로 받아야 함
             Model model
     ) throws IOException {
         List<Question> questions = questionWrapperDto.getQuestions();
-        List<FeedbackDto> feedbackList = feedbackService.getComboFeedbackParallel(files, questions);
+        List<FeedbackDTO> feedbackList = feedbackService.getComboFeedbackParallel(files, questions);
         model.addAttribute("feedbackList", feedbackList);
         return "/practice/feedback";
     }

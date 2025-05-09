@@ -6,6 +6,6 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class QuestionWrapperDto {
+public class QuestionWrapperDTO {
     private List<Question> questions;
 }

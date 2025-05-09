@@ -22,7 +22,6 @@ public enum Region {
     EUNPYEONG("은평구"),
     SEOCHO("서초구"),
     SONGPA("송파구"),
-    GANGBUK2("강북구"),  // 중복이라면 제거 가능
     GEUMCHEON("금천구"),
     YEONGDEUNGPO("영등포구"),
     DONGJAK("동작구"),

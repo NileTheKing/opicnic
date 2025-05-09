@@ -2,14 +2,12 @@ package com.opicnic.opicnic.dto;
 
 
 import com.opicnic.opicnic.domain.Question;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class FeedbackDto {
+public class FeedbackDTO {
     private Question question;
     private String sttText;
     private String vocabulary;
