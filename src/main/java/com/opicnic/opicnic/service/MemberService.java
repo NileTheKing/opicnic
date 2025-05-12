@@ -40,4 +40,8 @@ public class MemberService {
         return memberRepository.findAll();
     }
 
+    public Optional<Member> findByProviderAndProviderId(String provider, String providerId) {
+        return memberRepository.findByProviderAndProviderId(provider, providerId);
+    }
+
 }
