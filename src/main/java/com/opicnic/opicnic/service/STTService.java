@@ -58,7 +58,6 @@ public class STTService {
 
         } catch (Exception e) {
             log.error("STT 요청 실패: {}", e.getMessage());
-            return "STT 변환 실패";
-        }
+            return "STT 변환 실패";}
     }
 }

@@ -20,7 +20,45 @@
                         sans: ['Pretendard', 'sans-serif']
                     },
                     boxShadow: {
-                        card: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                        card: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                        filter: '0 6px 16px rgba(0, 0, 0, 0.15)' // 필터 드롭다운 그림자 추가
+                    },
+                    transitionProperty: {
+                        'max-height': 'max-height', // maxHeight transition 추가
+                        'height': 'height',       // height transition 추가
+                        'opacity': 'opacity',     // opacity transition 추가
+                        'visibility': 'visibility' // visibility transition 추가
+                    },
+                    height: {
+                        '0': '0',
+                        'auto': 'auto',
+                        '64': '16rem', // 256px, 4x4 그리드
+                        '80': '20rem', // 320px, 4x5 그리드
+                        '96': '24rem', // 384px, 5x5 그리드
+                        '128': '32rem' // 512px, 6x6 그리드
+                    },
+                    maxHeight: {
+                        '0': '0',
+                        '60': '15rem', // 기본 최대 높이
+                        '96': '24rem', // 확장된 최대 높이
+                        'none': 'none'
+                    },
+                    width: {
+                        '48': '12rem', // 기본 너비 (192px)
+                        '64': '16rem', // 확장된 너비 (256px)
+                        '80': '20rem', // 더 확장된 너비 (320px)
+                        '96': '24rem', // 384px, 5x5
+                        '128': '32rem' // 512px
+                    },
+                    gridTemplateColumns: {
+                        '5': 'repeat(5, minmax(0, 1fr))', // 5열 그리드
+                        '6': 'repeat(6, minmax(0, 1fr))', // 6열 그리드
+                        'auto-fit': 'repeat(auto-fit, minmax(120px, 1fr))' //반응형 그리드
+                    },
+                    gap: {
+                        '4': '1rem', // 기본 gap
+                        '6': '1.5rem', // 확장된 gap
+                        '2': '0.5rem'
                     }
                 }
             }
@@ -69,12 +107,145 @@
             background-color: #FEF3C7;
             color: #92400E;
         }
+
+        /* 드롭다운 스타일 */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            flex-grow: 1;
+            min-width: 200px; /*최소 넓이*/
+        }
+
+        .custom-select-trigger {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            background-color: #fff;
+            border-width: 1px;
+            border-color: #E5E7EB;
+            border-radius: 0.5rem;
+            color: #6B7280;
+            cursor: pointer;
+            transition: border-color 0.15s ease-in-out, shadow-sm 0.15s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-select-trigger:hover, .custom-select-wrapper:focus-within .custom-select-trigger {
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .custom-select-trigger span {
+            margin-right: 0.5rem;
+        }
+
+        .custom-select-trigger svg {
+            height: 1rem;
+            width: 1rem;
+            fill: currentColor;
+            color: #6B7280;
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: auto;
+            z-index: 20;
+            background-color: #fff;
+            border-width: 1px;
+            border-color: #E5E7EB;
+            border-radius: 0.5rem;
+            margin-top: 0.25rem;
+            overflow: auto;
+            max-height: 0;
+            transition: max-height 0.3s ease-in-out, padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out,
+            height 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; /* height, opacity, visibility 추가 */
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            width: auto;
+            height: 0; /* 초기 높이 0 */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* auto-fit 및 minmax 사용 */
+            gap: 0.5rem; /* gap 조정 */
+            padding: 0.5rem;
+            align-items: start;
+        }
+
+        .custom-select-wrapper.open .custom-options {
+            /* max-height: 24rem;  */ /* 더 이상 max-height 사용 안함 */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            opacity: 1;
+            visibility: visible;
+            /* width: 20rem; */
+            height: auto; /* height auto로 변경 */
+            max-height: none;
+            overflow: visible;
+        }
+
+
+        .custom-options li {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #6B7280;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+            white-space: nowrap;
+            text-align: center; /* 추가: 텍스트 가운데 정렬 */
+            border-radius: 0.5rem; /* 추가: 버튼 모양 */
+        }
+
+        .custom-options li:hover, .custom-options li.selected {
+            background-color: #4F46E5;
+            color: #fff;
+        }
+
+        .custom-select-wrapper select {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+
+        /* Grid Layout for 지역 버튼 */
+        /* #region-options {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 1rem;
+            padding: 0.5rem;
+            height: auto !important;
+            overflow: visible;
+            width: 32rem;
+        }
+        #region-options li {
+            padding: 0.5rem 1rem;
+            text-align: center;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .custom-select-wrapper.open .custom-options {
+            height: auto;
+            max-height: none;
+            overflow: visible;
+        } */
+
     </style>
 </head>
 <body>
 <header th:replace="~{fragments/header :: header}"></header>
 
-<!-- Hero Section -->
 <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 class="text-3xl font-bold mb-4">함께 성장하는 스터디 커뮤니티</h1>
@@ -83,23 +254,32 @@
 </div>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- 필터링 섹션 -->
     <div class="bg-white rounded-xl shadow-card p-6 mb-8 -mt-8 relative z-10">
         <form id="filterForm" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- 지역 선택 -->
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700">지역 선택</label>
-                    <div id="region-options" class="grid grid-cols-2 gap-3"></div>
+                    <div class="custom-select-wrapper" id="region-select-wrapper">
+                        <div class="custom-select-trigger" id="region-select-trigger">
+                            <span>지역 선택</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                        <div class="custom-options" id="region-options">
+                            <select name="regions" multiple class="hidden">
+                                <option value="">전체</option>
+                            </select>
+                            <ul>
+                                <li data-value="">전체</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 스터디 종류 -->
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700">스터디 종류</label>
                     <div id="studytype-options" class="flex flex-wrap gap-2"></div>
                 </div>
 
-                <!-- 모집 상태 -->
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700">모집 상태</label>
                     <div class="flex gap-2">
@@ -125,10 +305,8 @@
     </div>
 
     <div id="study-post-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <!-- 게시글 카드 삽입 영역 -->
     </div>
 
-    <!-- 페이지네이션 추가 -->
     <div class="flex justify-center mt-8">
         <nav class="inline-flex rounded-md shadow-sm">
             <a href="#" class="px-3 py-2 rounded-l-md bg-white border border-gray-300 text-gray-500 hover:bg-gray-50">이전</a>
@@ -143,6 +321,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         await loadEnumOptions();
+        initializeCustomSelect();
         fetchStudyPosts();
 
         document.getElementById('filterForm').addEventListener('submit', function (e) {
@@ -150,11 +329,10 @@
             fetchStudyPosts();
         });
 
-        // ✅ 체크박스(지역) 변경 감지
-        document.getElementById('filterForm').addEventListener('change', function (e) {
-            if (e.target.name === 'regions') {
+        document.querySelectorAll('.btn-checkbox, .btn-radio').forEach(btn => {
+            btn.addEventListener('click', () => {
                 fetchStudyPosts();
-            }
+            });
         });
     });
 
@@ -166,14 +344,18 @@
         const regions = await regionRes.json();
         const types = await typeRes.json();
 
-        const regionBox = document.getElementById('region-options');
+        const regionOptionsList = document.getElementById('region-options').querySelector('ul');
+        const regionSelect = document.querySelector('select[name="regions"]');
         regions.forEach(r => {
-            regionBox.insertAdjacentHTML('beforeend', `
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" name="regions" value="${r.code}" class="w-4 h-4 text-primary rounded focus:ring-primary">
-                    <span>${r.label}</span>
-                </label>
-            `);
+            const option = document.createElement('option');
+            option.value = r.code;
+            option.textContent = r.label;
+            regionSelect.appendChild(option);
+
+            const li = document.createElement('li');
+            li.dataset.value = r.code;
+            li.textContent = r.label;
+            regionOptionsList.appendChild(li);
         });
 
         const typeBox = document.getElementById('studytype-options');
@@ -186,7 +368,7 @@
         document.querySelectorAll('.btn-checkbox').forEach(btn => {
             btn.addEventListener('click', () => {
                 btn.classList.toggle('active');
-                fetchStudyPosts();  // ✅ 즉시 반영
+                fetchStudyPosts();
             });
         });
 
@@ -194,17 +376,23 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.btn-radio').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                fetchStudyPosts();  // ✅ 즉시 반영
+                fetchStudyPosts();
             });
         });
     }
+
+
 
     async function fetchStudyPosts() {
         const form = document.getElementById('filterForm');
         const formData = new FormData(form);
         const params = new URLSearchParams();
 
-        formData.getAll('regions').forEach(v => params.append('regions', v));
+        const selectedRegions = formData.getAll('regions');
+        selectedRegions.forEach(regionCode => {
+            params.append('regions', regionCode);
+        });
+
         const types = Array.from(document.querySelectorAll('.btn-checkbox.active')).map(b => b.dataset.value);
         types.forEach(t => params.append('studyTypes', t));
         const status = document.querySelector('.btn-radio.active')?.dataset.value;
@@ -263,12 +451,114 @@
         }
     }
 
-    // 날짜 포맷팅 함수 (예시)
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    function initializeCustomSelect() {
+        const selectWrapper = document.getElementById('region-select-wrapper');
+        const selectTrigger = document.getElementById('region-select-trigger');
+        const selectOptions = document.getElementById('region-options');
+        const selectElement = document.querySelector('select[name="regions"]');
+        const listItems = selectOptions.querySelectorAll('li');
+
+        let selectedValues = new Set();
+
+        // initial setup
+        selectTrigger.addEventListener('click', () => {
+            selectWrapper.classList.toggle('open');
+            if (selectWrapper.classList.contains('open')) {
+                selectOptions.querySelector('li').focus();
+            }
+        });
+
+        selectOptions.addEventListener('click', (event) => {
+            if (event.target.tagName === 'LI') {
+                const value = event.target.dataset.value;
+                const text = event.target.textContent;
+
+                if (value === "") {
+                    selectedValues.clear();
+                    selectTrigger.querySelector('span').textContent = "전체";
+                    Array.from(selectElement.options).forEach(option => option.selected = false);
+                    listItems.forEach(item => item.classList.remove('selected'));
+                } else {
+                    if (selectedValues.has(value)) {
+                        selectedValues.delete(value);
+                        event.target.classList.remove('selected');
+                    } else {
+                        selectedValues.add(value);
+                        event.target.classList.add('selected');
+                    }
+
+                    let displayText = "";
+                    if (selectedValues.size === 0) {
+                        displayText = "전체";
+                        selectElement.value = "";
+                    } else {
+                        displayText = Array.from(selectedValues).map(val => {
+                            const option = selectElement.namedItem(val);
+                            return option ? option.text : '';
+                        }).join(', ');
+                    }
+                    selectTrigger.querySelector('span').textContent = displayText;
+
+
+                    Array.from(selectElement.options).forEach(option => {
+                        option.selected = selectedValues.has(option.value);
+                    });
+                }
+                fetchStudyPosts();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!selectWrapper.contains(event.target) && !selectOptions.contains(event.target)) {
+                selectWrapper.classList.remove('open');
+            }
+        });
+
+        selectOptions.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === 'Space') {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName === 'LI') {
+                    const value = activeElement.dataset.value;
+                    const text = activeElement.textContent;
+
+                    if (value === "") {
+                        selectedValues.clear();
+                        selectTrigger.querySelector('span').textContent = "전체";
+                        Array.from(selectElement.options).forEach(option => option.selected = false);
+                        listItems.forEach(item => item.classList.remove('selected'));
+                    } else {
+                        if (selectedValues.has(value)) {
+                            selectedValues.delete(value);
+                            activeElement.classList.remove('selected');
+                        } else {
+                            selectedValues.add(value);
+                            activeElement.classList.add('selected');
+                        }
+
+                        let displayText = "";
+                        if (selectedValues.size === 0) {
+                            displayText = "전체";
+                            selectElement.value = "";
+                        } else {
+                            displayText = Array.from(selectedValues).map(val => {
+                                const option = selectElement.namedItem(val);
+                                return option ? option.text : '';
+                            }).join(', ');
+                        }
+                        selectTrigger.querySelector('span').textContent = displayText;
+
+                        Array.from(selectElement.options).forEach(option => {
+                            option.selected = selectedValues.has(option.value);
+                        });
+                    }
+                    fetchStudyPosts();
+                }
+            } else if (event.key === 'Escape') {
+                selectWrapper.classList.remove('open');
+            }
+        });
     }
+
 </script>
 </body>
 </html>

@@ -12,17 +12,77 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#4F46E5',
-                        'primary-dark': '#4338CA',
-                        secondary: '#8B5CF6',
-                        accent: '#F59E0B'
+                        primary: '#6366F1',       // 기존 primary 색상 유지
+                        'primary-dark': '#4F46E5',
+                        secondary: '#A855F7',     // 기존 secondary 색상 유지
+                        accent: '#F97316',        // 기존 accent 색상 유지
+                        gray: {                 // 기존 gray 스케일 유지
+                            '50': '#F9FAFB',
+                            '100': '#F3F4F6',
+                            '200': '#E5E7EB',
+                            '300': '#D1D5DB',
+                            '400': '#9CA3AF',
+                            '500': '#6B7280',
+                            '600': '#4B5563',
+                            '700': '#374151',
+                            '800': '#1F2937',
+                            '900': '#111827'
+                        },
+                        velog: {            // Velog 스타일 색상 추가 (필요한 경우)
+                            'blue': '#228be6',
+                            'blue-dark': '#1c7ed6',
+                            'gray': '#e9ecef',
+                            'gray-dark': '#d3d9df',
+                        }
                     },
                     fontFamily: {
-                        sans: ['Pretendard', 'sans-serif']
+                        sans: ['Pretendard', 'sans-serif']  // Pretendard 폰트 유지
                     },
                     boxShadow: {
-                        card: '0 4px 12px rgba(0, 0, 0, 0.05)'
-                    }
+                        sm: '0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07)',
+                        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+                        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+                        xl: '0 15px 20px -5px rgba(0, 0, 0, 0.15), 0 7px 10px -5px rgba(0, 0, 0, 0.12)',
+                        '2xl': '0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+                        inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                        none: '0 0 0 0 transparent'
+                    },
+                    borderRadius: {
+                        'none': '0',
+                        sm: '0.125rem',
+                        default: '0.375rem',
+                        md: '0.5rem',
+                        lg: '0.75rem',
+                        full: '9999px'
+                    },
+                    borderWidth: {
+                        '0': '0',
+                        '1': '1px',
+                        '2': '2px',
+                        '4': '4px',
+                        '8': '8px'
+                    },
+                    transitionProperty: {
+                        'height': 'height',
+                        'spacing': 'margin, padding',
+                    },
+                    transitionDuration: {
+                        'fast': '100ms',
+                        'slow': '500ms',
+                    },
+                    easing: {
+                        'ease-in-out': 'cubic-bezier(0.4, 0, 0.6, 1)',
+                    },
+                    fontSize: {
+                        'sm': '0.875rem',  // 14px
+                        'base': '1rem',     // 16px
+                        'lg': '1.125rem',   // 18px
+                        'xl': '1.25rem',    // 20px
+                        '2xl': '1.5rem',   // 24px
+                        '3xl': '1.875rem', // 30px
+                        '4xl': '2.25rem',  // 36px
+                        '5xl': '3rem',     // 48px
+                    },
                 }
             }
         }
@@ -30,104 +90,285 @@
     <style>
         body {
             font-family: 'Pretendard', sans-serif;
-            background-color: #F7F9FC;
+            background-color: #F9FAFB;
         }
         .form-label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: #374151;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+            color: #4B5563;
+            font-size: 0.9rem;
+            transition: color 0.2s ease-in-out;
+        }
+        .form-label:hover {
+            color: #6366F1;
         }
         .form-input,
         .form-textarea,
         .form-select {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #D1D5DB;
-            border-radius: 0.375rem;
-            margin-bottom: 1rem;
-            color: #374151;
-            font-size: 1rem;
+            padding: 0.8rem;
+            border-width: 1px;
+            border-color: #D1D5DB;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: #4B5563;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease-in-out, shadow-sm 0.2s ease-in-out;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
         .form-textarea {
-            min-height: 150px;
+            min-height: 200px;
+            resize: vertical;
+            line-height: 1.7;
         }
         .form-checkbox-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         .form-checkbox-group label {
             display: inline-flex;
             align-items: center;
-            margin-right: 1rem;
-            color: #374151;
+            margin-right: 1.5rem;
+            color: #4B5563;
+            font-size: 0.9rem;
+            transition: color 0.2s ease-in-out;
+        }
+        .form-checkbox-group label:hover {
+            color: #6366F1;
         }
         .form-checkbox {
-            margin-right: 0.5rem;
+            margin-right: 0.75rem;
+            border-radius: 0.375rem;
+            border-color: #D1D5DB;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-checkbox:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .form-checkbox:checked {
+            background-color: #6366F1;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
         }
         .btn {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease-in-out, transform 0.1s ease;
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.8rem;
+            font-size: 0.95rem;
         }
         .btn:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
         }
         .btn-primary {
-            background-color: #4F46E5;
+            background-color: #6366F1;
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .btn-primary:hover {
-            background-color: #4338CA;
+            background-color: #4F46E5;
         }
         .btn-secondary {
             background-color: #E5E7EB;
             color: #374151;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .btn-secondary:hover {
             background-color: #D1D5DB;
+            color: #374151;
         }
+        .input-error {
+            color: #DC2626;
+            font-size: 0.875rem;
+            margin-top: -1rem;
+            margin-bottom: 0.75rem;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, margin-bottom 0.3s ease-in-out;
+            height: 0;
+            overflow: hidden;
+        }
+        .input-error.visible {
+            opacity: 1;
+            height: auto;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Flex 레이아웃 적용 */
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2.5rem;
+        }
+        .form-section > div {
+            margin-bottom: 1.5rem;
+        }
+        .form-section .form-label {
+            margin-bottom: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .form-section {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+            .form-section > div {
+                width: 48%;
+            }
+            .form-section .form-label {
+                width: 100%;
+            }
+        }
+
+        #title-group, #content-group {
+            flex: 1;
+            min-width: 100%;
+            width: 100%; /* 추가: 제목, 내용 입력 영역 너비 100% */
+        }
+        #title-group .form-label, #content-group .form-label{
+            width: 100%;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 2rem;
+        }
+
+        /* Velog 스타일 추가 */
+        .form-title-input {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 2rem;
+            border: none;
+            padding: 0;
+            line-height: 1.3;
+            width: 100%; /* 추가: 제목 입력 필드 너비 100% */
+        }
+        .form-title-input:focus {
+            outline: none;
+            box-shadow: none;
+            border-bottom: 2px solid #228be6;
+        }
+
+        .form-content-textarea {
+            font-size: 1.125rem;
+            color: #343a40;
+            line-height: 1.7;
+            border: none;
+            padding: 0;
+            resize: vertical;
+            width: 100%; /* 추가: 내용 입력 필드 너비 100% */
+        }
+        .form-content-textarea:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .form-select {
+            background-color: #F0F0F0; /* 게시판 스타일: #f0f0f0 */
+            border-radius: 0.375rem;  /* 게시판 스타일: rounded-md */
+            border-color: #D1D5DB;
+            color: #374151;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500; /* 게시판 스타일 추가 */
+            appearance: none;  /* 화살표 제거 */
+            -webkit-appearance: none; /* 사파리 화살표 제거 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E"); /* 사용자 정의 화살표 */
+            background-position: right 0.5rem center; /* 화살표 위치 조정 */
+            background-repeat: no-repeat;
+            padding-right: 2rem; /* 화살표 공간 확보 */
+        }
+        .form-select:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-checkbox-group label {
+            font-size: 1rem;
+            color: #343a40;
+        }
+        .form-checkbox {
+            border-radius: 0.375rem; /* 게시판 스타일: rounded-md */
+            border-color: #D1D5DB;
+            margin-right: 0.5rem; /* 간격 수정 */
+        }
+
+        .form-checkbox:checked {
+            background-color: #6366F1;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+
     </style>
 </head>
 <body>
 
 <header id="header-container"></header>
 
-<div class="bg-gray-100 py-6">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-semibold text-gray-900">스터디 게시글 작성</h1>
+<div class="bg-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-semibold text-gray-900">스터디 게시글 작성</h1>
     </div>
 </div>
 
-<main class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-    <form id="write-form">
-        <div>
-            <label for="title" class="form-label">제목</label>
-            <input type="text" id="title" name="title" class="form-input" required>
+<main class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <form id="write-form" class="space-y-8">
+
+        <div id="title-group" class="form-section">
+            <div>
+                <input type="text" id="title" name="title" class="form-input form-title-input" placeholder="제목을 입력하세요" required>
+                <div id="title-error" class="input-error">제목을 입력해주세요.</div>
+            </div>
         </div>
-        <div>
-            <label for="content" class="form-label">내용</label>
-            <textarea id="content" name="content" rows="8" class="form-textarea" required></textarea>
+
+        <div id="content-group" class="form-section">
+            <div>
+                <textarea id="content" name="content" rows="10" class="form-textarea form-content-textarea" placeholder="스터디 내용을 상세히 작성해주세요" required></textarea>
+                <div id="content-error" class="input-error">내용을 입력해주세요.</div>
+            </div>
         </div>
-        <div>
-            <label for="studyType" class="form-label">스터디 유형</label>
-            <select id="studyType" name="studyType" class="form-select" required>
-                <option value="">선택하세요</option>
-            </select>
+
+        <div class="form-section">
+            <div>
+                <label for="studyType" class="form-label">스터디 유형</label>
+                <select id="studyType" name="studyType" class="form-select" required>
+                    <option value="">선택하세요</option>
+                </select>
+                <div id="studyType-error" class="input-error">스터디 유형을 선택해주세요.</div>
+            </div>
+            <div>
+                <label for="maxParticipants" class="form-label">모집 인원</label>
+                <input type="number" id="maxParticipants" name="maxParticipants" class="form-input" min="1" placeholder="모집 인원을 입력해주세요" required>
+                <div id="maxParticipants-error" class="input-error">모집 인원을 입력해주세요.</div>
+            </div>
         </div>
-        <div>
-            <label for="maxParticipants" class="form-label">모집 인원</label>
-            <input type="number" id="maxParticipants" name="maxParticipants" class="form-input" min="1" required>
+
+        <div class="form-section">
+            <div style="width: 100%">
+                <label class="form-label">지역 (다중 선택 가능)</label>
+                <div class="form-checkbox-group">
+                </div>
+            </div>
         </div>
-        <div class="form-checkbox-group">
-            <label class="form-label">지역 (다중 선택 가능)</label>
-        </div>
-        <div class="flex justify-end gap-2">
+
+        <div class="button-group">
             <button type="button" class="btn btn-secondary" onclick="window.location.href='/board'">취소</button>
             <button type="submit" class="btn btn-primary">등록</button>
         </div>
@@ -151,7 +392,7 @@
                 const studyTypes = await response.json();
                 studyTypes.forEach(type => {
                     const option = document.createElement('option');
-                    option.value = type.code; // 수정: type.name -> type.code
+                    option.value = type.code;
                     option.textContent = type.label;
                     studyTypeSelect.appendChild(option);
                 });
@@ -173,7 +414,7 @@
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.name = 'regions';
-                    checkbox.value = region.code; // 수정: region.name -> region.code
+                    checkbox.value = region.code;
                     checkbox.classList.add('form-checkbox');
 
                     const span = document.createElement('span');
@@ -191,25 +432,54 @@
         }
 
         const writeForm = document.getElementById('write-form');
+        const titleInput = document.getElementById('title');
+        const contentInput = document.getElementById('content');
+        const maxParticipantsInput = document.getElementById('maxParticipants');
+        const titleError = document.getElementById('title-error');
+        const contentError = document.getElementById('content-error');
+        const maxParticipantsError = document.getElementById('maxParticipants-error');
+        const studyTypeSelectError = document.getElementById('studyType-error');
+
+
         writeForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const titleInput = document.getElementById('title');
-            const contentInput = document.getElementById('content');
-            const maxParticipantsInput = document.getElementById('maxParticipants');
+            let hasErrors = false;
+
+            if (!titleInput.value.trim()) {
+                titleError.classList.add('visible');
+                hasErrors = true;
+            } else {
+                titleError.classList.remove('visible');
+            }
+            if (!contentInput.value.trim()) {
+                contentError.classList.add('visible');
+                hasErrors = true;
+            } else {
+                contentError.classList.remove('visible');
+            }
+            if (!maxParticipantsInput.value.trim()) {
+                maxParticipantsError.classList.add('visible');
+                hasErrors = true;
+            } else {
+                maxParticipantsError.classList.remove('visible');
+            }
+            if (!studyTypeSelect.value) {
+                studyTypeSelectError.classList.add('visible');
+                hasErrors = true;
+            } else {
+                studyTypeSelectError.classList.remove('visible');
+            }
+
+
+            if (hasErrors) {
+                return;
+            }
+
 
             const studyType = studyTypeSelect.value;
             const selectedRegions = Array.from(document.querySelectorAll('input[name="regions"]:checked'))
                 .map(checkbox => checkbox.value);
-
-            console.log("선택된 스터디 유형:", studyType);
-            console.log("선택된 지역:", selectedRegions);
-
-            if (!studyType) {
-                alert('스터디 유형을 선택해주세요.');
-                studyTypeSelect.focus();
-                return;
-            }
 
             const postData = {
                 title: titleInput.value,
@@ -218,8 +488,6 @@
                 maxParticipants: parseInt(maxParticipantsInput.value),
                 regions: selectedRegions
             };
-
-            console.log("전송될 postData:", postData);
 
             try {
                 const response = await fetch('/api/study-posts', {
@@ -232,7 +500,7 @@
 
                 if (response.ok) {
                     const postId = await response.json();
-                    alert(`게시글이 등록되었습니다. ID: ${postId}`);
+                    alert(`게시글이 등록되었습니다.`);
                     window.location.href = `/studypost/${postId}`;
                 } else {
                     const errorData = await response.json();
@@ -244,8 +512,21 @@
                 alert('게시글 등록 중 오류가 발생했습니다.');
             }
         });
+
+        // 입력 필드에 대한 실시간 유효성 검사 (선택적)
+        titleInput.addEventListener('input', () => {
+            titleError.classList.toggle('visible', !titleInput.value.trim());
+        });
+        contentInput.addEventListener('input', () => {
+            contentError.classList.toggle('visible', !contentInput.value.trim());
+        });
+        maxParticipantsInput.addEventListener('input', () => {
+            maxParticipantsError.classList.toggle('visible', !maxParticipantsInput.value.trim());
+        });
+        studyTypeSelect.addEventListener('change', () => {
+            studyTypeSelectError.classList.toggle('visible', !studyTypeSelect.value);
+        });
     });
 </script>
-
 </body>
 </html>
