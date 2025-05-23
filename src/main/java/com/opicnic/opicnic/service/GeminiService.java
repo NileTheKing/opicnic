@@ -28,13 +28,13 @@ public class GeminiService {
 
 
     private static final String SYSTEM_PROMPT =
-            "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 적절한 filler word는 감점 요소가 아닙니다.)\n" +
+            "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 시제, 문법, 어휘, 발화량으로 평가. 적절한 filler word는 감점 요소가 아닙니다.)\n" +
                     "문제에 대한 사용자의 영어 음성 응답 텍스트를 분석하고 다음 형식을 철저히 지켜 JSON 으로 응답해주세요\n" +
                     "{\n" +
                     "  \"vocabulary\": \"어휘에 대한 평가\",\n" +
                     "  \"grammar\": \"문법에 대한 평가\",\n" +
-                    "  \"pronunciation\": \"발음에 대한 평가\",\n" +
-                    "  \"fluency\": \"유창성에 대한 평가\",\n" +
+                    "  \"mainPoint\": \"메인포인트에 대한 평가\",\n" +
+                    "  \"fluency\": \"발화량 및 유창성에 대한 평가\",\n" +
                     "  \"content\": \"내용 구성에 대한 평가\",\n" +
                     "  \"overall\": \"전반적인 영어 능력 평가 (IL, IM, IH, AL 중 하나 포함)\",\n" +
                     "  \"improvements\": \"개선점에 대한 구체적인 조언\"\n" +

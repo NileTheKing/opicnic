@@ -12,7 +12,8 @@ public class FeedbackDTO {
     private String sttText;
     private String vocabulary;
     private String grammar;
-    private String pronunciation;
+    private String mainPoint;
+    //private String pronunciation;
     private String fluency;
     private String content;
     private String overall;
