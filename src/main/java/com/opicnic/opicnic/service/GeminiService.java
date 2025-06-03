@@ -1,7 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.opicnic.opicnic.domain.Question;
+import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
@@ -40,13 +40,13 @@ public class GeminiService {
                     "  \"improvements\": \"개선점에 대한 구체적인 조언\"\n" +
                     "}";
 
-    public Map<String, String> getOpicFeedback(String speechText, Question question) {
+    public Map<String, String> getOpicFeedback(String speechText, QuestionDto question) {
 
 
         // 시스템 프롬프트 및 사용자 메시지 생성
         Message systemMessage = new SystemMessage(SYSTEM_PROMPT);
         Message userMessage = new UserMessage(
-                "다음 질문에 대한 답변입니다: " + question.getText() + "\n" +
+                "다음 질문에 대한 답변입니다: " + question.getContent() + "\n" +
                         "사용자의 응답: " + speechText
         );
 

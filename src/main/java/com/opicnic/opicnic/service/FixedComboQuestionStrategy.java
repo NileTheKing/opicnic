@@ -20,7 +20,7 @@ public class FixedComboQuestionStrategy implements ComboQuestionStrategy {
         List<Combo> selectedCombos = new ArrayList<>();
 
         // 임시 QuestionSet 생성 (이 전략 내에서는 DB에 저장되지 않음)
-        QuestionSet fixedSet = new QuestionSet("Fixed Park Sample Set", SurveyDifficulty.LEVEL_3, SurveyTopic.PARK);
+        QuestionSet fixedSet = new QuestionSet("Fixed Park Sample Set", SurveyDifficulty.LEVEL_3, SurveyTopic.PARK_GOING);
         fixedSet.setId(999L); // 임시 ID
 
         // 임시 Combo 생성

@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.opicnic.opicnic.domain.Question;
 import com.opicnic.opicnic.dto.FeedbackDTO;
+import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class FeedbackService {
      * @param questions: 문제 리스트
      * @return: 각 파일에 대한 STT 결과와 Gemini 피드백을 포함한 리스트
      */
-    public List<FeedbackDTO> getComboFeedbackParallel(List<MultipartFile> files, List<Question> questions) {
+    public List<FeedbackDTO> getComboFeedbackParallel(List<MultipartFile> files, List<QuestionDto> questions) {
         long start = System.currentTimeMillis();
         log.info("[병렬 처리] 피드백 처리 시작");
 
@@ -37,7 +38,7 @@ public class FeedbackService {
 
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            Question question = questions.get(i);
+            QuestionDto question = questions.get(i);
 
             CompletableFuture<FeedbackDTO> future = CompletableFuture.supplyAsync(() -> {
                 try {

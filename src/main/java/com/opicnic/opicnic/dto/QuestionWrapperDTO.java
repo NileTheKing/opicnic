@@ -7,5 +7,5 @@ import java.util.List;
 
 @Data
 public class QuestionWrapperDTO {
-    private List<Question> questions;
+    private List<QuestionDto> questions;
 }

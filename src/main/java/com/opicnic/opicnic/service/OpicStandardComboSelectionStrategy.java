@@ -6,6 +6,7 @@ import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // 추가
 
@@ -16,6 +17,7 @@ import java.util.Random;
 
 @Service("opicStandardSelector") // 새로운 전략의 빈 이름
 @RequiredArgsConstructor
+@Primary // @Primary 어노테이션을 사용하여 기본 전략으로 설정
 public class OpicStandardComboSelectionStrategy implements ComboQuestionStrategy {
 
     private final QuestionSetRepository questionSetRepository;
@@ -25,7 +27,7 @@ public class OpicStandardComboSelectionStrategy implements ComboQuestionStrategy
     @Transactional(readOnly = true) // 읽기 전용 트랜잭션
     public List<Combo> selectCombos(SurveyTopic topic, SurveyDifficulty difficulty) {
         // 주제와 난이도에 맞는 세트들을 상세 정보(콤보, 질문)와 함께 조회
-        List<QuestionSet> matchingSets = questionSetRepository.findByTopicAndDifficultyWithDetails(topic, difficulty);
+        List<QuestionSet> matchingSets = questionSetRepository.findByTopicAndDifficulty(topic, difficulty);
         List<Combo> selectedCombos = new ArrayList<>();
 
         if (matchingSets.isEmpty()) {

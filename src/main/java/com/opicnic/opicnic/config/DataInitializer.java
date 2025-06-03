@@ -1,10 +1,13 @@
 package com.opicnic.opicnic.config; // 또는 com.opicnic.opicnic.config 등 적절한 패키지
 
 import com.opicnic.opicnic.domain.*;
+import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional; // 추가
+
 
 import java.util.List;
 
@@ -28,7 +31,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void populateSampleData() {
         // --- 영화 주제 세트 (난이도 3) ---
-        QuestionSet movieSetL3 = new QuestionSet("Movie Set - Level 3", SurveyDifficulty.LEVEL_3, SurveyTopic.MOVIE);
+        QuestionSet movieSetL3 = new QuestionSet("Movie Set - Level 3", SurveyDifficulty.LEVEL_3, SurveyTopic.MOVIE_WATCHING);
 
         Combo recentMovieCombo = new Combo("Recent Movie Experience Combo", movieSetL3, 1);
         Question q1_1_m_l3 = new Question("What is the most recent movie you watched? Please describe it in detail.", 1, recentMovieCombo);
@@ -44,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         questionSetRepository.save(movieSetL3);
 
         // --- 음악 주제 세트 (난이도 4) ---
-        QuestionSet musicSetL4 = new QuestionSet("Music Set - Level 4", SurveyDifficulty.LEVEL_4, SurveyTopic.MUSIC);
+        QuestionSet musicSetL4 = new QuestionSet("Music Set - Level 4", SurveyDifficulty.LEVEL_4, SurveyTopic.MUSICAL_WATCHING);
 
         Combo favArtistCombo = new Combo("Favorite Artist Deep Dive Combo", musicSetL4, 1);
         Question q1_1_mu_l4 = new Question("Who is your favorite singer or band? Tell me about their music in detail.", 1, favArtistCombo);
@@ -56,7 +59,7 @@ public class DataInitializer implements CommandLineRunner {
         questionSetRepository.save(musicSetL4);
 
         // --- 공원 주제 세트 (난이도 2) ---
-        QuestionSet parkSetL2 = new QuestionSet("Park Set - Level 2", SurveyDifficulty.LEVEL_2, SurveyTopic.PARK);
+        QuestionSet parkSetL2 = new QuestionSet("Park Set - Level 2", SurveyDifficulty.LEVEL_2, SurveyTopic.PARK_GOING);
         Combo frequentParkCombo = new Combo("Frequent Park Visits Combo", parkSetL2, 1);
         Question q1_1_p_l2 = new Question("Describe a park you often go to.", 1, frequentParkCombo);
         Question q1_2_p_l2 = new Question("What do you usually do when you go to that park?", 2, frequentParkCombo);

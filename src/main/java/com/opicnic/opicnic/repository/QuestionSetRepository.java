@@ -17,6 +17,10 @@ public interface QuestionSetRepository extends JpaRepository<QuestionSet, Long> 
     // N+1 문제를 피하기 위해 JOIN FETCH 사용
     @Query("SELECT DISTINCT qs FROM QuestionSet qs LEFT JOIN FETCH qs.combos c LEFT JOIN FETCH c.questions WHERE qs.topic = :topic AND qs.difficulty = :difficulty")
     List<QuestionSet> findByTopicAndDifficultyWithDetails(@Param("topic") SurveyTopic topic, @Param("difficulty") SurveyDifficulty difficulty);
+    List<QuestionSet> findByTopicAndDifficulty(
+            SurveyTopic topic,
+            SurveyDifficulty difficulty
+    );
 
     // 기본 JpaRepository 메서드 외에 필요에 따라 추가 가능
     // 예: List<QuestionSet> findByTopic(SurveyTopic topic);

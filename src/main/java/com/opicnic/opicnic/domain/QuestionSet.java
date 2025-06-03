@@ -14,6 +14,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "question_set")
