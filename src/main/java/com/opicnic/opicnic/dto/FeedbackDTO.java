@@ -8,11 +8,12 @@ import lombok.Data;
 @Data
 @Builder
 public class FeedbackDTO {
-    private Question question;
+    private QuestionDto question;
     private String sttText;
     private String vocabulary;
     private String grammar;
-    private String pronunciation;
+    private String mainPoint;
+    //private String pronunciation;
     private String fluency;
     private String content;
     private String overall;

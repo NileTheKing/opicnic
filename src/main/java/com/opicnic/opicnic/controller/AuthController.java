@@ -14,7 +14,7 @@ public class AuthController {
     @GetMapping("/auth/login")
     public String login() {
 
-        log.info("카카오 로그인 페이지 호출");
+        //log.info("카카오 로그인 페이지 호출");
         return "/auth/login";
     }
     @GetMapping("/test-auth")

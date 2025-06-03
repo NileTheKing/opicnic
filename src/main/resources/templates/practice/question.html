@@ -40,7 +40,6 @@
 
 <body class="bg-gray-50 min-h-screen font-sans flex">
 
-<!-- 로딩 화면 -->
 <div id="loading" class="hidden fixed inset-0 bg-white bg-opacity-90 z-50 flex flex-col items-center justify-center">
     <svg class="animate-spin h-10 w-10 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -62,11 +61,10 @@
                     <div class="bg-blue-100 text-blue-600 rounded-full w-12 h-12 flex items-center justify-center mr-4">
                         <i class="fas fa-language text-xl"></i>
                     </div>
-                    <h2 id="questionTitle" class="text-xl font-semibold text-gray-800"></h2>
+                    <h2 id="questionTitle" class="text-xl font-semibold text-gray-800" ></h2>
                 </div>
-                <!-- 문제 출력부-->
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p id="questionText" class="text-gray-700"></p>
+                    <p id="questionText" class="text-gray-700" >문제 내용</p>
                     <p id="questionHint" class="text-sm text-gray-500 mt-2"></p>
                 </div>
             </div>
@@ -102,16 +100,17 @@
             <button id="nextButton" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
                 다음
             </button>
-            <button href="/" id="submitButton" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors hidden">
+            <button id="submitButton" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors hidden">
                 제출
             </button>
         </div>
     </div>
     <form id="feedbackForm" action="/practice/combo/feedback" method="POST"
-          enctype="multipart/form-data" style="display:none;"></form> <!-- Hidden form for feedback submission -->
+          enctype="multipart/form-data" style="display:none;"></form>
 </div>
 <script th:inline="javascript">
     // Initialize questions array from Thymeleaf model
+    // 이제 questions는 QuestionDto 객체들의 배열입니다.
     const questions = /*[[${questions}]]*/ [];
 
     // UI Elements
@@ -135,7 +134,7 @@
     let startTime;
     let timerInterval;
     let recordedAudioBlob;
-    let recordings = [];
+    let recordings = []; // 녹음된 오디오 Blob을 저장하는 배열
 
     // Initialize the application
     function initializeApp() {
@@ -157,20 +156,21 @@
         progressDots.forEach((dot, index) => {
             dot.classList.remove('bg-blue-600', 'bg-gray-300');
             if (index < currentQuestionIndex) {
-                dot.classList.add('bg-blue-600');
+                dot.classList.add('bg-blue-600'); // 완료된 질문
             } else if (index === currentQuestionIndex) {
-                dot.classList.add('bg-blue-600');
+                dot.classList.add('bg-blue-600'); // 현재 질문
             } else {
-                dot.classList.add('bg-gray-300');
+                dot.classList.add('bg-gray-300'); // 미완료 질문
             }
         });
     }
 
     function loadQuestion(index) {
         const question = questions[index];
-        questionTitle.textContent =  question.topic + ' 연습';
-        questionText.textContent = question.text;
-        questionHint.textContent =  '';
+        // QuestionDto에 topic과 difficulty가 있으므로 이제 사용 가능
+        questionTitle.textContent = question.topic + ' - ' + question.difficulty + ' 연습';
+        questionText.textContent = question.content;
+        questionHint.textContent = ''; // 필요하다면 DTO에 힌트 필드를 추가하여 사용
 
         resetRecordingUI();
 
@@ -183,6 +183,7 @@
             if (!isRecording) {
                 startRecording();
             } else {
+                // 이 경우는 없어야 하지만, 만약을 대비
                 stopRecording();
             }
         });
@@ -195,17 +196,20 @@
 
     function advanceToNextQuestion() {
         if (recordedAudioBlob) {
-            recordings[currentQuestionIndex] = recordedAudioBlob;
+            recordings[currentQuestionIndex] = recordedAudioBlob; // 현재 질문의 녹음본 저장
             currentQuestionIndex++;
-            loadQuestion(currentQuestionIndex);
-            updateProgressIndicators();
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion(currentQuestionIndex);
+                updateProgressIndicators();
+            }
         } else {
             alert('먼저 녹음해주세요.');
         }
     }
+
     function submitAllRecordings() {
         if (recordedAudioBlob) {
-            recordings[currentQuestionIndex] = recordedAudioBlob;
+            recordings[currentQuestionIndex] = recordedAudioBlob; // 마지막 질문의 녹음본 저장
         }
 
         if (recordings.length !== questions.length) {
@@ -218,11 +222,12 @@
 
         // 녹음 파일들 첨부
         recordings.forEach((blob, index) => {
+            // 파일명은 Spring이 MultipartFile을 구분할 수 있도록 고유하게 설정
             const file = new File([blob], `file_${index + 1}.wav`, { type: 'audio/wav' });
 
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.name = 'files';
+            fileInput.name = 'files'; // Spring에서 @RequestParam("files") List<MultipartFile> files로 받을 이름
             const dt = new DataTransfer();
             dt.items.add(file);
             fileInput.files = dt.files;
@@ -230,13 +235,15 @@
             form.appendChild(fileInput);
         });
 
-        // Question 정보 담기
+        // QuestionDto 정보 담기
         questions.forEach((question, index) => {
-            ['id', 'text', 'topic', 'difficulty'].forEach(key => {
+            // DTO에 있는 모든 필드를 보냅니다.
+            ['id', 'content', 'topic', 'difficulty'].forEach(key => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
+                // Spring의 @ModelAttribute QuestionWrapperDTO에 매핑되도록 필드명 설정
                 input.name = `questions[${index}].${key}`;
-                input.value = question[key] || '';
+                input.value = question[key] || ''; // 해당 필드의 값이 없으면 빈 문자열
                 form.appendChild(input);
             });
         });
@@ -260,16 +267,16 @@
                     const audioUrl = URL.createObjectURL(recordedAudioBlob);
                     audioPlayer = new Audio();
                     audioPlayer.src = audioUrl;
-                    playButton.disabled = false;
+                    playButton.disabled = false; // 녹음 완료 후 재생 버튼 활성화
                 };
-                audioChunks = [];
+                audioChunks = []; // 새로운 녹음을 위해 청크 배열 초기화
                 mediaRecorder.start();
                 isRecording = true;
                 recordButton.classList.remove('bg-red-500');
-                recordButton.classList.add('bg-red-600', 'recording', 'hidden');
+                recordButton.classList.add('bg-red-600', 'recording', 'hidden'); // 녹음 중 버튼 숨기기
                 if (stopButton) {
                     stopButton.disabled = false;
-                    stopButton.classList.remove('hidden');
+                    stopButton.classList.remove('hidden'); // 정지 버튼 표시
                 }
                 recordingStatus.textContent = '녹음 중입니다...';
                 startTime = new Date();
@@ -286,9 +293,9 @@
             mediaRecorder.stop();
         }
         isRecording = false;
-        recordButton.classList.remove('hidden');
-        stopButton.classList.add('hidden');
-        clearInterval(timerInterval);
+        recordButton.classList.remove('hidden'); // 녹음 완료 후 녹음 버튼 다시 표시
+        stopButton.classList.add('hidden'); // 정지 버튼 숨기기
+        clearInterval(timerInterval); // 타이머 중지
         timerInterval = null;
         recordingStatus.textContent = '녹음이 완료되었습니다.';
     }
@@ -303,15 +310,15 @@
         recordButton.classList.remove('hidden', 'recording', 'bg-red-600');
         recordButton.classList.add('bg-red-500');
         stopButton.classList.add('hidden');
-        playButton.disabled = true;
-        recordedAudioBlob = null;
+        playButton.disabled = true; // 새로 녹음하기 전까지 재생 비활성화
+        recordedAudioBlob = null; // 이전 녹음 데이터 초기화
         audioChunks = [];
-        timerDisplay.textContent = '00:00';
+        timerDisplay.textContent = '00:00'; // 타이머 초기화
         recordingStatus.textContent = '준비된 주제에 대해 말씀해주세요';
     }
 
     function updateTimer() {
-        if (!isRecording) return;
+        if (!isRecording) return; // 녹음 중이 아니면 타이머 업데이트 중지
         const currentTime = new Date();
         const elapsedTime = Math.floor((currentTime - startTime) / 1000);
         const minutes = Math.floor(elapsedTime / 60);

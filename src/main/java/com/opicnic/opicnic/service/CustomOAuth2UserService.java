@@ -43,12 +43,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             String nickname = (String) profile.get("nickname");
             String providerId = attributes.get("id").toString(); // 카카오 고유 ID는 attributes의 "id" key
 
-            log.info("nickname: {}", nickname);
-            log.info("providerId: {}", providerId);
-            log.info("registrationId: {}", registrationId);
-            log.info("attributes: {}", attributes);
-
-            log.info("All attributes from Kakao: {}", attributes);
+//            log.info("nickname: {}", nickname);
+//            log.info("providerId: {}", providerId);
+//            log.info("registrationId: {}", registrationId);
+//            log.info("attributes: {}", attributes);
+//
+//            log.info("All attributes from Kakao: {}", attributes);
 
 
             // provider + providerId 기준으로 기존 유저 조회

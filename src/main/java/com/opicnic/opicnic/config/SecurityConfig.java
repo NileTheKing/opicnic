@@ -25,16 +25,9 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(new AntPathRequestMatcher("/", "GET")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/css/**", "GET")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/js/**", "GET")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/auth/**", "GET")).permitAll()  // "/auth/**" 경로 허용
-                        .requestMatchers(new AntPathRequestMatcher("/images/**", "GET")).permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/**").permitAll()
+                        .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/auth/**").permitAll()
+                        .requestMatchers("/api/study-posts/**").permitAll()
+                        .requestMatchers("/api/study-applications/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

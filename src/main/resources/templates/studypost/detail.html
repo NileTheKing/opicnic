@@ -201,6 +201,17 @@
         </div>
     </div>
 
+    <!-- ✅ 신청자 목록 섹션 -->
+    <div class="mt-12">
+        <h2 class="text-xl font-bold mb-4">신청자 목록</h2>
+        <div id="application-section" class="bg-white shadow rounded-lg p-4">
+            <p id="no-applicants" class="text-gray-500 text-sm">아직 신청한 사람이 없습니다.</p>
+            <ul id="applicant-list" class="divide-y divide-gray-200">
+                <!-- 신청자 항목이 여기에 렌더링됨 -->
+            </ul>
+        </div>
+    </div>
+
     <div class="mt-12">
         <h2 class="text-xl font-bold mb-4">관련 스터디</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="related-studies">
@@ -282,7 +293,7 @@
                     applyBtn.onclick = (e) => e.preventDefault();
                     applyBtn.innerHTML = '<i class="fas fa-lock mr-2"></i> 모집 마감';
                 } else {
-                    applyBtn.href = `/study-posts/${postId}/apply`;
+                    applyBtn.href = `/api/study-posts/${postId}/apply`;
                 }
 
                 // 공유 버튼 기능 (유지)
@@ -321,7 +332,9 @@
                 }
 
                 // 관련 스터디 로드 (API 호출 방식으로 변경)
+                await loadApplications(postId);
                 loadRelatedStudies(data.studyType);
+
 
             } catch (err) {
                 console.error(err);
@@ -329,6 +342,36 @@
                 alert("게시글을 불러오는 중 오류가 발생했습니다.");
             }
         });
+        // ✅ 신청자 목록 로드 함수
+        async function loadApplications(postId) {
+            try {
+                const res = await fetch(`/api/study-posts/${postId}/applications`);
+                const applications = await res.json();
+                const list = document.getElementById('applicant-list');
+                const noApplicants = document.getElementById('no-applicants');
+
+                list.innerHTML = '';
+                if (!applications.length) {
+                    noApplicants.style.display = 'block';
+                    return;
+                }
+                noApplicants.style.display = 'none';
+
+                applications.forEach(app => {
+                    const li = document.createElement('li');
+                    li.className = 'py-2 flex justify-between items-center';
+                    li.innerHTML = `
+                    <span class="font-medium text-gray-700">${app.applicantNickname}</span>
+                    <span class="text-xs px-2 py-1 rounded-full ${app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700'}">
+                        ${app.status === 'PENDING' ? '대기중' : app.status}
+                    </span>
+                `;
+                    list.appendChild(li);
+                });
+            } catch (e) {
+                console.error('신청자 목록 로딩 실패:', e);
+            }
+        }
 
         async function loadRelatedStudies(studyType) {
             try {
@@ -357,6 +400,5 @@
             }
         }
     </script>
-
 </body>
 </html>

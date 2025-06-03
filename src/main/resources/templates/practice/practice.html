@@ -30,18 +30,15 @@
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">맞춤 연습</h2>
                 <form id="customPracticeForm" action="/practice/combo" method="get">
                     <div class="mb-4">
-                        <label class="block text-gray-700 mb-2">주제</label>
+                        <label for="topicSelect" class="block text-gray-700 mb-2">주제</label>
                         <select id="topicSelect" name="topic" class="w-full border rounded-lg px-3 py-2 text-gray-700">
-                            <option>취미/여가</option>
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 mb-2">난이도</label>
+                        <label for="difficultySelect" class="block text-gray-700 mb-2">난이도</label>
                         <select id="difficultySelect" name="difficulty" class="w-full border rounded-lg px-3 py-2 text-gray-700">
-                            <option>중급 (IM)</option>
                         </select>
                     </div>
-                    <input type="hidden" name="algorithm" value="fixedQuestionSelector">
                     <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
                         맞춤 연습 시작
                     </button>
@@ -63,5 +60,38 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const topicSelect = document.getElementById('topicSelect');
+        const difficultySelect = document.getElementById('difficultySelect');
+
+        // 주제(Topic) 드롭다운 채우기
+        fetch('/api/enums/survey-topics')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.code; // enum의 실제 이름 (MOVIE, MUSIC 등)
+                    option.textContent = item.label; // 화면에 보여줄 이름 (영화, 음악 등)
+                    topicSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching topics:', error));
+
+        // 난이도(Difficulty) 드롭다운 채우기
+        fetch('/api/enums/survey-difficulties')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.code; // enum의 실제 이름 (LEVEL_1, LEVEL_2 등)
+                    option.textContent = item.label; // 화면에 보여줄 이름 (초급, 중급 (IM2) 등)
+                    difficultySelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching difficulties:', error));
+    });
+</script>
 </body>
 </html>
