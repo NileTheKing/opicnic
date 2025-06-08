@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.springframework.core.annotation.Order;
 
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ public class Combo {
 
     @OneToMany(mappedBy = "combo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sequenceInCombo ASC") // 콤보 내 질문 순서
+    @BatchSize(size = 3) // N+1 문제 방지를 위한 배치 사이즈 설정
     private List<Question> questions = new ArrayList<>(); // 질문 목록
 
     //편의용 생성자

@@ -29,6 +29,8 @@ public class GeminiService {
 
     private static final String SYSTEM_PROMPT =
             "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 시제, 문법, 어휘, 발화량으로 평가. 적절한 filler word는 감점 요소가 아닙니다.)\n" +
+                    "사용자의 응답은 음성이 stt된 것이므로 더듬은 부분이나 filler words는 감안해야합니다.:\n" +
+                    "문맥에 맞지 않는 단어가 나온다면 stt가 잘못된 것일수도 있으니 평가점수에서 크기 감점을 하지 않도록 한다\n" +
                     "문제에 대한 사용자의 영어 음성 응답 텍스트를 분석하고 다음 형식을 철저히 지켜 JSON 으로 응답해주세요\n" +
                     "{\n" +
                     "  \"vocabulary\": \"어휘에 대한 평가\",\n" +

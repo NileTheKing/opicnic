@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,9 @@ public class QuestionSet {
     //todo orphan? fetch?
     @OneToMany(mappedBy = "questionSet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sequenceInSet ASC") // 세트 내 콤보 순서
+    @BatchSize(size = 10) // N+1 문제 방지를 위한 배치 사이즈 설정
     private List<Combo> combos = new ArrayList<>(); // 질문 목록
+
 
     //생성자
     public QuestionSet(String name, SurveyDifficulty difficulty, SurveyTopic topic) {

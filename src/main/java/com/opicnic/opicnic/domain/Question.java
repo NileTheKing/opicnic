@@ -33,13 +33,5 @@ public class Question {
         this.combo = combo;
     }
 
-    // 기존 FixedComboQuestionStrategy와의 호환성을 위해 임시로 남겨둘 수 있었던 필드들.
-    // 하지만 새로운 구조에서는 Combo와 QuestionSet에서 주제/난이도를 가져오는 것이 이상적입니다.
-    // 이 예제에서는 위 편의 생성자를 사용합니다.
-    // public Question(Long id, String content, String topic, String difficulty) {
-    //    this.id = id;
-    //    this.content = content;
-    //    // this.topic = topic; // 더 이상 Question 엔티티에 직접 저장하지 않음
-    //    // this.difficulty = difficulty; // 더 이상 Question 엔티티에 직접 저장하지 않음
     // }
 }
