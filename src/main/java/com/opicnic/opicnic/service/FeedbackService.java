@@ -30,7 +30,7 @@ public class FeedbackService {
      * @param questions: 문제 리스트
      * @return: 각 파일에 대한 STT 결과와 Gemini 피드백을 포함한 리스트
      */
-    public List<FeedbackDTO> getComboFeedbackParallel(List<MultipartFile> files, List<QuestionDto> questions) {
+    public CompletableFuture<List<FeedbackDTO>> getComboFeedbackParallel(List<MultipartFile> files, List<QuestionDto> questions) {
         long start = System.currentTimeMillis();
         log.info("[병렬 처리] 피드백 처리 시작");
 
@@ -51,7 +51,6 @@ public class FeedbackService {
                             .vocabulary(geminiFeedback.get("vocabulary"))
                             .grammar(geminiFeedback.get("grammar"))
                             .mainPoint(geminiFeedback.get("mainPoint"))
-                            //.pronunciation(geminiFeedback.get("pronunciation"))
                             .fluency(geminiFeedback.get("fluency"))
                             .content(geminiFeedback.get("content"))
                             .overall(geminiFeedback.get("overall"))
@@ -64,7 +63,6 @@ public class FeedbackService {
                             .sttText("오류")
                             .vocabulary("오류")
                             .grammar("오류")
-                            //.pronunciation("오류")
                             .fluency("오류")
                             .content("오류")
                             .overall("오류")
@@ -76,14 +74,16 @@ public class FeedbackService {
             futures.add(future);
         }
 
-        List<FeedbackDTO> result = futures.stream()
-                .map(CompletableFuture::join)
-                .collect(Collectors.toList());
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
-        long end = System.currentTimeMillis();
-        log.info("[병렬 처리] 총 소요 시간: {}ms", (end - start));
-
-        return result;
+        return allFutures.thenApply(v -> {
+            List<FeedbackDTO> result = futures.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+            long end = System.currentTimeMillis();
+            log.info("[병렬 처리] 총 소요 시간: {}ms", (end - start));
+            return result;
+        });
     }
 
 //    public List<FeedbackDTO> getComboFeedbackSequential(List<MultipartFile> files, List<Question> questions) {

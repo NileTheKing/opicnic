@@ -12,6 +12,11 @@ spring:
     username: root
     password: dksk1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000 # 30 seconds
+      idle-timeout: 600000 # 10 minutes
+      max-lifetime: 1800000 # 30 minutes
 
   jpa:
     hibernate:
@@ -29,8 +34,8 @@ spring:
           location: asia-northeast3
   servlet:
     multipart:
-      max-file-size: 150MB # 단일 파일의 최대 허용 크기
-      max-request-size: 150MB # 전체 멀티파트 요청의 최대 허용 크기 (모든 파일 + 폼 데이터)
+      max-file-size: 150MB
+      max-request-size: 150MB
 
   security:
     oauth2:
@@ -38,7 +43,6 @@ spring:
         registration:
           kakao:
             client-id: 6c7274effddb5ca04eefc044be19bdec
-            # client-secret: jmPQawUQHjZRicBJm4RebjVdrYfqFa0a # ??? ? (?? ??)
             client-name: Kakao
             authorization-grant-type: authorization_code
             redirect-uri: http://localhost:8080/login/oauth2/code/kakao
@@ -50,10 +54,112 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
-#logging:
-#  level:
-#    org:
-#      springframework:
-#        security: DEBUG
-#      security.oauth2: DEBUG
-#      web.client.RestTemplate: DEBUG
+async:
+  thread:
+    pool-size: 10
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://opicnic-db.c3wzgoi4sfbj.ap-northeast-2.rds.amazonaws.com/opicnic
+    username: admin
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  ai:
+    vertex:
+      ai:
+        gemini:
+          chat:
+            options:
+              model: gemini-1.5-flash-001
+          project-id: compelling-moon-456116-m8
+          location: asia-northeast3
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: 6c7274effddb5ca044be19bdec
+            client-name: Kakao
+            authorization-grant-type: authorization_code
+            redirect-uri: http://opicnic.shop/login/oauth2/code/kakao
+            scope: profile_nickname,profile_image
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+async:
+  thread:
+    pool-size: 20
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/opicnic
+    username: root
+    password: dksk1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  ai:
+    vertex:
+      ai:
+        gemini:
+          chat:
+            options:
+              model: gemini-1.5-flash-001
+          project-id: compelling-moon-456116-m8
+          location: asia-northeast3
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: 6c7274effddb5ca044be19bdec
+            client-name: Kakao
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            scope: profile_nickname,profile_image
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+async:
+  thread:
+    pool-size: 10

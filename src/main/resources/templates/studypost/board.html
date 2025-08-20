@@ -451,6 +451,13 @@
         }
     }
 
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        // Assuming the dateString is in "yyyy-MM-dd HH:mm:ss" format
+        // Just return the date part for simplicity
+        return dateString.split(' ')[0];
+    }
+
     function initializeCustomSelect() {
         const selectWrapper = document.getElementById('region-select-wrapper');
         const selectTrigger = document.getElementById('region-select-trigger');

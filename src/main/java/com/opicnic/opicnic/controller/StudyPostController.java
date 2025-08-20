@@ -2,6 +2,7 @@ package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.enums.Region;
+import com.opicnic.opicnic.domain.enums.StudyStatus;
 import com.opicnic.opicnic.domain.enums.StudyType;
 import com.opicnic.opicnic.dto.StudyPostRequestDto;
 import com.opicnic.opicnic.dto.StudyPostResponseDto;
@@ -30,8 +31,9 @@ public class StudyPostController {
     @GetMapping
     public ResponseEntity<List<StudyPostResponseDto>> getAll(
             @RequestParam(required = false) List<Region> regions,
-            @RequestParam(required = false) List<StudyType> studyTypes) {
-        return ResponseEntity.ok(studyPostService.findAllFiltered(regions, studyTypes));
+            @RequestParam(required = false) List<StudyType> studyTypes,
+            @RequestParam(required = false) StudyStatus status) {
+        return ResponseEntity.ok(studyPostService.findAllFiltered(regions, studyTypes, status));
     }
 
     // 단건 조회

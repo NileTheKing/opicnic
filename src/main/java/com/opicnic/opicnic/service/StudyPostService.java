@@ -21,8 +21,8 @@ public class StudyPostService {
 
     private final StudyPostRepository studyPostRepository;
 
-    public List<StudyPostResponseDto> findAllFiltered(List<Region> regions, List<StudyType> studyTypes) {
-        List<StudyPost> posts = studyPostRepository.findFiltered(regions, studyTypes);
+    public List<StudyPostResponseDto> findAllFiltered(List<Region> regions, List<StudyType> studyTypes, StudyStatus status) {
+        List<StudyPost> posts = studyPostRepository.findFiltered(regions, studyTypes, status);
         return posts.stream()
                 .map(StudyPostResponseDto::from)
                 .collect(Collectors.toList());

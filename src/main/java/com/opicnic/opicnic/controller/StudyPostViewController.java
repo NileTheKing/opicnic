@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/studypost")
 @Slf4j
@@ -18,9 +20,10 @@ public class StudyPostViewController {
     private final StudyPostService studyPostService;
 
     @GetMapping
-    public String studyPostBoard() {
-        // board.html로 이동
-        return "/studypost/board"; // resources/templates/studypost/board.html
+    public String studyPostBoard(Model model) {
+        List<StudyPostResponseDto> posts = studyPostService.findAllFiltered(null, null, null);
+        model.addAttribute("posts", posts);
+        return "/studypost/board";
     }
 
     @GetMapping("/{id}")
