@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>질문 세트 관리</title>
+    <!-- 필요한 CSS 등 공통 헤더 여기에 포함 -->
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container">
+    <h1>질문 세트 관리</h1>
+    <p>데이터베이스에 저장된 모든 질문 세트 목록입니다.</p>
+
+    <div class="mb-3">
+        <a href="/admin/question-sets/new" th:href="@{/admin/question-sets/new}" class="btn btn-primary">새 질문 세트 추가</a>
+    </div>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>이름</th>
+            <th>주제</th>
+            <th>난이도</th>
+            <th>콤보 수</th>
+            <th>작업</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- th:each를 사용하여 questionSets 목록을 반복 -->
+        <tr th:each="set : ${questionSets}">
+            <td th:text="${set.id}">1</td>
+            <td th:text="${set.name}">Unexpected Topic: Recycling - Level 3</td>
+            <td th:text="${set.topic.label}">재활용</td>
+            <td th:text="${set.difficulty.name()}">LEVEL_3</td>
+            <td th:text="${#lists.size(set.combos)}">5</td>
+            <td>
+                <a th:href="@{/admin/question-sets/{id}/edit(id=${set.id})}" class="btn btn-secondary btn-sm">수정</a>
+                <form th:action="@{/admin/question-sets/{id}/delete(id=${set.id})}" method="post" style="display:inline;" onsubmit="return confirm('정말로 이 질문 세트를 보관하시겠습니까?');">
+                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

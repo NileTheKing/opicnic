@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>새 질문 세트 추가</title>
+    <!-- 필요한 CSS 등 공통 헤더 여기에 포함 -->
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container">
+    <h1>새 질문 세트 추가</h1>
+    <p>새로운 질문 세트의 기본 정보를 입력합니다. 콤보와 질문은 세트 생성 후 추가할 수 있습니다.</p>
+
+    <!-- th:object를 사용하여 모델의 questionSet 객체와 폼을 바인딩 -->
+    <!-- th:if를 사용하여 ID 존재 여부에 따라 POST 요청 주소를 동적으로 변경 -->
+    <form action="#" 
+          th:object="${questionSet}" 
+          th:action="${questionSet.id == null} ? @{/admin/question-sets} : @{/admin/question-sets/{id}/edit(id=${questionSet.id})}" 
+          method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">세트 이름</label>
+            <!-- th:field를 사용하여 객체의 필드와 폼 입력을 연결 -->
+            <input type="text" id="name" th:field="*{name}" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="topic" class="form-label">주제</label>
+            <select id="topic" th:field="*{topic}" class="form-select" required>
+                <option value="">-- 주제 선택 --</option>
+                <!-- th:each를 사용하여 topics 목록으로 드롭다운 메뉴 생성 -->
+                <option th:each="topicOpt : ${topics}" 
+                        th:value="${topicOpt}" 
+                        th:text="${topicOpt.label}"></option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="difficulty" class="form-label">난이도</label>
+            <select id="difficulty" th:field="*{difficulty}" class="form-select" required>
+                <option value="">-- 난이도 선택 --</option>
+                <!-- th:each를 사용하여 difficulties 목록으로 드롭다운 메뉴 생성 -->
+                <option th:each="diffOpt : ${difficulties}" 
+                        th:value="${diffOpt}" 
+                        th:text="${diffOpt.name()}"></option>
+            </select>
+        </div>
+
+        <!-- 향후 이곳에 콤보와 질문을 동적으로 추가하는 UI가 들어감 -->
+
+        <button type="submit" class="btn btn-primary">저장</button>
+        <a href="/admin/question-sets" th:href="@{/admin/question-sets}" class="btn btn-secondary">취소</a>
+    </form>
+</div>
+
+</body>
+</html>

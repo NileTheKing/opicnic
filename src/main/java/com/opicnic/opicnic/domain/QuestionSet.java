@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +21,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "question_set")
-
+@SQLDelete(sql = "UPDATE question_set SET deleted = true WHERE id = ?")
+@Where(clause = "deleted = false")
 public class QuestionSet {
 
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
@@ -38,6 +41,8 @@ public class QuestionSet {
     @OrderBy("sequenceInSet ASC") // 세트 내 콤보 순서
     @BatchSize(size = 10) // N+1 문제 방지를 위한 배치 사이즈 설정
     private List<Combo> combos = new ArrayList<>(); // 질문 목록
+
+    private boolean deleted = false;
 
 
     //생성자
