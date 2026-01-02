@@ -7,16 +7,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class STTService {
-    private final WebClient webClient = WebClient.create("http://localhost:8000");
+    private final RestClient restClient = RestClient.create("http://localhost:8000");
 
     //사용자로부터 받은 오디오 파일을 STT 서버로 전송
     public String sendAudioToStt(MultipartFile file) {
@@ -33,14 +32,13 @@ public class STTService {
             bodyBuilder.part("file", fileResource)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "form-data; name=\"file\"; filename=\"" + file.getOriginalFilename() + "\"");
 
-            // WebClient 요청 전송
-            Map<String, Object> response = webClient.post()
+            // RestClient 요청 전송
+            Map<String, Object> response = restClient.post()
                     .uri("/stt")
                     .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .bodyValue(bodyBuilder.build()) // Multipart data body 전송
+                    .body(bodyBuilder.build()) // Multipart data body 전송
                     .retrieve()
-                    .bodyToMono(Map.class) // JSON 응답을 Map으로 파싱
-                    .block();
+                    .body(Map.class); // JSON 응답을 Map으로 파싱
 
             // JSON 응답에서 텍스트 추출
             if (response == null || !response.containsKey("text")) {
