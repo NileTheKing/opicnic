@@ -4,14 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
+import org.springframework.stereotype.Service;
+
+import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.stereotype.Service;
 
 
 import java.util.HashMap;
@@ -24,7 +25,7 @@ import java.util.Map;
 @Slf4j
 public class GeminiService {
 
-    private final VertexAiGeminiChatModel chatModel;
+    private final GoogleGenAiChatModel chatModel;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -48,7 +49,7 @@ public class GeminiService {
 
         // 시스템 프롬프트 및 사용자 메시지 생성
         Message systemMessage = new SystemMessage(SYSTEM_PROMPT);
-        Message userMessage = new UserMessage(
+        Message userMessage = new   UserMessage(
                 "다음 질문에 대한 답변입니다: " + question.getContent() + "\n" +
                         "사용자의 응답: " + speechText
         );

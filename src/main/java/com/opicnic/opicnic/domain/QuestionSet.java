@@ -25,7 +25,7 @@ import java.util.List;
 @Where(clause = "deleted = false")
 public class QuestionSet {
 
-    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
 
@@ -51,5 +51,6 @@ public class QuestionSet {
         this.difficulty = difficulty;
         this.topic = topic;
     }
+
 
 }

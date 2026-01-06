@@ -5,19 +5,17 @@ import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service("fixedQuestionSelector") // 빈 이름 유지
 public class FixedComboQuestionStrategy implements ComboQuestionStrategy {
 
     @Override
-    public List<Combo> selectCombos(SurveyTopic topic, SurveyDifficulty difficulty) {
+    public Optional<Combo> selectRandomCombo(SurveyTopic topic, SurveyDifficulty difficulty) {
         // 이 "고정된" 전략은 이 예제에서는 입력된 주제/난이도를 무시하고,
         // 미리 정의된 하나의 콤보를 반환합니다.
         // 실제 DB 기반의 고정 전략은 특정 ID로 엔티티를 조회할 수 있습니다.
-
-        List<Combo> selectedCombos = new ArrayList<>();
 
         // 임시 QuestionSet 생성 (이 전략 내에서는 DB에 저장되지 않음)
         QuestionSet fixedSet = new QuestionSet("Fixed Park Sample Set", SurveyDifficulty.LEVEL_3, SurveyTopic.PARK_GOING);
@@ -39,8 +37,7 @@ public class FixedComboQuestionStrategy implements ComboQuestionStrategy {
         fixedCombo.getQuestions().addAll(List.of(q1, q2, q3));
 
         // 생성된 콤보를 결과 목록에 추가
-        selectedCombos.add(fixedCombo);
 
-        return selectedCombos;
+        return Optional.of(fixedCombo);
     }
 }
