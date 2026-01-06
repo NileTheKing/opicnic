@@ -1,0 +1,27 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: opicnic_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: opicnic
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+    networks:
+      - opicnic_network
+
+  stt-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: opicnic_stt
+    ports:
+      - "8000:8000"
+    networks:
+      - opicnic_network
+
+networks:
+  opicnic_network:
+    driver: bridge

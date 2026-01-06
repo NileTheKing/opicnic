@@ -47,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         questionSetRepository.save(movieSetL3);
 
         // --- 음악 주제 세트 (난이도 4) ---
-        QuestionSet musicSetL4 = new QuestionSet("Music Set - Level 4", SurveyDifficulty.LEVEL_4, SurveyTopic.MUSICAL_WATCHING);
+        QuestionSet musicSetL4 = new QuestionSet("Music Set - Level 4", SurveyDifficulty.LEVEL_4, SurveyTopic.MUSIC_LISTENING);
 
         Combo favArtistCombo = new Combo("Favorite Artist Deep Dive Combo", musicSetL4, 1);
         Question q1_1_mu_l4 = new Question("Who is your favorite singer or band? Tell me about their music in detail.", 1, favArtistCombo);

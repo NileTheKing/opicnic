@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,10 +13,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class STTService {
-    private final RestClient restClient = RestClient.create("http://localhost:8000");
+    private final RestClient restClient;
+
+    public STTService(@Value("${spring.ai.stt.base-url}") String baseUrl) {
+        this.restClient = RestClient.create(baseUrl);
+    }
 
     //사용자로부터 받은 오디오 파일을 STT 서버로 전송
     public String sendAudioToStt(MultipartFile file) {

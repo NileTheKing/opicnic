@@ -22,6 +22,15 @@ public class Combo {
     @GeneratedValue
     private Long id;
 
+    /**
+     * 1: 유형 1,2,3
+     * 2: 유형 1,2,3
+     * 3: 유형 1,3,4
+     * 4: 유형 (3-4단계)6,7,4 / (5-6단계)6,7,8
+     * 5: 유형 (3-4단계)1,5 / (5-6단계)9,10
+     */
+    private Long comboNumber; // 콤보 고유 번호 ex: 1, 2, 3, 4, 5
+
     private String name; // 예: "Recent Movie Experience"
 
     @ManyToOne
