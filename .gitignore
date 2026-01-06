@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Docker data
+docker/
+package-lock.json
