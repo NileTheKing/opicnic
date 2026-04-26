@@ -258,12 +258,13 @@
     function startRecording() {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
+                const options = { mimeType: 'audio/webm;codecs=opus' };
+                mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = (event) => {
                     audioChunks.push(event.data);
                 };
                 mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const audioUrl = URL.createObjectURL(recordedAudioBlob);
                     audioPlayer = new Audio();
                     audioPlayer.src = audioUrl;

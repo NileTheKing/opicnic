@@ -16,7 +16,7 @@ spring:
     password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 50 # 10에서 50으로 확장하여 극심한 병목 해결
       connection-timeout: 30000 # 30 seconds
       idle-timeout: 600000 # 10 minutes
       max-lifetime: 1800000 # 30 minutes
@@ -27,24 +27,25 @@ spring:
     show-sql: true
 
   ai:
+    gemini:
+      enabled: ${AI_GEMINI_ENABLED:true} # 통합 설정을 위해 환경변수/프로퍼티 지원
     stt:
       base-url: ${STT_SERVER_URL:http://localhost:8000}
-#    vertex:
-#      ai:
-#        gemini:
-#          chat:
-#            options:
-#              model: gemini-1.5-flash-002
-#          project-id: compelling-moon-456116-m8
-#          location: asia-northeast3
+      enabled: ${STT_ENABLED:true} # 추가됨: 테스트 시 false로 설정 가능
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
+        enabled: ${AI_GEMINI_ENABLED:true} # 이 설정이 GeminiService에서 사용됨
         chat:
           options:
             model: gemini-2.0-flash-lite
+  mvc:
+    async:
+      request-timeout: 120000 # 비동기 타임아웃 120초
   servlet:
     multipart:
+      enabled: true # 다시 활성화
+      file-size-threshold: 2MB # 2MB 이하는 디스크에 쓰지 않고 메모리에서 처리 (핵심 최적화!)
       max-file-size: 150MB
       max-request-size: 150MB
 
@@ -68,4 +69,14 @@ spring:
 async:
   thread:
     pool-size: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info
+logging:
+  level:
+    com.zaxxer.hikari: INFO
+    org.hibernate.SQL: INFO
 
