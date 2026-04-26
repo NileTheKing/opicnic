@@ -22,6 +22,52 @@ services:
     networks:
       - opicnic_network
 
+  # --- Monitoring Stack ---
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: opicnic_prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    networks:
+      - opicnic_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: opicnic_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - opicnic_network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: opicnic_node_exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - opicnic_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: opicnic_cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - opicnic_network
+
 networks:
   opicnic_network:
     driver: bridge

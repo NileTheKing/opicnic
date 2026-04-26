@@ -16,11 +16,8 @@ import java.util.concurrent.Executors;
 @Configuration
 public class AsyncConfig {
 
-    @Value("${async.thread.pool-size:10}") // application.yml에서 설정값을 가져오며, 기본값은 10으로 설정
-    private int poolSize;
-
     @Bean(name = "taskExecutor")
     public ExecutorService taskExecutor() {
-        return Executors.newFixedThreadPool(poolSize);
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 }
