@@ -27,25 +27,26 @@ spring:
     show-sql: true
 
   ai:
-    gemini:
-      enabled: ${AI_GEMINI_ENABLED:true} # 통합 설정을 위해 환경변수/프로퍼티 지원
+    retry:
+      max-attempts: 1
     stt:
-      base-url: ${STT_SERVER_URL:http://localhost:8000}
-      enabled: ${STT_ENABLED:true} # 추가됨: 테스트 시 false로 설정 가능
-    google:
-      genai:
-        api-key: ${GEMINI_API_KEY}
-        enabled: ${AI_GEMINI_ENABLED:true} # 이 설정이 GeminiService에서 사용됨
-        chat:
-          options:
-            model: gemini-2.0-flash-lite
+      api-key: ${GROQ_API_KEY}
+      enabled: ${STT_ENABLED:true}
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai
+      enabled: ${LLM_ENABLED:true}
+      chat:
+        options:
+          model: llama-3.3-70b-versatile
+          stream-usage: false
   mvc:
     async:
       request-timeout: 120000 # 비동기 타임아웃 120초
   servlet:
     multipart:
       enabled: true # 다시 활성화
-      file-size-threshold: 2MB # 2MB 이하는 디스크에 쓰지 않고 메모리에서 처리 (핵심 최적화!)
+      file-size-threshold: 2MB # 2MB 이하는 디스크에 쓰지 않고 메모리에서 처리 (핵심 최적화)
       max-file-size: 150MB
       max-request-size: 150MB
 

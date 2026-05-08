@@ -31,7 +31,7 @@ repositories {
 
 // deprecated due to an alternative (google ai studio gemini)
 ext {
-	set('springAiVersion', "1.1.2")
+	set('springAiVersion', "1.1.5")
 }
 
 dependencyManagement {
@@ -48,10 +48,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'com.bucket4j:bucket4j-core:8.10.1'
 
 	// Spring AI dependencies deprecated in favor of Google AI Studio Gemini
 	//implementation "org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter:${springAiVersion}"
-    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 
 	//security dependencies
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -69,6 +70,15 @@ dependencies {
 	testImplementation 'org.testcontainers:mysql'
 }
 
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs += ['--enable-preview']
+}
+
+bootRun {
+	jvmArgs(['--enable-preview'])
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+	jvmArgs(['--enable-preview'])
 }

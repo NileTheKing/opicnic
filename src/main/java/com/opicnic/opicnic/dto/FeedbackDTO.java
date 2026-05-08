@@ -13,9 +13,12 @@ public class FeedbackDTO {
     private String vocabulary;
     private String grammar;
     private String mainPoint;
-    //private String pronunciation;
     private String fluency;
     private String content;
     private String overall;
     private String improvements;
+
+    @Builder.Default
+    private boolean failed = false;
+    private String errorMessage;
 }

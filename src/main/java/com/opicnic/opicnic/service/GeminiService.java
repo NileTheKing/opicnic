@@ -1,20 +1,22 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.api.ResponseFormat;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +26,9 @@ import java.util.Map;
 public class GeminiService {
 
     private final ChatModel chatModel;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-    @Value("${spring.ai.google.genai.enabled:true}")
+    @Value("${spring.ai.openai.enabled:true}")
     private boolean aiEnabled;
 
     private static final String SYSTEM_PROMPT =
@@ -46,54 +48,42 @@ public class GeminiService {
 
     public Map<String, String> getOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
-            log.info("[MOCK] Gemini API 호출을 스킵하고 고정 응답을 반환합니다.");
-            String mockResponse = "{\"vocabulary\":\"Good usage of basic words.\", \"grammar\":\"Correct tenses used.\", \"mainPoint\":\"Clear focus.\", \"fluency\":\"Smooth flow.\", \"content\":\"Relevant information.\", \"overall\":\"IM2 - Your speaking is natural and understandable.\", \"improvements\":\"Try using more diverse adjectives.\"}";
-            return parseResponse(mockResponse);
+            log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환");
+            String mock = "{\"vocabulary\":\"Good usage.\",\"grammar\":\"Correct tenses.\",\"mainPoint\":\"Clear focus.\",\"fluency\":\"Smooth flow.\",\"content\":\"Relevant.\",\"overall\":\"IM2\",\"improvements\":\"Use more diverse adjectives.\"}";
+            return parseResponse(mock);
         }
 
-        // 시스템 프롬프트 및 사용자 메시지 생성
         Message systemMessage = new SystemMessage(SYSTEM_PROMPT);
         Message userMessage = new UserMessage(
-                "다음 질문에 대한 답변입니다: " + question.getContent() + "\n" +
-                        "사용자의 응답: " + speechText
+                "다음 질문에 대한 답변입니다: " + question.getContent() + "\n사용자의 응답: " + speechText
         );
 
-        // 프롬프트 생성
-        Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                .build();
+
+        Prompt prompt = new Prompt(List.of(systemMessage, userMessage), options);
 
         try {
-            // Gemini 모델에 요청 보내고 응답 받기
             ChatResponse response = chatModel.call(prompt);
-
-            // 응답에서 텍스트 추출
-            String responseContent;
-
-            //직접 첫 번째 메시지 내용 가져오기
             AssistantMessage assistantMessage = (AssistantMessage) response.getResult().getOutput();
-            responseContent = assistantMessage.getText()
-                    .replaceAll("(?m)^```json\\s*", "")  // ```json 윗줄 제거
-                    .replaceAll("(?m)^```\\s*", "");     // ``` 아랫줄 제거;
+            String content = assistantMessage.getText();
 
-            log.info("Gemini API 응답: {}", responseContent);
-            return parseResponse(responseContent);
+            log.info("[Groq LLM] 피드백 생성 완료");
+            return parseResponse(content);
 
         } catch (Exception e) {
-            log.error("Gemini API 호출 중 오류 발생: {}", e.getMessage(), e);
-            Map<String, String> errorMap = new HashMap<>();
-            errorMap.put("error", "API 호출 중 오류가 발생했습니다: " + e.getMessage());
-            return errorMap;
+            log.error("Groq LLM 호출 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("LLM API 호출 중 오류가 발생했습니다.", e);
         }
     }
 
-    //JSON 응답 파싱
     private Map<String, String> parseResponse(String response) {
         try {
-            return objectMapper.readValue(response, Map.class);
+            return objectMapper.readValue(response, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
-            log.error("Gemini JSON 파싱 오류: {}", e.getMessage());
-            Map<String, String> errorMap = new HashMap<>();
-            errorMap.put("error", "Gemini JSON 응답 파싱 중 오류가 발생했습니다: " + e.getMessage());
-            return errorMap;
+            log.error("LLM JSON 파싱 오류: {}", e.getMessage());
+            throw new RuntimeException("LLM 응답 파싱 중 오류가 발생했습니다.", e);
         }
     }
 }

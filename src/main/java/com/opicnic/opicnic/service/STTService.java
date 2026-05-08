@@ -1,5 +1,7 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -8,68 +10,65 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+
 import java.io.InputStream;
 import java.util.Map;
 
 @Service
 @Slf4j
 public class STTService {
+
+    private static final String GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
+
     private final RestClient restClient;
+    private final ObjectMapper objectMapper;
     private final boolean enabled;
 
-    public STTService(@Value("${spring.ai.stt.base-url}") String baseUrl, 
-                      @Value("${spring.ai.stt.enabled:true}") boolean enabled) {
-        this.restClient = RestClient.create(baseUrl);
+    public STTService(@Value("${spring.ai.stt.api-key}") String apiKey,
+                      @Value("${spring.ai.stt.enabled:true}") boolean enabled,
+                      ObjectMapper objectMapper) {
+        this.restClient = RestClient.builder()
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .build();
         this.enabled = enabled;
+        this.objectMapper = objectMapper;
     }
 
-    /**
-     * [성능 최적화 버전] 스트리밍 데이터 전송
-     * 바이트 배열로 변환하지 않고 InputStream 을 그대로 파이썬 서버로 전달합니다. (Relay)
-     */
     public String sendStreamToStt(InputStream inputStream, String filename) {
         if (!enabled) {
-            log.info("[MOCK] STT 스트리밍 릴레이를 스킵하고 고정 텍스트를 반환합니다.");
+            log.info("[MOCK] STT 스킵, 고정 텍스트 반환");
             return "I went to the beautiful park yesterday and had a great time with my best friends.";
         }
 
+        InputStreamResource resource = new InputStreamResource(inputStream) {
+            @Override public String getFilename() { return filename; }
+            @Override public long contentLength() { return -1; }
+        };
+
+        MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+        bodyBuilder.part("file", resource)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "form-data; name=\"file\"; filename=\"" + filename + "\"");
+        bodyBuilder.part("model", "whisper-large-v3");
+        bodyBuilder.part("response_format", "json");
+
+        log.info("[GROQ STT] 변환 요청 시작: {}", filename);
+
+        String responseBody = restClient.post()
+                .uri(GROQ_STT_URL)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(bodyBuilder.build())
+                .retrieve()
+                .body(String.class);
+
         try {
-            // InputStream 을 Resource 로 래핑 (메모리에 다 올리지 않음!)
-            InputStreamResource resource = new InputStreamResource(inputStream) {
-                @Override
-                public String getFilename() { return filename; }
-                @Override
-                public long contentLength() { return -1; } // 크기를 미리 알 수 없음을 명시 (Chunked Encoding 유도)
-            };
-
-            log.info("[STREAMING] STT 서버로 스트림 릴레이 시작: {}", filename);
-            MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-            bodyBuilder.part("file", resource)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "form-data; name=\"file\"; filename=\"" + filename + "\"");
-
-            Map<String, Object> response = restClient.post()
-                    .uri("/stt")
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(bodyBuilder.build())
-                    .retrieve()
-                    .body(Map.class);
-
+            Map<String, Object> response = objectMapper.readValue(responseBody, new TypeReference<>() {});
             if (response == null || !response.containsKey("text")) {
-                log.error("STT 응답이 유효하지 않음: {}", response);
-                return "STT 변환 실패";
+                throw new RuntimeException("Groq STT 응답이 유효하지 않습니다: " + responseBody);
             }
-
-            log.info("[STREAMING] STT 변환 결과 수신 완료");
+            log.info("[GROQ STT] 변환 완료");
             return (String) response.get("text");
-
         } catch (Exception e) {
-            log.error("STT 스트리밍 요청 실패: {}", e.getMessage());
-            return "STT 변환 실패";
+            throw new RuntimeException("Groq STT 응답 파싱 실패: " + responseBody, e);
         }
-    }
-
-    // 기존 버전 (하위 호환성 유지)
-    public String sendAudioToStt(org.springframework.web.multipart.MultipartFile file) {
-        return "Not used in streaming mode";
     }
 }
