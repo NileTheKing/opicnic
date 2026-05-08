@@ -175,7 +175,9 @@
         resetRecordingUI();
 
         nextButton.style.display = index < questions.length - 1 ? 'inline-block' : 'none';
+        nextButton.disabled = true;
         submitButton.style.display = index === questions.length - 1 ? 'inline-block' : 'none';
+        submitButton.disabled = true;
     }
 
     function setupEventListeners() {
@@ -223,7 +225,7 @@
         // 녹음 파일들 첨부
         recordings.forEach((blob, index) => {
             // 파일명은 Spring이 MultipartFile을 구분할 수 있도록 고유하게 설정
-            const file = new File([blob], `file_${index + 1}.wav`, { type: 'audio/wav' });
+            const file = new File([blob], `file_${index + 1}.webm`, { type: 'audio/webm' });
 
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -268,7 +270,9 @@
                     const audioUrl = URL.createObjectURL(recordedAudioBlob);
                     audioPlayer = new Audio();
                     audioPlayer.src = audioUrl;
-                    playButton.disabled = false; // 녹음 완료 후 재생 버튼 활성화
+                    playButton.disabled = false;
+                    nextButton.disabled = false;
+                    submitButton.disabled = false;
                 };
                 audioChunks = []; // 새로운 녹음을 위해 청크 배열 초기화
                 mediaRecorder.start();

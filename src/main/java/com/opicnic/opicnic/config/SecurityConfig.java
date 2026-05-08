@@ -25,7 +25,8 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // 테스트를 위해 모든 경로 전면 개방
+                        .requestMatchers("/", "/practice", "/auth/**", "/api/**", "/actuator/**", "/css/**", "/js/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/auth/login")

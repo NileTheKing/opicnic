@@ -11,14 +11,27 @@ services:
       - ./docker/mysql/data:/var/lib/mysql
     networks:
       - opicnic_network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
-  stt-server:
+  opicnic-app:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
-    container_name: opicnic_stt
+    container_name: opicnic_app
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://opicnic_mysql:3306/opicnic?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_AI_STT_BASE_URL=http://opicnic_stt:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - opicnic_network
 
@@ -43,28 +56,6 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    networks:
-      - opicnic_network
-
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: opicnic_node_exporter
-    ports:
-      - "9100:9100"
-    networks:
-      - opicnic_network
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: opicnic_cadvisor
-    ports:
-      - "8081:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
     networks:
       - opicnic_network
 
