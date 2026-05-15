@@ -39,3 +39,6 @@ out/
 # Docker data
 docker/
 package-lock.json
+
+# Environment variables
+.env

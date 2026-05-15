@@ -1,0 +1,57 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: opicnic_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: opicnic
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - opicnic_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opicnic_app
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DOMAIN=${DOMAIN}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - SPRING_AI_STT_BASE_URL=http://opicnic_stt:8000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - opicnic_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: opicnic_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - opicnic_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  opicnic_network:
+    driver: bridge

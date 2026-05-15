@@ -16,7 +16,7 @@ spring:
     password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 50 # 10에서 50으로 확장하여 극심한 병목 해결
+      maximum-pool-size: 50 # DB 병목 가설 검증 중 10에서 50으로 확장했으나, 최종 병목은 파일 I/O로 판단
       connection-timeout: 30000 # 30 seconds
       idle-timeout: 600000 # 10 minutes
       max-lifetime: 1800000 # 30 minutes
@@ -80,4 +80,3 @@ logging:
   level:
     com.zaxxer.hikari: INFO
     org.hibernate.SQL: INFO
-

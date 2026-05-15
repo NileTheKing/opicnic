@@ -1,0 +1,20 @@
+spring:
+  thymeleaf:
+    cache: true
+
+  datasource:
+    url: jdbc:mysql://opicnic_mysql:3306/opicnic?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            redirect-uri: https://${DOMAIN}/login/oauth2/code/kakao

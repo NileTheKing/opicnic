@@ -2,9 +2,13 @@
 
 ## 🚀 Phase 1: MVP (Completed)
 - OPIc 출제 알고리즘 (Topic & Difficulty 기반 랜덤 콤보) 구현.
-- Whisper 기반 STT 서버 연동.
-- Gemini API를 통한 텍스트 피드백 엔진 구축.
-- Java 21 Virtual Threads 및 RestClient 전환으로 성능 최적화.
+- Groq Whisper 기반 STT 연동 (초기 Gemini → Groq 마이그레이션).
+- Groq llama-3.3-70b 기반 피드백 엔진 구축 (Spring AI OpenAI starter 호환).
+- Java 21 Virtual Threads + StructuredTaskScope 병렬 처리 (per-subtask 재시도 포함).
+- Bucket4j Rate Limiting (사용자 ID 기반, 10회/시간).
+- FeedbackResult DB 저장 (Member 연관, 성공한 피드백만 저장).
+- 피드백 실패 시 부분 결과 반환 (전체 오류 대신 실패 카드 표시).
+- Oracle Cloud + DuckDNS + Nginx + Let's Encrypt 배포 환경 구성 (VM 확보 후 실행 예정).
 
 ## 📈 Phase 2: System Integration & Data Driven
 - **MCP Server 도입:** 백엔드 API와 AI의 유기적 결합 (자율 에이전트화).
