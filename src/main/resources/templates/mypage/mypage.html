@@ -122,6 +122,81 @@
         </div>
     </div>
 
+    <!-- OPIc 설문 프로필 섹션 -->
+    <div class="mb-10">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden section-card">
+            <div class="bg-gradient-to-r from-violet-500 to-indigo-500 p-6">
+                <h2 class="text-xl font-semibold text-white">OPIc 설문 프로필</h2>
+                <p class="text-violet-100 text-sm mt-1">실제 시험과 동일한 환경으로 맞춤 연습을 설정하세요.</p>
+            </div>
+
+            <div class="p-6">
+                <form th:action="@{/mypage/survey}" method="post">
+
+                    <!-- 직업 상태 -->
+                    <div class="mb-6">
+                        <h3 class="text-base font-semibold text-gray-700 mb-3">현재 상태</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <label th:each="type : ${occupationTypes}"
+                                   class="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:border-indigo-400 transition"
+                                   th:classappend="${surveyProfile.occupationType == type} ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'">
+                                <input type="radio" name="occupationType" th:value="${type.name()}"
+                                       th:checked="${surveyProfile.occupationType == type}" class="accent-indigo-600">
+                                <span th:text="${type.label}"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 거주지 유형 -->
+                    <div class="mb-6">
+                        <h3 class="text-base font-semibold text-gray-700 mb-3">거주 형태</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <label th:each="type : ${residenceTypes}"
+                                   class="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:border-indigo-400 transition"
+                                   th:classappend="${surveyProfile.residenceType == type} ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'">
+                                <input type="radio" name="residenceType" th:value="${type.name()}"
+                                       th:checked="${surveyProfile.residenceType == type}" class="accent-indigo-600">
+                                <span th:text="${type.label}"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 주제 선택 -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-base font-semibold text-gray-700">연습 주제 선택</h3>
+                            <span class="text-sm text-gray-500">
+                                선택: <span id="topicCount" class="font-bold text-indigo-600"
+                                           th:text="${surveyProfile.selectedTopics != null ? #lists.size(surveyProfile.selectedTopics) : 0}">0</span> / 12
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-4">실제 OPIc 설문과 동일하게 최대 12개를 선택하세요.</p>
+
+                        <div th:each="group : ${topicGroups}" class="mb-5">
+                            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+                                th:text="${group.key}"></h4>
+                            <div class="flex flex-wrap gap-2">
+                                <label th:each="topic : ${group.value}"
+                                       class="topic-label flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm cursor-pointer hover:border-indigo-400 transition"
+                                       th:classappend="${surveyProfile.selectedTopics != null and surveyProfile.selectedTopics.contains(topic)} ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600'">
+                                    <input type="checkbox" name="selectedTopics" th:value="${topic.name()}"
+                                           th:checked="${surveyProfile.selectedTopics != null and surveyProfile.selectedTopics.contains(topic)}"
+                                           class="topic-checkbox accent-indigo-600">
+                                    <span th:text="${topic.label}"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-medium">
+                        저장하기
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- 알림 설정 섹션 -->
     <div class="mb-10">
         <div class="bg-white rounded-xl shadow-md overflow-hidden section-card">
@@ -284,6 +359,37 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // 주제 선택 카운트 및 최대 12개 제한
+        const checkboxes = document.querySelectorAll('.topic-checkbox');
+        const countEl = document.getElementById('topicCount');
+
+        function updateCount() {
+            const checked = document.querySelectorAll('.topic-checkbox:checked').length;
+            countEl.textContent = checked;
+            countEl.className = checked > 12 ? 'font-bold text-red-500' : 'font-bold text-indigo-600';
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const checked = document.querySelectorAll('.topic-checkbox:checked').length;
+                if (checked > 12) {
+                    this.checked = false;
+                    showToast('최대 12개까지 선택 가능합니다.');
+                }
+                updateCount();
+                // 라벨 스타일 업데이트
+                const label = this.closest('label');
+                if (this.checked) {
+                    label.classList.add('border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+                    label.classList.remove('border-gray-200', 'text-gray-600');
+                } else {
+                    label.classList.remove('border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+                    label.classList.add('border-gray-200', 'text-gray-600');
+                }
+            });
+        });
+
+
         // 알림 설정 토글 이벤트
         const toggleButtons = document.querySelectorAll('.toggle-button input');
         toggleButtons.forEach(button => {
