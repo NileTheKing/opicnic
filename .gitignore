@@ -42,3 +42,16 @@ package-lock.json
 
 # Environment variables
 .env
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# JFR profiles
+*.jfr
+
+# Memory dumps
+*.tdump
+*.hprof
