@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
-import com.opicnic.opicnic.domain.*; // 모든 도메인 엔티티 임포트
+import com.opicnic.opicnic.domain.*;
+import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import org.springframework.stereotype.Service;
@@ -26,11 +27,11 @@ public class FixedComboQuestionStrategy implements ComboQuestionStrategy {
         fixedCombo.setId(888L); // 임시 ID
 
         // 이 콤보에 포함될 임시 Question 객체들 생성 (영어로 된 문제)
-        Question q1 = new Question("Please describe a park you often visit.", 1, fixedCombo);
-        q1.setId(701L); // 임시 ID
-        Question q2 = new Question("Tell me about your most recent visit to a park.", 2, fixedCombo);
+        Question q1 = new Question("Please describe a park you often visit.", 1, QuestionType.TYPE_1, fixedCombo);
+        q1.setId(701L);
+        Question q2 = new Question("Tell me about your most recent visit to a park.", 2, QuestionType.TYPE_2, fixedCombo);
         q2.setId(702L);
-        Question q3 = new Question("What is your most memorable experience in a park?", 3, fixedCombo);
+        Question q3 = new Question("What is your most memorable experience in a park?", 3, QuestionType.TYPE_3, fixedCombo);
         q3.setId(703L);
 
         // 질문들을 콤보에 추가

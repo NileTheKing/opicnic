@@ -3,6 +3,7 @@
 package com.opicnic.opicnic.dto;
 
 import com.opicnic.opicnic.domain.Question;
+import com.opicnic.opicnic.domain.enums.QuestionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,9 +14,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class QuestionDto {
     private Long id;
-    private String content; // Question 엔티티의 content 필드
-    private String topic;   // QuestionSet에서 가져올 주제
-    private String difficulty; // QuestionSet에서 가져올 난이도
+    private String content;
+    private String topic;
+    private String difficulty;
+    private QuestionType questionType;
 
     public static QuestionDto from(Question question) {
         String topic = question.getCombo().getQuestionSet().getTopic().getLabel();
@@ -24,7 +26,8 @@ public class QuestionDto {
                 question.getId(),
                 question.getContent(),
                 topic,
-                difficulty
+                difficulty,
+                question.getQuestionType()
         );
     }
 }
