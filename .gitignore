@@ -36,8 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
-# Docker data
-docker/
+# Docker runtime data (generated nginx.conf은 제외)
+docker/nginx/nginx.conf
 package-lock.json
 
 # Environment variables
