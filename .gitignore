@@ -54,4 +54,10 @@ package-lock.json
 
 # Memory dumps
 *.tdump
-*.hprofdocker/mysql/data/
+*.hprof
+
+# Docker database runtime data
+docker/mysql/data/
+
+# Local development notes
+docs/local/

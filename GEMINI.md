@@ -1,71 +1,100 @@
-# opicnic Project Context
 
-## Project Overview
+# CLAUDE.md
 
-**opicnic** is a Spring Boot web application designed for two primary purposes:
-1.  **OPIc Exam Preparation:** Provides practice functionality with AI-driven feedback using Google Vertex AI (Gemini) and Speech-to-Text (STT) capabilities.
-2.  **Study Group Matching:** Facilitates the creation and management of study groups for various topics (Projects, Algorithms, Tech Stacks, Interviews).
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-## Tech Stack
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-*   **Language:** Java 21 (LTS)
-*   **Framework:** Spring Boot 3.4.4
-*   **Build Tool:** Gradle
-*   **Database:** MySQL
-    *   **Driver:** `com.mysql.cj.jdbc.Driver`
-    *   **ORM:** Spring Data JPA (Hibernate)
-*   **Frontend:** Thymeleaf (Server-side rendering)
-*   **AI & ML:**
-    *   **Spring AI:** Vertex AI Gemini (`gemini-1.5-flash-001`/`002`) - Optimized with Virtual Threads.
-    *   **STT (Speech-to-Text):** Implemented using Spring `RestClient` to communicate with an external API (optimized for Virtual Threads).
-*   **Security:** Spring Security with OAuth2 Client (Kakao Login)
-*   **Testing:** JUnit 5, Testcontainers
+## 1. Think Before Coding
 
-## Key Features
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-### 1. OPIc Practice
-*   **Practice Combos:** Logic for selecting question combos (`ComboPracticeService`, `ComboQuestionStrategy`).
-*   **AI Feedback:** Uses `GeminiService` to analyze user responses and provide feedback.
-*   **Speech Recognition:** `STTService` handles audio input processing using `RestClient`.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-### 2. Study Group Management
-*   **Study Posts:** Users can create posts to recruit members for study groups (`StudyPostController`, `StudyPostService`).
-*   **Applications:** Users can apply to join groups, with status tracking (`PENDING`, `APPROVED`, `REJECTED`).
-*   **Categories:** Supports various study types defined in `StudyType` (Project, Algorithm, etc.).
+## 2. Simplicity First
 
-### 3. Member Management
-*   **Authentication:** Social login via Kakao (`CustomOAuth2UserService`).
-*   **My Page:** User profile and activity management (`MyPageController`).
+**Minimum code that solves the problem. Nothing speculative.**
 
-## Configuration & Environment
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
 
-Configuration is managed via `src/main/resources/application.yml` with support for profiles.
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-**Key Configuration Updates:**
-*   **Java 21 Virtual Threads:** Enabled (`spring.threads.virtual.enabled: true`) for high-throughput I/O handling (Gemini API, STT API, DB).
+## 3. Surgical Changes
 
-*   **default/local:** Connects to `localhost:3306/opicnic`.
-*   **dev:** Connects to `localhost:3306/opicnic`.
-*   **prod:** Connects to an AWS RDS instance.
+**Touch only what you must. Clean up only your own mess.**
 
-**Required Environment Variables (inferred):**
-*   `DB_PASSWORD`: For production database access.
-*   **Google Cloud Credentials:** Implicitly required for `spring-ai-vertex-ai-gemini`. Ensure `GOOGLE_APPLICATION_CREDENTIALS` is set or the environment is authenticated (e.g., via `gcloud auth application-default login`).
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
 
-## Building and Running
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
 
-### Prerequisites
-*   JDK 21+
-*   MySQL Server running on localhost (for default/dev profiles)
+The test: Every changed line should trace directly to the user's request.
 
-### Commands
-*   **Build:** `./gradlew build`
-*   **Run:** `./gradlew bootRun`
-*   **Run Tests:** `./gradlew test`
+## 4. Goal-Driven Execution
 
-## Development Conventions
+**Define success criteria. Loop until verified.**
 
-*   **Architecture:** Standard Spring Boot Layered Architecture (Controller -> Service -> Repository -> Domain).
-*   **DTO Pattern:** extensive use of DTOs (e.g., `StudyPostRequestDto`, `MemberDTO`) to decouple API/View from Domain entities.
-*   **Async Processing:** configured in `AsyncConfig.java`.
-*   **HTTP Client:** Prefer `RestClient` over `WebClient` or `RestTemplate` to leverage Virtual Threads efficiency.
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## OPicnic Current Project Context
+
+### Current OPIc Domain Model
+
+- `QuestionSet` is the topic-specific question bank.
+- Each `QuestionSet` contains `Question` rows for `TYPE_1` through `TYPE_10`.
+- `ComboPattern` is a runtime exam pattern, not a persistent DB concept.
+- `MockExamService` creates a 15-question mock exam: 1 self-introduction + 5 combo slots.
+- The mock exam uses 3 selected-topic combos and 2 surprise-topic combos.
+- Surprise combo slots are randomized among the 5 combo slots.
+- There is no dedicated surprise-topic question bank yet. Current implementation uses unselected supported topics as a temporary substitute.
+
+### Important Current Classes
+
+- `ComboPracticeService`: creates one short practice combo from `topic + difficulty`.
+- `OpicComboPatternProvider`: provides difficulty-specific combo patterns.
+- `QuestionAssemblyService`: converts `QuestionSet + ComboPattern` into `QuestionDto` list.
+- `MockExamService`: creates full mock exam questions.
+- `HomeController`: routes `/practice/random`, `/practice/surprise`, `/practice/mock`.
+- `TopicsController`: renders `/practice/topics`.
+
+### Important Constraints
+
+- Do not treat persisted `Combo` as the source of truth for OPIc exam generation.
+- Do not claim true OPIc surprise topics are fully implemented.
+- Do not hardcode topic counts such as `22`.
+- Do not reintroduce difficulty selection into the topic exploration page. Difficulty comes from onboarding/profile.
+- Keep `docs/local/` ignored. It is for local development notes.
+
+### Verification Notes
+
+- `./gradlew compileJava` currently passes.
+- `./gradlew test` currently fails because `QuestionSetAdminIntegrationTest` still references the old `QuestionSet.difficulty` model.
