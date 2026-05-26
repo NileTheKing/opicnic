@@ -1,22 +1,102 @@
 package com.opicnic.opicnic.controller;
 
+import com.opicnic.opicnic.domain.Member;
+import com.opicnic.opicnic.domain.SurveyProfile;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
+import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.MockExamService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.List;
+import java.util.Random;
+
 @Controller
+@RequiredArgsConstructor
 @Slf4j
 public class HomeController {
 
+    private final MemberRepository memberRepository;
+    private final SurveyProfileRepository surveyProfileRepository;
+    private final MockExamService mockExamService;
+    private final Random random = new Random();
+
+    private static final List<SurveyTopic> SUPPORTED_TOPICS = List.of(
+            SurveyTopic.LIVING_WITH_FAMILY,
+            SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
+            SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING, SurveyTopic.SPORTS_WATCHING,
+            SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING,
+            SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
+            SurveyTopic.SINGING, SurveyTopic.COOKING, SurveyTopic.READING,
+            SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM,
+            SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
+    );
+
     @GetMapping("/")
-    public String redirectToPractice() {
-        // 리디렉션을 사용하여 /practice로 이동
-        return "redirect:/practice";
+    public String home(@AuthenticationPrincipal OAuth2User user, Model model) {
+        model.addAttribute("supportedTopicCount", SUPPORTED_TOPICS.size());
+        if (user != null) {
+            String provider = user.getAttributes().get("provider").toString();
+            memberRepository.findByProviderAndProviderId(provider, user.getName()).ifPresent(member -> {
+                surveyProfileRepository.findByMemberId(member.getId()).ifPresent(profile -> {
+                    List<SurveyTopic> practiceTopics = profile.getSelectedTopics().stream()
+                            .filter(t -> t != SurveyTopic.NO_EXERCISE)
+                            .toList();
+                    model.addAttribute("selectedTopics", practiceTopics);
+                });
+            });
+        }
+        return "home";
     }
 
-    @GetMapping("/practice")
-    public String practicePage() {
-        // practice.html 템플릿을 렌더링
-        return "/practice/practice";
+    // 선택 주제 중 랜덤 콤보
+    @GetMapping("/practice/random")
+    public String randomPractice(@AuthenticationPrincipal OAuth2User user) {
+        String provider = user.getAttributes().get("provider").toString();
+        Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
+        SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
+                .orElseThrow(() -> new IllegalStateException("서베이 프로필이 없습니다."));
+
+        List<SurveyTopic> topics = profile.getSelectedTopics().stream()
+                .filter(t -> t != SurveyTopic.NO_EXERCISE)
+                .toList();
+
+        if (topics.isEmpty()) return "redirect:/?noTopics=true";
+
+        SurveyTopic topic = topics.get(random.nextInt(topics.size()));
+        String difficulty = profile.getPreferredDifficulty() != null
+                ? profile.getPreferredDifficulty().name() : "LEVEL_3";
+        log.info("랜덤 연습: {} ({})", topic, difficulty);
+        return "redirect:/practice/combo?topic=" + topic.name() + "&difficulty=" + difficulty;
+    }
+
+    // 돌발: 지원 주제 전체 중 랜덤
+    @GetMapping("/practice/surprise")
+    public String surprisePractice(@AuthenticationPrincipal OAuth2User user) {
+        String provider = user.getAttributes().get("provider").toString();
+        String difficulty = memberRepository.findByProviderAndProviderId(provider, user.getName())
+                .flatMap(m -> surveyProfileRepository.findByMemberId(m.getId()))
+                .map(p -> p.getPreferredDifficulty() != null ? p.getPreferredDifficulty().name() : "LEVEL_3")
+                .orElse("LEVEL_3");
+        SurveyTopic topic = SUPPORTED_TOPICS.get(random.nextInt(SUPPORTED_TOPICS.size()));
+        log.info("돌발 연습: {} ({})", topic, difficulty);
+        return "redirect:/practice/combo?topic=" + topic.name() + "&difficulty=" + difficulty;
+    }
+
+    @GetMapping("/practice/mock")
+    public String mockExam(@AuthenticationPrincipal OAuth2User user, Model model) {
+        String provider = user.getAttributes().get("provider").toString();
+        Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
+        SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
+                .orElseThrow(() -> new IllegalStateException("서베이 프로필이 없습니다."));
+
+        model.addAttribute("questions", mockExamService.createMockExam(profile));
+        return "/practice/question";
     }
 }

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>주제 탐색 - Opicnic</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans flex">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="flex-1 flex flex-col">
+
+    <main class="flex-1 p-5 sm:p-6 max-w-5xl mx-auto w-full">
+
+        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-6 sm:p-8 text-white shadow-xl mb-6">
+            <div class="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-white/15"></div>
+            <div class="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/10"></div>
+
+            <div class="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-medium text-indigo-100 mb-2">OPIc survey topics</p>
+                    <h1 class="text-3xl font-extrabold tracking-tight">주제 탐색</h1>
+                    <p class="text-sm text-indigo-100 mt-2">
+                        온보딩에서 설정한 난이도
+                        <span class="font-bold text-white" th:text="${preferredDifficulty.label}">난이도</span>로 바로 연습합니다.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 min-w-[220px]">
+                    <div class="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+                        <p class="text-xs text-indigo-100">지원 주제</p>
+                        <p class="text-2xl font-black"><span th:text="${topicCount}">20</span>개</p>
+                    </div>
+                    <div class="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+                        <p class="text-xs text-indigo-100">내 주제</p>
+                        <p class="text-2xl font-black"><span th:text="${myTopicCount}">0</span>개</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="mb-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div class="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">난이도는 프로필 설정을 사용합니다</p>
+                        <p class="mt-1 text-sm text-slate-500">변경이 필요하면 마이페이지 또는 온보딩 프로필의 목표 등급/난이도를 수정하세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/mypage"
+               class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:border-indigo-200 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-user-gear"></i>
+                프로필 수정
+            </a>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full"><i class="fa-solid fa-star text-[10px]"></i> 추천</span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full"><i class="fa-solid fa-check text-[10px]"></i> 내 주제</span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200 rounded-full"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> 주의</span>
+        </div>
+
+        <div th:each="group : ${topicGroups}" class="mb-8">
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-sm font-extrabold text-slate-700 tracking-tight" th:text="${group.key}"></h2>
+                <span class="text-xs font-semibold text-slate-400"
+                      th:text="${#lists.size(group.value)} + '개'">0개</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div th:each="topic : ${group.value}"
+                     th:with="isRecommended=${recommended.contains(topic)},
+                              isWarn=${warnTopics.contains(topic)},
+                              isMine=${myTopics.contains(topic)},
+                              hint=${hints[topic]}"
+                     class="group bg-white rounded-2xl border border-slate-100 p-4 flex flex-col gap-3 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition"
+                     th:classappend="${isMine} ? 'ring-2 ring-indigo-200 border-indigo-100' : ''">
+
+                    <div class="flex items-center gap-1 flex-wrap min-h-[20px]">
+                        <span th:if="${isRecommended}"
+                              class="inline-flex items-center gap-1 text-[11px] font-semibold bg-yellow-50 text-yellow-600 border border-yellow-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-star text-[9px]"></i> 추천</span>
+                        <span th:if="${isMine}"
+                              class="inline-flex items-center gap-1 text-[11px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check text-[9px]"></i> 내 주제</span>
+                        <span th:if="${isWarn}"
+                              class="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> 주의</span>
+                    </div>
+
+                    <div>
+                        <p class="font-bold text-slate-800 text-base leading-snug" th:text="${topic.label}"></p>
+                        <p th:if="${hint != null}"
+                           class="mt-1 text-xs text-slate-400 leading-snug" th:text="${hint}"></p>
+                    </div>
+
+                    <a th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
+                       class="mt-auto inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition"
+                       th:classappend="${isMine} ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'">
+                        연습하기
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>
