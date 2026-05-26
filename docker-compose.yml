@@ -28,7 +28,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=admin
       - SPRING_AI_STT_BASE_URL=http://opicnic_stt:8000
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
       mysql:
         condition: service_healthy
