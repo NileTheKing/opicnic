@@ -1,29 +1,100 @@
-<div th:fragment="sidebar" class="w-64 bg-white border-r shadow-sm p-4">
-    <div class="flex items-center mb-8">
-        <img class="h-8 w-auto mr-2" src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" alt="Opicnic"/>
-        <span class="text-xl font-bold text-blue-600">Opicnic</span>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ko">
+<body>
+<div th:fragment="sidebar"
+     class="w-56 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shrink-0">
+
+    <!-- 로고 -->
+    <div class="px-5 pt-5 pb-4">
+        <a href="/" class="flex items-center gap-2.5">
+            <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                <span class="text-white font-bold text-sm leading-none">O</span>
+            </div>
+            <span class="text-lg font-bold text-indigo-600 tracking-tight">Opicnic</span>
+        </a>
     </div>
-    <nav class="space-y-1">
-        <a href="#" class="bg-blue-100 text-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-            <i class="fas fa-graduation-cap w-6 mr-2"></i>
-            <span class="truncate">연습</span>
+
+    <!-- 네비 -->
+    <nav class="flex-1 px-3 space-y-0.5">
+        <a href="/"
+           class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-800">
+            <i class="fa-solid fa-graduation-cap w-4 text-center"></i>
+            <span>연습</span>
         </a>
-<!--        학습기능 은 추후 추가 예정
-<a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-md">-->
-<!--            <i class="fas fa-book-open w-6 mr-2"></i>-->
-<!--            <span class="truncate">학습</span>-->
+        <a href="/mypage"
+           class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-800">
+            <i class="fa-solid fa-user w-4 text-center"></i>
+            <span>마이페이지</span>
         </a>
-        <a href="/mypage" class="text-gray-600 hover:bg-gray-50 hover:text-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-            <i class="fas fa-user w-6 mr-2"></i>
-            <span class="truncate">마이페이지</span>
-        </a>
-        <a href="/studypost" class="text-gray-600 hover:bg-gray-50 hover:text-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-            <i class="fas fa-user w-6 mr-2"></i>
-            <span class="truncate">스터디 게시판</span>
-        </a>
-        <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-            <i class="fas fa-calendar w-6 mr-2"></i>
-            <span class="truncate">캘린더</span>
+        <a href="/studypost"
+           class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-800">
+            <i class="fa-solid fa-comments w-4 text-center"></i>
+            <span>스터디 게시판</span>
         </a>
     </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const path = window.location.pathname;
+            document.querySelectorAll('.nav-item').forEach(a => {
+                const href = a.getAttribute('href');
+                const isActive = href === '/' ? path === '/' : path.startsWith(href);
+                if (isActive) {
+                    a.classList.add('bg-indigo-50', 'text-indigo-600');
+                    a.classList.remove('text-gray-500', 'hover:bg-gray-50', 'hover:text-gray-800');
+                }
+            });
+        });
+    </script>
+
+    <!-- 하단 프로필 -->
+    <div sec:authorize="isAuthenticated()"
+         th:with="profile=${#authentication.principal.attributes['kakao_account'] != null ? #authentication.principal.attributes['kakao_account']['profile'] : null}"
+         class="relative px-3 py-3 border-t border-gray-100">
+
+        <!-- 드롭다운 (위로 열림) -->
+        <div id="sidebar-profile-dropdown"
+             class="hidden absolute bottom-full left-3 right-3 mb-1 bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden">
+            <a href="/mypage" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-user w-4 text-center text-gray-400"></i>
+                <span>마이페이지</span>
+            </a>
+            <div class="border-t border-gray-100"></div>
+            <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4 text-center"></i>
+                <span>로그아웃</span>
+            </a>
+        </div>
+
+        <!-- 프로필 버튼 -->
+        <button id="sidebar-profile-btn"
+                class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition-colors">
+            <div class="w-7 h-7 rounded-full bg-indigo-100 overflow-hidden shrink-0 flex items-center justify-center">
+                <img th:if="${profile != null and profile['profile_image_url'] != null}"
+                     th:src="${profile['profile_image_url']}"
+                     alt="profile" class="w-full h-full object-cover">
+                <i th:if="${profile == null or profile['profile_image_url'] == null}"
+                   class="fa-solid fa-user text-indigo-400 text-[10px]"></i>
+            </div>
+            <span class="flex-1 text-xs font-medium text-gray-700 truncate text-left min-w-0"
+                  th:text="${profile != null and profile['nickname'] != null ? profile['nickname'] : '사용자'}">사용자</span>
+            <i class="fa-solid fa-ellipsis text-gray-300 text-xs shrink-0"></i>
+        </button>
+
+        <script>
+            const profileBtn = document.getElementById('sidebar-profile-btn');
+            const profileDropdown = document.getElementById('sidebar-profile-dropdown');
+            profileBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+            });
+            document.addEventListener('click', function () {
+                profileDropdown.classList.add('hidden');
+            });
+        </script>
+    </div>
 </div>
+</body>
+</html>

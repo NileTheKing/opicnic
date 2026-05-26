@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPIc 설정 - Opicnic</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-2xl">
+    <!-- 헤더 -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-indigo-600 mb-2">Opicnic</h1>
+        <p class="text-gray-400 text-sm">OPIc 맞춤 연습 환경을 설정해드릴게요</p>
+    </div>
+
+    <!-- 스텝 인디케이터 -->
+    <div class="flex items-center mb-8 px-4">
+        <div id="step1-indicator" class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold shrink-0">1</div>
+        <div class="flex-1 h-1 mx-3 bg-gray-200 rounded-full">
+            <div id="step-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300 w-0"></div>
+        </div>
+        <div id="step2-indicator" class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-400 text-sm font-bold shrink-0">2</div>
+    </div>
+
+    <form th:action="@{/onboarding}" method="post">
+
+        <!-- ───── STEP 1 ───── -->
+        <div id="step1" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-1">나의 정보</h2>
+            <p class="text-sm text-gray-400 mb-7">실제 OPIc 서베이와 동일하게 설정해두면 더 정확한 연습이 돼요.</p>
+
+            <!-- Part 1: 직업 -->
+            <div class="mb-7">
+                <p class="text-sm font-semibold text-gray-700 mb-1">현재 어느 분야에 종사하고 있나요?</p>
+                <p class="text-xs text-indigo-500 mb-3">★ 고득점을 위해 <strong>일 경험 없음</strong>을 추천해요</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label th:each="type : ${occupationTypes}"
+                           class="occupation-card flex flex-col items-center gap-2 p-4 border-2 rounded-2xl cursor-pointer transition-all"
+                           th:classappend="${type.name() == 'NO_WORK_EXPERIENCE'} ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'">
+                        <input type="radio" name="occupationType" th:value="${type.name()}" class="sr-only"
+                               th:checked="${type.name() == 'NO_WORK_EXPERIENCE'}">
+                        <i th:if="${type.name() == 'NO_WORK_EXPERIENCE'}"   class="card-icon fa-solid fa-user text-2xl text-white"></i>
+                        <i th:if="${type.name() == 'BUSINESS'}"             class="card-icon fa-solid fa-briefcase text-2xl text-indigo-400"></i>
+                        <i th:if="${type.name() == 'REMOTE_WORK'}"          class="card-icon fa-solid fa-laptop-house text-2xl text-indigo-400"></i>
+                        <i th:if="${type.name() == 'TEACHER'}"              class="card-icon fa-solid fa-chalkboard-teacher text-2xl text-indigo-400"></i>
+                        <span class="text-xs font-medium text-center leading-tight" th:text="${type.label}"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Part 2: 학생 여부 -->
+            <div class="mb-7">
+                <p class="text-sm font-semibold text-gray-700 mb-1">현재 학생입니까?</p>
+                <p class="text-xs text-indigo-500 mb-3">★ <strong>아니오 (수강 후 5년 이상)</strong>를 추천해요</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="student-card flex flex-col items-center gap-2 p-4 border-2 rounded-2xl cursor-pointer transition-all border-indigo-500 bg-indigo-500 text-white">
+                        <input type="radio" name="isStudent" value="false" class="sr-only" checked>
+                        <i class="card-icon fa-solid fa-user-graduate text-2xl text-white"></i>
+                        <span class="text-xs font-medium text-center leading-tight">아니오<br><span class="font-normal opacity-75 text-[11px]">수강 후 5년 이상</span></span>
+                    </label>
+                    <label class="student-card flex flex-col items-center gap-2 p-4 border-2 rounded-2xl cursor-pointer transition-all border-gray-200 bg-white text-gray-500 hover:border-indigo-300">
+                        <input type="radio" name="isStudent" value="true" class="sr-only">
+                        <i class="card-icon fa-solid fa-school text-2xl text-indigo-400"></i>
+                        <span class="text-xs font-medium text-center leading-tight">예<br><span class="font-normal opacity-75 text-[11px]">현재 학생</span></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Part 3: 거주 형태 -->
+            <div class="mb-8">
+                <p class="text-sm font-semibold text-gray-700 mb-1">현재 어디에 살고 있나요?</p>
+                <p class="text-xs text-indigo-500 mb-3">★ <strong>가족과 함께</strong> 거주를 추천해요 — 까다로운 문제가 덜 출제돼요</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <label th:each="type : ${residenceTypes}"
+                           class="residence-card flex flex-col items-center gap-2 p-4 border-2 rounded-2xl cursor-pointer transition-all"
+                           th:classappend="${type.name() == 'WITH_FAMILY'} ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'">
+                        <input type="radio" name="residenceType" th:value="${type.name()}" class="sr-only"
+                               th:checked="${type.name() == 'WITH_FAMILY'}">
+                        <i th:if="${type.name() == 'WITH_FAMILY'}"    class="card-icon fa-solid fa-house-chimney-user text-2xl text-white"></i>
+                        <i th:if="${type.name() == 'WITH_FRIENDS'}"   class="card-icon fa-solid fa-user-group text-2xl text-indigo-400"></i>
+                        <i th:if="${type.name() == 'DORMITORY'}"      class="card-icon fa-solid fa-building-columns text-2xl text-indigo-400"></i>
+                        <span class="text-xs font-medium text-center leading-tight" th:text="${type.label}"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 목표 등급 -->
+            <div class="mb-8">
+                <p class="text-sm font-semibold text-gray-700 mb-1">목표 등급은 무엇인가요?</p>
+                <p class="text-xs text-indigo-500 mb-3">★ 등급에 따라 연습 난이도가 자동으로 설정돼요</p>
+                <div class="grid grid-cols-4 gap-2 mb-3">
+                    <label th:each="grade : ${targetGrades}"
+                           class="grade-card flex flex-col items-center gap-1 py-3 border-2 rounded-2xl cursor-pointer transition-all border-gray-200 bg-white text-gray-500 hover:border-indigo-300"
+                           th:classappend="${grade.name() == 'IM2'} ? ' border-indigo-500 bg-indigo-500 text-white' : ''">
+                        <input type="radio" name="targetGrade" th:value="${grade.name()}" class="sr-only"
+                               th:checked="${grade.name() == 'IM2'}">
+                        <span class="text-sm font-bold" th:text="${grade.label}"></span>
+                    </label>
+                </div>
+                <div id="grade-hint" class="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+                    IM2 목표 → 레벨 4 권장
+                </div>
+            </div>
+
+            <!-- 난이도 선택 -->
+            <div class="mb-8">
+                <p class="text-sm font-semibold text-gray-700 mb-1">연습 난이도를 선택해주세요</p>
+                <p class="text-xs text-gray-400 mb-3">목표 등급에 맞는 난이도가 자동으로 선택돼요</p>
+                <div class="grid grid-cols-4 gap-2 mb-2">
+                    <label class="diff-card flex flex-col items-center gap-0.5 py-3 border-2 rounded-2xl cursor-pointer transition-all border-gray-200 bg-white text-gray-500 hover:border-indigo-300">
+                        <input type="radio" name="preferredDifficulty" value="LEVEL_3" class="sr-only">
+                        <span class="text-sm font-bold">3</span>
+                        <span class="text-[10px] text-gray-400">NH · IL</span>
+                    </label>
+                    <label class="diff-card flex flex-col items-center gap-0.5 py-3 border-2 rounded-2xl cursor-pointer transition-all border-indigo-500 bg-indigo-500 text-white">
+                        <input type="radio" name="preferredDifficulty" value="LEVEL_4" class="sr-only" checked>
+                        <span class="text-sm font-bold">4</span>
+                        <span class="text-[10px] opacity-80">IM1 · IM2</span>
+                    </label>
+                    <label class="diff-card flex flex-col items-center gap-0.5 py-3 border-2 rounded-2xl cursor-pointer transition-all border-gray-200 bg-white text-gray-500 hover:border-indigo-300">
+                        <input type="radio" name="preferredDifficulty" value="LEVEL_5" class="sr-only">
+                        <span class="text-sm font-bold">5</span>
+                        <span class="text-[10px] text-gray-400">IM3 · IH · AL</span>
+                    </label>
+                    <label class="diff-card flex flex-col items-center gap-0.5 py-3 border-2 rounded-2xl cursor-pointer transition-all border-gray-200 bg-white text-gray-500 hover:border-indigo-300">
+                        <input type="radio" name="preferredDifficulty" value="LEVEL_6" class="sr-only">
+                        <span class="text-sm font-bold">6</span>
+                        <span class="text-[10px] text-gray-400">AL</span>
+                    </label>
+                </div>
+                <div id="diff-warn" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0 text-amber-400"></i>
+                    <span id="diff-warn-text"></span>
+                </div>
+            </div>
+
+            <button type="button" onclick="goStep2()"
+                    class="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition-colors">
+                다음
+            </button>
+        </div>
+
+        <!-- ───── STEP 2 ───── -->
+        <div id="step2" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-1">주로 하는 활동을 선택해주세요</h2>
+            <p class="text-sm text-gray-400 mb-4">모두 1세트의 쉬운 주제로만 구성했어요</p>
+
+            <!-- 진행 바 -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-xs text-gray-400">주제 선택</span>
+                    <span id="topicCountMain" class="text-sm font-bold text-gray-400">0 / 12</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div id="topic-progress-bar" class="h-2 bg-indigo-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <!-- 12개 달성 시 슬라이드인 -->
+                <div id="spare-hint" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+                    <div class="flex items-start gap-2 mt-2.5 px-3 py-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+                        <i class="fa-solid fa-circle-check text-green-500 mt-0.5 shrink-0"></i>
+                        <span>12개 완료! 최종 12개 중 마음에 안 드는 주제가 생기면 <strong>예비로 교체</strong>할 수 있어요. 1~2개 더 골라두는 걸 추천해요.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 카테고리별 카드 그리드 -->
+            <div th:each="group : ${topicGroups}" class="mb-6" th:attr="data-group=${group.key}">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider" th:text="${group.key}"></h4>
+                    <span class="group-progress text-xs text-gray-400"></span>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                    <label th:each="topic : ${group.value}"
+                           th:with="hint=${topicHints[topic]}, icon=${topicIcons[topic]}"
+                           class="topic-label relative flex flex-col items-center gap-1.5 p-3 border-2 border-gray-200 bg-white text-gray-500 rounded-2xl cursor-pointer hover:border-indigo-300 transition-all text-center">
+                        <input type="checkbox" name="selectedTopics" th:value="${topic.name()}"
+                               th:attr="data-hint=${hint}"
+                               class="topic-checkbox sr-only">
+                        <i th:class="'fa-solid ' + ${icon} + ' text-xl text-indigo-400 topic-icon'"></i>
+                        <span class="text-[11px] font-medium leading-tight" th:text="${topic.label}"></span>
+                        <!-- 툴팁 -->
+                        <span th:if="${hint != null}" class="absolute top-1.5 right-1.5">
+                            <span class="relative group/tip">
+                                <i class="fa-solid fa-circle-info text-gray-300 text-[9px] cursor-help"></i>
+                                <div class="pointer-events-none absolute bottom-full right-0 mb-1.5 w-44 z-30
+                                            opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150
+                                            bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl">
+                                    <span th:text="${hint}"></span>
+                                    <div class="absolute top-full right-2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-2">
+                <button type="button" onclick="goStep1()"
+                        class="px-6 py-3.5 border-2 border-gray-200 text-gray-500 rounded-2xl font-semibold hover:border-gray-300 transition-colors">
+                    이전
+                </button>
+                <button type="submit"
+                        class="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rocket"></i> 연습 시작하기
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <p class="text-center text-xs text-gray-400 mt-4">나중에 마이페이지에서 언제든 변경할 수 있어요.</p>
+</div>
+
+<script>
+    function goStep2() {
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
+        document.getElementById('step2-indicator').classList.replace('bg-gray-200', 'bg-indigo-600');
+        document.getElementById('step2-indicator').classList.replace('text-gray-400', 'text-white');
+        document.getElementById('step-progress-bar').style.width = '100%';
+    }
+
+    function goStep1() {
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step1').classList.remove('hidden');
+        document.getElementById('step2-indicator').classList.replace('bg-indigo-600', 'bg-gray-200');
+        document.getElementById('step2-indicator').classList.replace('text-white', 'text-gray-400');
+        document.getElementById('step-progress-bar').style.width = '0%';
+    }
+
+    // ── Step 1 ──
+    const STEP1_WARN_MESSAGES = {
+        occupationType: {
+            BUSINESS:    '일 경험 없음 선택을 추천해요 — 직업 관련 질문이 추가될 수 있어요',
+            REMOTE_WORK: '일 경험 없음 선택을 추천해요',
+            TEACHER:     '일 경험 없음 선택을 추천해요'
+        },
+        isStudent:    { true: '학생 아님 (수강 후 5년 이상) 선택을 추천해요' },
+        residenceType: {
+            WITH_FRIENDS: '가족과 함께 거주를 추천해요',
+            DORMITORY:    '가족과 함께 거주를 추천해요'
+        }
+    };
+
+    function warnBanner(msg) {
+        return `<div class="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-2">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5 text-amber-400 shrink-0"></i><span>${msg}</span>
+                </div>`;
+    }
+
+    function applyStep1Style(label, selected) {
+        if (selected) {
+            label.classList.remove('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
+            label.classList.add('border-indigo-500', 'bg-indigo-500', 'text-white');
+            label.querySelectorAll('i.card-icon').forEach(i => { i.classList.remove('text-indigo-400'); i.classList.add('text-white'); });
+        } else {
+            label.classList.remove('border-indigo-500', 'bg-indigo-500', 'text-white');
+            label.classList.add('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
+            label.querySelectorAll('i.card-icon').forEach(i => { i.classList.remove('text-white'); i.classList.add('text-indigo-400'); });
+        }
+    }
+
+    const GRADE_CONFIG = {
+        NH:  { hint: 'NH 목표 → 레벨 3 권장',         recommended: 'LEVEL_3', min: 3, max: 3 },
+        IL:  { hint: 'IL 목표 → 레벨 3 권장',         recommended: 'LEVEL_3', min: 3, max: 3 },
+        IM1: { hint: 'IM1 목표 → 레벨 4 권장',        recommended: 'LEVEL_4', min: 4, max: 4 },
+        IM2: { hint: 'IM2 목표 → 레벨 4 권장',        recommended: 'LEVEL_4', min: 4, max: 4 },
+        IM3: { hint: 'IM3 목표 → 레벨 5 권장',        recommended: 'LEVEL_5', min: 5, max: 5 },
+        IH:  { hint: 'IH 목표 → 레벨 5 권장',         recommended: 'LEVEL_5', min: 5, max: 5 },
+        AL:  { hint: 'AL 목표 → 레벨 5 또는 6 권장',  recommended: 'LEVEL_5', min: 5, max: 6 }
+    };
+
+    function selectDiffCard(value) {
+        document.querySelectorAll('.diff-card').forEach(l => {
+            const selected = l.querySelector('input').value === value;
+            applyStep1Style(l, selected);
+        });
+        document.querySelector(`.diff-card input[value="${value}"]`).checked = true;
+    }
+
+    function checkDiffWarn(grade, diffValue) {
+        const cfg = GRADE_CONFIG[grade];
+        if (!cfg) return;
+        const level = parseInt(diffValue.replace('LEVEL_', ''));
+        const warn = document.getElementById('diff-warn');
+        const warnText = document.getElementById('diff-warn-text');
+        if (level < cfg.min) {
+            warnText.textContent = `${grade} 목표에는 레벨 ${cfg.min} 이상을 추천해요`;
+            warn.classList.remove('hidden');
+        } else if (level > cfg.max) {
+            warnText.textContent = `${grade} 목표에는 레벨 ${cfg.max}까지 적합해요`;
+            warn.classList.remove('hidden');
+        } else {
+            warn.classList.add('hidden');
+        }
+    }
+
+    let currentGrade = 'IM2';
+
+    document.querySelectorAll('.grade-card').forEach(label => {
+        label.querySelector('input').addEventListener('change', function () {
+            document.querySelectorAll('.grade-card').forEach(l => applyStep1Style(l, false));
+            applyStep1Style(label, true);
+            currentGrade = this.value;
+            const cfg = GRADE_CONFIG[currentGrade];
+            document.getElementById('grade-hint').textContent = cfg ? cfg.hint : '';
+            selectDiffCard(cfg.recommended);
+            checkDiffWarn(currentGrade, cfg.recommended);
+        });
+    });
+
+    document.querySelectorAll('.diff-card').forEach(label => {
+        label.querySelector('input').addEventListener('change', function () {
+            document.querySelectorAll('.diff-card').forEach(l => applyStep1Style(l, false));
+            applyStep1Style(label, true);
+            checkDiffWarn(currentGrade, this.value);
+        });
+    });
+
+    document.querySelectorAll('.occupation-card, .student-card, .residence-card').forEach(label => {
+        label.querySelector('input').addEventListener('change', function () {
+            const name = this.name;
+            document.querySelectorAll(`input[name="${name}"]`).forEach(inp => applyStep1Style(inp.closest('label'), false));
+            applyStep1Style(label, true);
+
+            const warnId = name + '-warn';
+            let warnEl = document.getElementById(warnId);
+            const msgs = STEP1_WARN_MESSAGES[name];
+            if (msgs && msgs[this.value]) {
+                const html = warnBanner(msgs[this.value]).replace('class="', `id="${warnId}" class="`);
+                if (warnEl) warnEl.outerHTML = html;
+                else { const d = document.createElement('div'); d.innerHTML = html; label.closest('.mb-7, .mb-8').appendChild(d.firstChild); }
+            } else if (warnEl) {
+                warnEl.remove();
+            }
+        });
+    });
+
+    // ── Step 2 ──
+    const countMainEl = document.getElementById('topicCountMain');
+    const topicBar    = document.getElementById('topic-progress-bar');
+    const GROUP_MIN   = { '여가 활동': 2, '취미 / 관심사': 1, '운동': 1, '여행 / 휴가': 1 };
+
+    const spareHint = document.getElementById('spare-hint');
+    let prevCount = 0;
+
+    function updateCount() {
+        const count = document.querySelectorAll('.topic-checkbox:checked').length;
+        topicBar.style.width = Math.min(count / 12 * 100, 100) + '%';
+        if (count >= 12) {
+            countMainEl.textContent = count + ' ✓';
+            countMainEl.className = 'text-sm font-bold text-green-600';
+            topicBar.className = 'h-2 bg-green-500 rounded-full transition-all duration-300';
+            // 처음 12개 달성 시 bounce + 슬라이드인
+            if (prevCount < 12) {
+                countMainEl.animate([{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'scale(1)'}], {duration:350, easing:'ease-out'});
+                spareHint.classList.remove('max-h-0', 'opacity-0');
+                spareHint.classList.add('max-h-20', 'opacity-100');
+            }
+        } else {
+            countMainEl.textContent = count + ' / 12';
+            countMainEl.className = 'text-sm font-bold ' + (count === 0 ? 'text-gray-400' : 'text-amber-500');
+            topicBar.className = 'h-2 bg-indigo-500 rounded-full transition-all duration-300';
+            spareHint.classList.add('max-h-0', 'opacity-0');
+            spareHint.classList.remove('max-h-20', 'opacity-100');
+        }
+        prevCount = count;
+    }
+
+    function applyTopicStyle(label, checked) {
+        const icon = label.querySelector('.topic-icon');
+        if (checked) {
+            label.classList.add('border-indigo-500', 'bg-indigo-500', 'text-white');
+            label.classList.remove('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
+            if (icon) { icon.classList.remove('text-indigo-400'); icon.classList.add('text-white'); }
+        } else {
+            label.classList.remove('border-indigo-500', 'bg-indigo-500', 'text-white');
+            label.classList.add('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
+            if (icon) { icon.classList.remove('text-white'); icon.classList.add('text-indigo-400'); }
+        }
+    }
+
+    document.querySelectorAll('.topic-checkbox').forEach(cb => {
+        cb.addEventListener('change', function () {
+            applyTopicStyle(this.closest('label'), this.checked);
+            updateCount();
+            updateGroupProgress(this.closest('[data-group]'));
+        });
+    });
+
+    function updateGroupProgress(groupEl) {
+        if (!groupEl) return;
+        const min = GROUP_MIN[groupEl.dataset.group];
+        if (!min) return;
+        const checked = groupEl.querySelectorAll('.topic-checkbox:checked').length;
+        const el = groupEl.querySelector('.group-progress');
+        if (!el) return;
+        el.textContent = checked >= min ? '✓' : checked + '/' + min + ' 필수';
+        el.className = 'group-progress text-xs ' + (checked >= min ? 'font-bold text-green-500' : 'text-gray-400');
+    }
+
+    document.querySelectorAll('[data-group]').forEach(updateGroupProgress);
+
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const errors = [];
+        document.querySelectorAll('[data-group]').forEach(groupEl => {
+            const min = GROUP_MIN[groupEl.dataset.group];
+            if (!min) return;
+            if (groupEl.querySelectorAll('.topic-checkbox:checked').length < min)
+                errors.push(`"${groupEl.dataset.group}" 카테고리에서 ${min}개 이상 선택해주세요.`);
+        });
+        if (errors.length > 0) { e.preventDefault(); alert(errors.join('\n')); return; }
+        const total = document.querySelectorAll('.topic-checkbox:checked').length;
+        if (total < 12) { e.preventDefault(); alert('주제를 최소 12개 이상 선택해주세요. (현재 ' + total + '개)'); }
+    });
+
+    document.querySelectorAll('.topic-checkbox:checked').forEach(cb => applyTopicStyle(cb.closest('label'), true));
+    updateCount();
+</script>
+</body>
+</html>

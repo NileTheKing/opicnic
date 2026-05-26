@@ -1,12 +1,11 @@
 package com.opicnic.opicnic.domain;
 
+import com.opicnic.opicnic.domain.enums.QuestionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.BatchSize;
-import org.springframework.core.annotation.Order;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,35 +18,25 @@ import java.util.List;
 public class Combo {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 1: 유형 1,2,3
-     * 2: 유형 1,2,3
-     * 3: 유형 1,3,4
-     * 4: 유형 (3-4단계)6,7,4 / (5-6단계)6,7,8
-     * 5: 유형 (3-4단계)1,5 / (5-6단계)9,10
-     */
-    private Long comboNumber; // 콤보 고유 번호 ex: 1, 2, 3, 4, 5
+    private String name;
 
-    private String name; // 예: "Recent Movie Experience"
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_set_id")
-    private QuestionSet questionSet; // 질문 세트
+    private QuestionSet questionSet;
 
-    private int sequenceInSet; // 세트 내 이 콤보의 순서
+    @ElementCollection
+    @CollectionTable(name = "combo_question_types", joinColumns = @JoinColumn(name = "combo_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_type")
+    @OrderColumn(name = "position")
+    private List<QuestionType> questionTypes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "combo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @OrderBy("sequenceInCombo ASC") // 콤보 내 질문 순서
-    @BatchSize(size = 3) // N+1 문제 방지를 위한 배치 사이즈 설정
-    private List<Question> questions = new ArrayList<>(); // 질문 목록
-
-    //편의용 생성자
-    public Combo(String name, QuestionSet questionSet, int sequenceInSet) {
+    public Combo(String name, QuestionSet questionSet, List<QuestionType> questionTypes) {
         this.name = name;
         this.questionSet = questionSet;
-        this.sequenceInSet = sequenceInSet;
+        this.questionTypes = new ArrayList<>(questionTypes);
     }
 }

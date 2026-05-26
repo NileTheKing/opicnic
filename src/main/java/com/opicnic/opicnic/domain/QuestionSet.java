@@ -1,7 +1,5 @@
 package com.opicnic.opicnic.domain;
 
-
-import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,28 +27,23 @@ public class QuestionSet {
     @Id
     private Long id;
 
-    private String name; // 예: "Movie Lover Set - Level 3"
+    private String name;
 
     @Enumerated(EnumType.STRING)
-    private SurveyDifficulty difficulty; // enum: LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6
+    private SurveyTopic topic;
 
-    @Enumerated
-    private SurveyTopic topic; // enum: MOVIE, MUSIC, BOOK, FOOD, TRAVEL, GAME
-    //todo orphan? fetch?
     @OneToMany(mappedBy = "questionSet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @OrderBy("sequenceInSet ASC") // 세트 내 콤보 순서
-    @BatchSize(size = 10) // N+1 문제 방지를 위한 배치 사이즈 설정
-    private List<Combo> combos = new ArrayList<>(); // 질문 목록
+    @BatchSize(size = 10)
+    private List<Question> questions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "questionSet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 5)
+    private List<Combo> combos = new ArrayList<>();
 
     private boolean deleted = false;
 
-
-    //생성자
-    public QuestionSet(String name, SurveyDifficulty difficulty, SurveyTopic topic) {
+    public QuestionSet(String name, SurveyTopic topic) {
         this.name = name;
-        this.difficulty = difficulty;
         this.topic = topic;
     }
-
-
 }

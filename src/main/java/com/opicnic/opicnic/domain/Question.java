@@ -12,30 +12,25 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "question") // 테이블명 명시
+@Table(name = "question")
 public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT") // 긴 질문 내용을 위해
-    private String content; // 'text'에서 'content'로 변경 (의미 명확화)
-
-    private int sequenceInCombo;
+    @Column(columnDefinition = "TEXT")
+    private String content;
 
     @Enumerated(EnumType.STRING)
     private QuestionType questionType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "combo_id")
-    private Combo combo;
+    @JoinColumn(name = "question_set_id")
+    private QuestionSet questionSet;
 
-    public Question(String content, int sequenceInCombo, QuestionType questionType, Combo combo) {
+    public Question(String content, QuestionType questionType, QuestionSet questionSet) {
         this.content = content;
-        this.sequenceInCombo = sequenceInCombo;
         this.questionType = questionType;
-        this.combo = combo;
+        this.questionSet = questionSet;
     }
-
-    // }
 }

@@ -168,7 +168,7 @@
     function loadQuestion(index) {
         const question = questions[index];
         // QuestionDto에 topic과 difficulty가 있으므로 이제 사용 가능
-        questionTitle.textContent = question.topic + ' - ' + question.difficulty + ' 연습';
+        questionTitle.textContent = question.topic + ' 연습';
         questionText.textContent = question.content;
         questionHint.textContent = ''; // 필요하다면 DTO에 힌트 필드를 추가하여 사용
 
@@ -240,7 +240,7 @@
         // QuestionDto 정보 담기
         questions.forEach((question, index) => {
             // DTO에 있는 모든 필드를 보냅니다.
-            ['id', 'content', 'topic', 'difficulty'].forEach(key => {
+            ['id', 'content', 'topic'].forEach(key => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 // Spring의 @ModelAttribute QuestionWrapperDTO에 매핑되도록 필드명 설정

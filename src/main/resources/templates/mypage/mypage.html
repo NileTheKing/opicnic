@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         .profile-card {
             transition: all 0.3s ease;
@@ -167,10 +167,10 @@
                             <h3 class="text-base font-semibold text-gray-700">연습 주제 선택</h3>
                             <span class="text-sm text-gray-500">
                                 선택: <span id="topicCount" class="font-bold text-indigo-600"
-                                           th:text="${surveyProfile.selectedTopics != null ? #lists.size(surveyProfile.selectedTopics) : 0}">0</span> / 12
+                                           th:text="${surveyProfile.selectedTopics != null ? #lists.size(surveyProfile.selectedTopics) : 0}">0</span>개 (12개 이상 필수)
                             </span>
                         </div>
-                        <p class="text-sm text-gray-400 mb-4">실제 OPIc 설문과 동일하게 최대 12개를 선택하세요.</p>
+                        <p class="text-sm text-gray-400 mb-4">12개 필수, 예비 1~2개 추천 (시험 전 교체 가능)</p>
 
                         <div th:each="group : ${topicGroups}" class="mb-5">
                             <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
@@ -366,16 +366,11 @@
         function updateCount() {
             const checked = document.querySelectorAll('.topic-checkbox:checked').length;
             countEl.textContent = checked;
-            countEl.className = checked > 12 ? 'font-bold text-red-500' : 'font-bold text-indigo-600';
+            countEl.className = checked < 12 ? 'font-bold text-amber-500' : 'font-bold text-indigo-600';
         }
 
         checkboxes.forEach(cb => {
             cb.addEventListener('change', function() {
-                const checked = document.querySelectorAll('.topic-checkbox:checked').length;
-                if (checked > 12) {
-                    this.checked = false;
-                    showToast('최대 12개까지 선택 가능합니다.');
-                }
                 updateCount();
                 // 라벨 스타일 업데이트
                 const label = this.closest('label');

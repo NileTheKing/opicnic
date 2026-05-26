@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.QuestionSet;
-import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +37,6 @@ public class AdminController {
     public String showNewQuestionSetForm(Model model) {
         model.addAttribute("questionSet", new QuestionSet());
         model.addAttribute("topics", SurveyTopic.values());
-        model.addAttribute("difficulties", SurveyDifficulty.values());
         return "admin/question-set-form";
     }
 
@@ -64,7 +62,6 @@ public class AdminController {
         questionSetRepository.findById(id).ifPresent(questionSet -> {
             model.addAttribute("questionSet", questionSet);
             model.addAttribute("topics", SurveyTopic.values());
-            model.addAttribute("difficulties", SurveyDifficulty.values());
         });
         return "admin/question-set-form";
     }
@@ -74,7 +71,6 @@ public class AdminController {
         questionSetRepository.findById(id).ifPresent(existingQuestionSet -> {
             existingQuestionSet.setName(questionSetDetails.getName());
             existingQuestionSet.setTopic(questionSetDetails.getTopic());
-            existingQuestionSet.setDifficulty(questionSetDetails.getDifficulty());
             questionSetRepository.save(existingQuestionSet);
         });
         return "redirect:/admin/question-sets";

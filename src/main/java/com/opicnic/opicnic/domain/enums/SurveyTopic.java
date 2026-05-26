@@ -31,6 +31,7 @@ public enum SurveyTopic {
     COFFEE_SHOP_GOING("커피 전문점 가기"),
 
     // --- 2. 취미/관심사 (Hobbies & Interests) ---
+    SINGING("혼자 노래 부르거나 합창하기"),
     INSTRUMENT_PLAYING("악기 연주하기"),
     PHOTOGRAPHY("사진 촬영하기"),
     DRAWING_PAINTING("그림 그리기/미술 활동"),
@@ -47,6 +48,7 @@ public enum SurveyTopic {
     RECYCLING("재활용하기"), // 활동 성격이 강하여 취미/관심사에 포함
 
     // --- 3. 운동 (Sports) ---
+    NO_EXERCISE("운동 안함"),
     JOGGING("조깅"),
     WALKING("걷기"),
     SWIMMING("수영"),
@@ -67,11 +69,17 @@ public enum SurveyTopic {
     BILLIARDS("당구 (포켓볼 포함)"),
 
     // --- 4. 여행/휴가 (Travel & Vacations) ---
-    TRAVEL("여행 (국내/해외)"), // 국내/해외 여행 통합
-    BEACH_GOING("해변 가기"), // 여행과 밀접
-    PARK_GOING("공원 가기"),   // 여행과 밀접
+    TRAVEL("여행 (국내/해외)"),
+    DOMESTIC_TRAVEL("국내 여행"),
+    INTERNATIONAL_TRAVEL("해외 여행"),
+    BEACH_GOING("해변 가기"),
+    PARK_GOING("공원 가기"),
     CAMPING("캠핑하기"),
     STAYCATION("집에서 보내는 휴가"),
+
+    // --- 거주 유형 (Residence Types as OPIc Topics) ---
+    LIVING_WITH_FAMILY("가족과 함께 거주"),
+    LIVING_ALONE("독신/혼자 거주"),
 
     // --- 5. 직업/학업/기타 (Work/Study & Others) ---
     INDUSTRY("일/산업군 관련"), // 직업 관련

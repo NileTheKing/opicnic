@@ -17,6 +17,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -25,7 +26,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/practice", "/auth/**", "/api/**", "/actuator/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/auth/**", "/api/**", "/actuator/**", "/css/**", "/js/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -33,7 +34,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService) // CustomOAuth2UserService 빈 주입 확인
                         )
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(oAuth2LoginSuccessHandler)
                         .failureUrl("/auth/login?error")
                 )
                 .logout(logout -> logout

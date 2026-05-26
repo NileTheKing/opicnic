@@ -3,6 +3,7 @@ package com.opicnic.opicnic.controller;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.NotificationSetting;
 import com.opicnic.opicnic.domain.SurveyProfile;
+import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.NotificationSettingRepository;
@@ -72,6 +73,7 @@ public class MyPageController {
     public String updateSurvey(
             @RequestParam(required = false) SurveyProfile.OccupationType occupationType,
             @RequestParam(required = false) SurveyProfile.ResidenceType residenceType,
+            @RequestParam(defaultValue = "false") boolean isStudent,
             @RequestParam(value = "selectedTopics", required = false) List<SurveyTopic> selectedTopics,
             @AuthenticationPrincipal OAuth2User user) {
 
@@ -84,6 +86,7 @@ public class MyPageController {
 
         profile.setOccupationType(occupationType);
         profile.setResidenceType(residenceType);
+        profile.setStudent(isStudent);
         profile.getSelectedTopics().clear();
         if (selectedTopics != null) {
             profile.getSelectedTopics().addAll(selectedTopics);
@@ -96,26 +99,19 @@ public class MyPageController {
     private Map<String, List<SurveyTopic>> buildTopicGroups() {
         Map<String, List<SurveyTopic>> groups = new LinkedHashMap<>();
         groups.put("여가 활동", List.of(
-                SurveyTopic.MOVIE_WATCHING, SurveyTopic.MUSIC_LISTENING, SurveyTopic.TV_WATCHING,
-                SurveyTopic.PERFORMANCE_WATCHING, SurveyTopic.SPORTS_WATCHING,
-                SurveyTopic.ONLINE_GAMING, SurveyTopic.SOCIAL_MEDIA_USE, SurveyTopic.SHOPPING,
-                SurveyTopic.MUSEUM_VISITING, SurveyTopic.COFFEE_SHOP_GOING
+                SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
+                SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING,
+                SurveyTopic.SPORTS_WATCHING, SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING
         ));
         groups.put("취미 / 관심사", List.of(
-                SurveyTopic.READING, SurveyTopic.COOKING, SurveyTopic.PHOTOGRAPHY,
-                SurveyTopic.INSTRUMENT_PLAYING, SurveyTopic.DRAWING_PAINTING,
-                SurveyTopic.PET_RAISING, SurveyTopic.GARDENING, SurveyTopic.VOLUNTEERING,
-                SurveyTopic.RECYCLING, SurveyTopic.TECHNOLOGY, SurveyTopic.CURRENT_AFFAIRS
+                SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
+                SurveyTopic.READING, SurveyTopic.SINGING, SurveyTopic.COOKING
         ));
         groups.put("운동", List.of(
-                SurveyTopic.JOGGING, SurveyTopic.WALKING, SurveyTopic.SWIMMING,
-                SurveyTopic.CYCLING, SurveyTopic.HIKING, SurveyTopic.FITNESS_GYM,
-                SurveyTopic.YOGA, SurveyTopic.GOLF, SurveyTopic.TENNIS,
-                SurveyTopic.SOCCER, SurveyTopic.BASKETBALL, SurveyTopic.DANCING
+                SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM
         ));
         groups.put("여행 / 휴가", List.of(
-                SurveyTopic.TRAVEL, SurveyTopic.CAMPING, SurveyTopic.BEACH_GOING,
-                SurveyTopic.PARK_GOING, SurveyTopic.STAYCATION
+                SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
         ));
         return groups;
     }
