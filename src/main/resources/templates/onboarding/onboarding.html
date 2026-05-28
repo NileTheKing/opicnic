@@ -418,6 +418,11 @@
 
     document.querySelectorAll('.topic-checkbox:checked').forEach(cb => applyTopicStyle(cb.closest('label'), true));
     updateCount();
+
+    // 초기 렌더링 시 th:classappend와 기본 클래스 충돌 해소 (text-gray-500 vs text-white 등)
+    document.querySelectorAll('.grade-card').forEach(label => {
+        applyStep1Style(label, label.querySelector('input').checked);
+    });
 </script>
 </body>
 </html>
