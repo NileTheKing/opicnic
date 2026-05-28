@@ -4,8 +4,10 @@ import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.repository.QuestionSetRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.MockExamService;
+import com.opicnic.opicnic.service.TopicCatalog;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,23 +26,14 @@ public class HomeController {
 
     private final MemberRepository memberRepository;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final QuestionSetRepository questionSetRepository;
     private final MockExamService mockExamService;
-    private final Random random = new Random();
-
-    private static final List<SurveyTopic> SUPPORTED_TOPICS = List.of(
-            SurveyTopic.LIVING_WITH_FAMILY,
-            SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-            SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING, SurveyTopic.SPORTS_WATCHING,
-            SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING,
-            SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
-            SurveyTopic.SINGING, SurveyTopic.COOKING, SurveyTopic.READING,
-            SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM,
-            SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
-    );
+    private final TopicCatalog topicCatalog;
+    private final Random random;
 
     @GetMapping("/")
     public String home(@AuthenticationPrincipal OAuth2User user, Model model) {
-        model.addAttribute("supportedTopicCount", SUPPORTED_TOPICS.size());
+        model.addAttribute("supportedTopicCount", topicCatalog.supportedTopics().size());
         if (user != null) {
             String provider = user.getAttributes().get("provider").toString();
             memberRepository.findByProviderAndProviderId(provider, user.getName()).ifPresent(member -> {
@@ -63,8 +56,10 @@ public class HomeController {
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new IllegalStateException("서베이 프로필이 없습니다."));
 
+        List<SurveyTopic> existingTopics = questionSetRepository.findExistingTopics(topicCatalog.practiceTopics());
         List<SurveyTopic> topics = profile.getSelectedTopics().stream()
                 .filter(t -> t != SurveyTopic.NO_EXERCISE)
+                .filter(existingTopics::contains)
                 .toList();
 
         if (topics.isEmpty()) return "redirect:/?noTopics=true";
@@ -84,7 +79,10 @@ public class HomeController {
                 .flatMap(m -> surveyProfileRepository.findByMemberId(m.getId()))
                 .map(p -> p.getPreferredDifficulty() != null ? p.getPreferredDifficulty().name() : "LEVEL_3")
                 .orElse("LEVEL_3");
-        SurveyTopic topic = SUPPORTED_TOPICS.get(random.nextInt(SUPPORTED_TOPICS.size()));
+        List<SurveyTopic> topics = questionSetRepository.findExistingTopics(topicCatalog.practiceTopics());
+        if (topics.isEmpty()) return "redirect:/?noTopics=true";
+
+        SurveyTopic topic = topics.get(random.nextInt(topics.size()));
         log.info("돌발 연습: {} ({})", topic, difficulty);
         return "redirect:/practice/combo?topic=" + topic.name() + "&difficulty=" + difficulty;
     }

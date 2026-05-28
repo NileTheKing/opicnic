@@ -15,7 +15,7 @@ public class ComboPracticeService {
 
     private final OpicComboPatternProvider comboPatternProvider;
     private final QuestionAssemblyService questionAssemblyService;
-    private final Random random = new Random();
+    private final Random random;
 
     public List<QuestionDto> getComboQuestions(String topicStr, String difficultyStr) {
         SurveyTopic topic = SurveyTopic.valueOf(topicStr);

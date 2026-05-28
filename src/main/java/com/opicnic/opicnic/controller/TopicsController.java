@@ -4,6 +4,7 @@ import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.TopicCatalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -19,19 +20,9 @@ public class TopicsController {
 
     private final MemberRepository memberRepository;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final TopicCatalog topicCatalog;
 
     private static final SurveyDifficulty DEFAULT_DIFFICULTY = SurveyDifficulty.LEVEL_3;
-
-    private static final Set<SurveyTopic> RECOMMENDED = Set.of(
-            SurveyTopic.LIVING_WITH_FAMILY,
-            SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-            SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING, SurveyTopic.SPORTS_WATCHING,
-            SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING,
-            SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
-            SurveyTopic.READING, SurveyTopic.SINGING, SurveyTopic.COOKING,
-            SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM,
-            SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
-    );
 
     private static final Set<SurveyTopic> WARN_TOPICS = Set.of();
 
@@ -58,7 +49,7 @@ public class TopicsController {
                     .orElse(DEFAULT_DIFFICULTY);
         }
 
-        Map<String, List<SurveyTopic>> topicGroups = buildTopicGroups();
+        Map<String, List<SurveyTopic>> topicGroups = topicCatalog.groupedTopics();
         int topicCount = topicGroups.values().stream().mapToInt(List::size).sum();
 
         model.addAttribute("topicGroups", topicGroups);
@@ -66,30 +57,9 @@ public class TopicsController {
         model.addAttribute("myTopics", myTopics);
         model.addAttribute("myTopicCount", myTopics.size());
         model.addAttribute("preferredDifficulty", preferredDifficulty);
-        model.addAttribute("recommended", RECOMMENDED);
+        model.addAttribute("recommended", topicCatalog.recommendedTopics());
         model.addAttribute("warnTopics", WARN_TOPICS);
         model.addAttribute("hints", HINTS);
         return "practice/topics";
-    }
-
-    private Map<String, List<SurveyTopic>> buildTopicGroups() {
-        Map<String, List<SurveyTopic>> groups = new LinkedHashMap<>();
-        groups.put("거주 형태", List.of(SurveyTopic.LIVING_WITH_FAMILY));
-        groups.put("여가 활동", List.of(
-                SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-                SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING,
-                SurveyTopic.SPORTS_WATCHING, SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING
-        ));
-        groups.put("취미 / 관심사", List.of(
-                SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
-                SurveyTopic.READING, SurveyTopic.SINGING, SurveyTopic.COOKING
-        ));
-        groups.put("운동", List.of(
-                SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM
-        ));
-        groups.put("여행 / 휴가", List.of(
-                SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
-        ));
-        return groups;
     }
 }

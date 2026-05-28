@@ -4,15 +4,15 @@ import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -24,46 +24,24 @@ public class MockExamService {
     private static final int SELECTED_TOPIC_COMBO_COUNT = 3;
     private static final int SURPRISE_TOPIC_COMBO_COUNT = 2;
 
-    private static final List<SurveyTopic> SUPPORTED_TOPICS = List.of(
-            SurveyTopic.LIVING_WITH_FAMILY,
-            SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-            SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING, SurveyTopic.SPORTS_WATCHING,
-            SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING,
-            SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
-            SurveyTopic.SINGING, SurveyTopic.COOKING, SurveyTopic.READING,
-            SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM,
-            SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
-    );
-
-    private static final Map<SurveyTopic, String> TOPIC_GROUPS = new EnumMap<>(SurveyTopic.class);
-
-    static {
-        putGroup("거주 형태", SurveyTopic.LIVING_WITH_FAMILY);
-        putGroup("여가 활동",
-                SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-                SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING, SurveyTopic.SPORTS_WATCHING,
-                SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING);
-        putGroup("취미 / 관심사",
-                SurveyTopic.MUSIC_LISTENING, SurveyTopic.INSTRUMENT_PLAYING,
-                SurveyTopic.SINGING, SurveyTopic.COOKING, SurveyTopic.READING);
-        putGroup("운동",
-                SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM);
-        putGroup("여행 / 휴가", SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL);
-    }
-
     private final OpicComboPatternProvider comboPatternProvider;
     private final QuestionAssemblyService questionAssemblyService;
-    private final Random random = new Random();
+    private final QuestionSetRepository questionSetRepository;
+    private final TopicCatalog topicCatalog;
+    private final Random random;
 
     public List<QuestionDto> createMockExam(SurveyProfile profile) {
         SurveyDifficulty difficulty = profile.getPreferredDifficulty() != null
                 ? profile.getPreferredDifficulty()
                 : DEFAULT_DIFFICULTY;
-        List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty);
+        List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty).stream()
+                .sorted(Comparator.comparingInt(ComboPattern::order))
+                .toList();
         List<Integer> surpriseSlots = pickSurpriseSlots(patterns.size());
+        List<SurveyTopic> availableTopics = findAvailablePracticeTopics();
 
-        List<SurveyTopic> selectedTopics = pickSelectedTopics(profile.getSelectedTopics());
-        List<SurveyTopic> surpriseTopics = pickSurpriseTopics(profile.getSelectedTopics(), selectedTopics);
+        List<SurveyTopic> selectedTopics = pickSelectedTopics(profile.getSelectedTopics(), availableTopics);
+        List<SurveyTopic> surpriseTopics = pickSurpriseTopics(profile.getSelectedTopics(), selectedTopics, availableTopics);
 
         List<QuestionDto> questions = new ArrayList<>();
         questions.add(selfIntroductionQuestion());
@@ -80,6 +58,18 @@ public class MockExamService {
         return questions;
     }
 
+    private List<SurveyTopic> findAvailablePracticeTopics() {
+        List<SurveyTopic> practiceTopics = topicCatalog.practiceTopics();
+        List<SurveyTopic> existingTopics = questionSetRepository.findExistingTopics(practiceTopics);
+        List<SurveyTopic> availableTopics = practiceTopics.stream()
+                .filter(existingTopics::contains)
+                .toList();
+        if (availableTopics.isEmpty()) {
+            throw new IllegalStateException("모의고사에 사용할 수 있는 질문 세트가 없습니다.");
+        }
+        return availableTopics;
+    }
+
     private List<Integer> pickSurpriseSlots(int patternSize) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < patternSize; i++) {
@@ -92,10 +82,10 @@ public class MockExamService {
                 .toList();
     }
 
-    private List<SurveyTopic> pickSelectedTopics(List<SurveyTopic> profileTopics) {
+    private List<SurveyTopic> pickSelectedTopics(List<SurveyTopic> profileTopics, List<SurveyTopic> availableTopics) {
         List<SurveyTopic> candidates = profileTopics.stream()
                 .filter(topic -> topic != SurveyTopic.NO_EXERCISE)
-                .filter(SUPPORTED_TOPICS::contains)
+                .filter(availableTopics::contains)
                 .toList();
 
         List<SurveyTopic> distinctGroups = pickOnePerGroup(candidates, SELECTED_TOPIC_COMBO_COUNT);
@@ -108,13 +98,9 @@ public class MockExamService {
         List<SurveyTopic> shuffled = new ArrayList<>(candidates);
         Collections.shuffle(shuffled, random);
         fallback.addAll(shuffled);
-        fallback.addAll(SUPPORTED_TOPICS.stream()
-                .filter(topic -> topic != SurveyTopic.NO_EXERCISE)
-                .toList());
+        fallback.addAll(availableTopics);
 
-        return fallback.stream()
-                .limit(SELECTED_TOPIC_COMBO_COUNT)
-                .toList();
+        return pickWithRepeatFallback(fallback.stream().toList(), SELECTED_TOPIC_COMBO_COUNT);
     }
 
     private List<SurveyTopic> pickOnePerGroup(List<SurveyTopic> topics, int limit) {
@@ -124,7 +110,7 @@ public class MockExamService {
         Set<String> usedGroups = new LinkedHashSet<>();
         List<SurveyTopic> picked = new ArrayList<>();
         for (SurveyTopic topic : shuffled) {
-            String group = TOPIC_GROUPS.getOrDefault(topic, topic.name());
+            String group = topicCatalog.groupOf(topic);
             if (usedGroups.add(group)) {
                 picked.add(topic);
             }
@@ -135,28 +121,46 @@ public class MockExamService {
         return picked;
     }
 
-    private List<SurveyTopic> pickSurpriseTopics(List<SurveyTopic> profileTopics, List<SurveyTopic> selectedTopics) {
+    private List<SurveyTopic> pickSurpriseTopics(List<SurveyTopic> profileTopics,
+                                                List<SurveyTopic> selectedTopics,
+                                                List<SurveyTopic> availableTopics) {
         Set<SurveyTopic> excluded = new LinkedHashSet<>(profileTopics);
         excluded.addAll(selectedTopics);
         excluded.add(SurveyTopic.NO_EXERCISE);
 
-        // TODO: 별도 돌발 주제 문제은행이 생기면 SURPORTED_TOPICS 대체 후보가 아니라
+        // TODO: 별도 돌발 주제 문제은행이 생기면 supported topic 대체 후보가 아니라
         // 서베이 밖 돌발 주제 pool에서만 선택하도록 분리한다.
-        List<SurveyTopic> candidates = SUPPORTED_TOPICS.stream()
+        List<SurveyTopic> candidates = availableTopics.stream()
                 .filter(topic -> !excluded.contains(topic))
                 .toList();
         if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
-            candidates = SUPPORTED_TOPICS.stream()
-                    .filter(topic -> topic != SurveyTopic.NO_EXERCISE)
+            candidates = availableTopics.stream()
                     .filter(topic -> !selectedTopics.contains(topic))
                     .toList();
+        }
+        if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
+            candidates = availableTopics;
         }
 
         List<SurveyTopic> shuffled = new ArrayList<>(candidates);
         Collections.shuffle(shuffled, random);
-        return shuffled.stream()
-                .limit(SURPRISE_TOPIC_COMBO_COUNT)
-                .toList();
+        return pickWithRepeatFallback(shuffled, SURPRISE_TOPIC_COMBO_COUNT);
+    }
+
+    private List<SurveyTopic> pickWithRepeatFallback(List<SurveyTopic> candidates, int count) {
+        if (candidates.isEmpty()) {
+            throw new IllegalStateException("질문 세트 후보가 없습니다.");
+        }
+
+        List<SurveyTopic> picked = new ArrayList<>(candidates.stream()
+                .limit(count)
+                .toList());
+        int index = 0;
+        while (picked.size() < count) {
+            picked.add(candidates.get(index % candidates.size()));
+            index++;
+        }
+        return picked;
     }
 
     private QuestionDto selfIntroductionQuestion() {
@@ -168,9 +172,4 @@ public class MockExamService {
         );
     }
 
-    private static void putGroup(String group, SurveyTopic... topics) {
-        for (SurveyTopic topic : topics) {
-            TOPIC_GROUPS.put(topic, group);
-        }
-    }
 }

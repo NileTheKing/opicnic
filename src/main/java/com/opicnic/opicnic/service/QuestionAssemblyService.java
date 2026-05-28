@@ -18,7 +18,7 @@ import java.util.Random;
 public class QuestionAssemblyService {
 
     private final QuestionSetRepository questionSetRepository;
-    private final Random random = new Random();
+    private final Random random;
 
     @Transactional(readOnly = true)
     public List<QuestionDto> assemble(SurveyTopic topic, ComboPattern pattern) {

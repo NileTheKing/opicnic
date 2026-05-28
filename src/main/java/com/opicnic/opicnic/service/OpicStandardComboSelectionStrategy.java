@@ -19,7 +19,7 @@ import java.util.*;
 public class OpicStandardComboSelectionStrategy implements ComboQuestionStrategy {
 
     private final QuestionSetRepository questionSetRepository;
-    private final Random random = new Random();
+    private final Random random;
 
     // 레벨 3-4: [9,10] 타입 포함 콤보 제외
     // 레벨 5-6: [6,7,8] 타입 포함 콤보 제외
