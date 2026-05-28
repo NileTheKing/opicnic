@@ -49,6 +49,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'com.bucket4j:bucket4j-core:8.10.1'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 
 	// Spring AI dependencies deprecated in favor of Google AI Studio Gemini
 	//implementation "org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter:${springAiVersion}"

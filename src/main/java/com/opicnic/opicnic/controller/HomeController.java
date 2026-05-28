@@ -2,12 +2,16 @@ package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.SurveyProfile;
+import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
+import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
+import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.TopicCatalog;
+import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +33,7 @@ public class HomeController {
     private final QuestionSetRepository questionSetRepository;
     private final MockExamService mockExamService;
     private final TopicCatalog topicCatalog;
+    private final PracticeAttemptService practiceAttemptService;
     private final Random random;
 
     @GetMapping("/")
@@ -94,7 +99,15 @@ public class HomeController {
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new IllegalStateException("서베이 프로필이 없습니다."));
 
-        model.addAttribute("questions", mockExamService.createMockExam(profile));
+        try {
+            List<QuestionDto> questions = mockExamService.createMockExam(profile);
+            PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM);
+            model.addAttribute("questions", questions);
+            model.addAttribute("attemptId", attempt.attemptId());
+        } catch (IllegalStateException e) {
+            log.warn("모의고사 시작 불가: {}", e.getMessage());
+            return "redirect:/?noTopics=true";
+        }
         return "/practice/question";
     }
 }
