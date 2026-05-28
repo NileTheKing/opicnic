@@ -47,37 +47,29 @@ public class FeedbackService {
 
                 subtasks.add(scope.fork(() -> {
                     log.info("[Subtask-{}] STT & LLM 처리 시작 (Thread: {})", idx, Thread.currentThread());
-                    Exception lastException = null;
-                    for (int attempt = 0; attempt <= 2; attempt++) {
-                        try {
-                            if (attempt > 0) {
-                                log.warn("[Subtask-{}] 재시도 {}/2", idx, attempt);
-                                Thread.sleep(1000L * attempt);
-                            }
-                            String speechText = sttService.sendStreamToStt(is, "audio_" + idx + ".webm");
-                            var feedbackMap = geminiService.getOpicFeedback(speechText, question);
+                    try {
+                        String speechText = sttService.sendStreamToStt(is, "audio_" + idx + ".webm");
+                        var feedbackMap = geminiService.getOpicFeedback(speechText, question);
 
-                            return FeedbackDTO.builder()
-                                    .question(question)
-                                    .sttText(speechText)
-                                    .vocabulary(feedbackMap.get("vocabulary"))
-                                    .grammar(feedbackMap.get("grammar"))
-                                    .mainPoint(feedbackMap.get("mainPoint"))
-                                    .fluency(feedbackMap.get("fluency"))
-                                    .content(feedbackMap.get("content"))
-                                    .overall(feedbackMap.get("overall"))
-                                    .improvements(feedbackMap.get("improvements"))
-                                    .build();
-                        } catch (Exception e) {
-                            lastException = e;
-                        }
+                        return FeedbackDTO.builder()
+                                .question(question)
+                                .sttText(speechText)
+                                .vocabulary(feedbackMap.get("vocabulary"))
+                                .grammar(feedbackMap.get("grammar"))
+                                .mainPoint(feedbackMap.get("mainPoint"))
+                                .fluency(feedbackMap.get("fluency"))
+                                .content(feedbackMap.get("content"))
+                                .overall(feedbackMap.get("overall"))
+                                .improvements(feedbackMap.get("improvements"))
+                                .build();
+                    } catch (Exception e) {
+                        log.error("[Subtask-{}] 분석 실패: {}", idx, e.getMessage());
+                        return FeedbackDTO.builder()
+                                .question(question)
+                                .failed(true)
+                                .errorMessage(e.getMessage())
+                                .build();
                     }
-                    log.error("[Subtask-{}] 3회 시도 후 최종 실패: {}", idx, lastException.getMessage());
-                    return FeedbackDTO.builder()
-                            .question(question)
-                            .failed(true)
-                            .errorMessage(lastException.getMessage())
-                            .build();
                 }));
             }
 

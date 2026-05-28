@@ -55,7 +55,7 @@ public class PracticeAttemptService {
                 .stream().collect(Collectors.toMap(Question::getId, q -> q));
 
         return targetIds.stream()
-                .map(id -> id == null ? selfIntroDto() : QuestionDto.from(questionMap.get(id)))
+                .map(id -> id == null ? selfIntroDto() : QuestionDto.from(requireQuestion(questionMap, id)))
                 .toList();
     }
 
@@ -82,5 +82,13 @@ public class PracticeAttemptService {
                 "자기소개",
                 null
         );
+    }
+
+    private Question requireQuestion(Map<Long, Question> questionMap, Long questionId) {
+        Question question = questionMap.get(questionId);
+        if (question == null) {
+            throw new IllegalStateException("문제를 찾을 수 없습니다. questionId=" + questionId);
+        }
+        return question;
     }
 }

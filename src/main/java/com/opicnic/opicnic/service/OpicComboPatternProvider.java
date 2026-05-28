@@ -13,20 +13,20 @@ public class OpicComboPatternProvider {
     public List<ComboPattern> getPatterns(SurveyDifficulty difficulty) {
         if (isUpperLevel(difficulty)) {
             return List.of(
-                    new ComboPattern(1, List.of(TYPE_1, TYPE_2, TYPE_3)),
-                    new ComboPattern(2, List.of(TYPE_1, TYPE_3, TYPE_4)),
-                    new ComboPattern(3, List.of(TYPE_1, TYPE_3, TYPE_4)),
-                    new ComboPattern(4, List.of(TYPE_6, TYPE_7, TYPE_8)),
-                    new ComboPattern(5, List.of(TYPE_9, TYPE_10))
+                    new ComboPattern(List.of(TYPE_1, TYPE_2, TYPE_3)),
+                    new ComboPattern(List.of(TYPE_1, TYPE_3, TYPE_4)),
+                    new ComboPattern(List.of(TYPE_1, TYPE_3, TYPE_4)),
+                    new ComboPattern(List.of(TYPE_6, TYPE_7, TYPE_8)),
+                    new ComboPattern(List.of(TYPE_9, TYPE_10))
             );
         }
 
         return List.of(
-                new ComboPattern(1, List.of(TYPE_1, TYPE_2, TYPE_3)),
-                new ComboPattern(2, List.of(TYPE_1, TYPE_2, TYPE_3)),
-                new ComboPattern(3, List.of(TYPE_1, TYPE_3, TYPE_4)),
-                new ComboPattern(4, List.of(TYPE_6, TYPE_7, TYPE_4)),
-                new ComboPattern(5, List.of(TYPE_1, TYPE_5))
+                new ComboPattern(List.of(TYPE_1, TYPE_2, TYPE_3)),
+                new ComboPattern(List.of(TYPE_1, TYPE_2, TYPE_3)),
+                new ComboPattern(List.of(TYPE_1, TYPE_3, TYPE_4)),
+                new ComboPattern(List.of(TYPE_6, TYPE_7, TYPE_4)),
+                new ComboPattern(List.of(TYPE_1, TYPE_5))
         );
     }
 

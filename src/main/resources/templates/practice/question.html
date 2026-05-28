@@ -103,13 +103,16 @@
                 disabled>
             제출 <i class="fa-solid fa-check text-sm ml-1"></i>
         </button>
+        <button id="retryButton"
+                class="hidden flex-1 py-3 bg-amber-500 text-white rounded-2xl font-semibold hover:bg-amber-600 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            실패 문항 다시 제출 <i class="fa-solid fa-rotate-right text-sm ml-1"></i>
+        </button>
     </div>
 </main>
 
-<form id="feedbackForm" action="/practice/combo/feedback" method="POST" enctype="multipart/form-data" class="hidden"></form>
-
 <script th:inline="javascript">
     const questions = /*[[${questions}]]*/ [];
+    const attemptId = /*[[${attemptId}]]*/ null;
 
     const questionNumber   = document.getElementById('questionNumber');
     const topicBadge       = document.getElementById('topicBadge');
@@ -117,6 +120,7 @@
     const progressContainer = document.getElementById('progressContainer');
     const nextButton       = document.getElementById('nextButton');
     const submitButton     = document.getElementById('submitButton');
+    const retryButton      = document.getElementById('retryButton');
     const recordButton     = document.getElementById('recordButton');
     const stopButton       = document.getElementById('stopButton');
     const playButton       = document.getElementById('playButton');
@@ -130,6 +134,9 @@
     let isRecording = false, startTime, timerInterval;
     let recordedAudioBlob;
     let recordings = [];
+    let feedbackResults = [];
+    let failedIndexes = [];
+    let submissionComplete = false;
 
     function showError(msg) {
         inlineErrorText.textContent = msg;
@@ -176,6 +183,7 @@
         nextButton.disabled = true;
         submitButton.classList.toggle('hidden', !isLast);
         submitButton.disabled = true;
+        retryButton.classList.add('hidden');
     }
 
     function setupEventListeners() {
@@ -184,6 +192,8 @@
         playButton.addEventListener('click', playRecording);
         nextButton.addEventListener('click', advanceToNextQuestion);
         submitButton.addEventListener('click', submitAllRecordings);
+        retryButton.addEventListener('click', retryFailedRecordings);
+        window.addEventListener('beforeunload', warnBeforeLeavingWithRecordings);
     }
 
     function advanceToNextQuestion() {
@@ -194,33 +204,80 @@
         updateProgressIndicators();
     }
 
-    function submitAllRecordings() {
+    async function submitAllRecordings() {
         if (recordedAudioBlob) recordings[currentQuestionIndex] = recordedAudioBlob;
-        if (recordings.length !== questions.length) { showError('모든 문제를 녹음해주세요.'); return; }
+        if (!hasAllRecordings()) { showError('모든 문제를 녹음해주세요.'); return; }
 
-        const form = document.getElementById('feedbackForm');
-        form.innerHTML = '';
-        recordings.forEach((blob, index) => {
-            const file = new File([blob], `file_${index + 1}.webm`, { type: 'audio/webm' });
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.name = 'files';
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            input.files = dt.files;
-            form.appendChild(input);
-        });
-        questions.forEach((q, index) => {
-            ['id', 'content', 'topic'].forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = `questions[${index}].${key}`;
-                input.value = q[key] || '';
-                form.appendChild(input);
-            });
-        });
+        const indexes = questions.map((_, index) => index);
+        await submitRecordings('/api/practice-attempts/answers', indexes);
+    }
+
+    async function retryFailedRecordings() {
+        if (failedIndexes.length === 0) return;
+        await submitRecordings('/api/practice-attempts/answers/retry', failedIndexes);
+    }
+
+    async function submitRecordings(endpoint, indexes) {
         document.getElementById('loading').classList.remove('hidden');
-        form.submit();
+        submitButton.disabled = true;
+        retryButton.disabled = true;
+
+        try {
+            const formData = new FormData();
+            indexes.forEach(index => {
+                const blob = recordings[index];
+                if (!blob) throw new Error(`Q${index + 1} 녹음 파일이 없습니다.`);
+                formData.append('files', new File([blob], `file_${index + 1}.webm`, { type: 'audio/webm' }));
+            });
+            formData.append('attemptId', attemptId);
+            formData.append('questionIndexes', JSON.stringify(indexes));
+            // no questionsJson — server restores questions from attemptId
+
+            const response = await fetch(endpoint, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('피드백 요청에 실패했습니다.');
+
+            const data = await response.json();
+            data.results.forEach(item => {
+                feedbackResults[item.questionIndex] = item.feedback;
+            });
+            failedIndexes = data.failedIndexes || [];
+
+            if (failedIndexes.length > 0) {
+                document.getElementById('loading').classList.add('hidden');
+                retryButton.classList.remove('hidden');
+                retryButton.disabled = false;
+                showError(`분석 실패 문항 ${failedIndexes.length}개가 있습니다. 다시 제출해 주세요.`);
+                return;
+            }
+
+            await finalizeFeedback();
+        } catch (err) {
+            document.getElementById('loading').classList.add('hidden');
+            retryButton.disabled = false;
+            submitButton.disabled = false;
+            showError(err.message || '피드백 요청 중 오류가 발생했습니다.');
+        }
+    }
+
+    async function finalizeFeedback() {
+        const response = await fetch(`/api/practice-attempts/answers/finalize?attemptId=${encodeURIComponent(attemptId)}`, { method: 'POST' });
+        if (!response.ok) throw new Error('피드백 결과 확정에 실패했습니다.');
+
+        const data = await response.json();
+        submissionComplete = true;
+        window.location.href = data.resultUrl;
+    }
+
+    function hasAllRecordings() {
+        return questions.every((_, index) => recordings[index]);
+    }
+
+    function warnBeforeLeavingWithRecordings(event) {
+        if (submissionComplete) return;
+        if (!recordings.some(Boolean)) return;
+
+        event.preventDefault();
+        event.returnValue = '';
     }
 
     function startRecording() {

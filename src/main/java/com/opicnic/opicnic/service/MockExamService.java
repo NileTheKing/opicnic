@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -34,9 +33,7 @@ public class MockExamService {
         SurveyDifficulty difficulty = profile.getPreferredDifficulty() != null
                 ? profile.getPreferredDifficulty()
                 : DEFAULT_DIFFICULTY;
-        List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty).stream()
-                .sorted(Comparator.comparingInt(ComboPattern::order))
-                .toList();
+        List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty);
         List<Integer> surpriseSlots = pickSurpriseSlots(patterns.size());
         List<SurveyTopic> availableTopics = findAvailablePracticeTopics();
 
@@ -100,7 +97,13 @@ public class MockExamService {
         fallback.addAll(shuffled);
         fallback.addAll(availableTopics);
 
-        return pickWithRepeatFallback(fallback.stream().toList(), SELECTED_TOPIC_COMBO_COUNT);
+        List<SurveyTopic> fallbackTopics = fallback.stream().toList();
+        if (fallbackTopics.size() < SELECTED_TOPIC_COMBO_COUNT) {
+            throw new IllegalStateException("모의고사 선택 주제 후보가 부족합니다.");
+        }
+        return fallbackTopics.stream()
+                .limit(SELECTED_TOPIC_COMBO_COUNT)
+                .toList();
     }
 
     private List<SurveyTopic> pickOnePerGroup(List<SurveyTopic> topics, int limit) {
@@ -134,33 +137,14 @@ public class MockExamService {
                 .filter(topic -> !excluded.contains(topic))
                 .toList();
         if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
-            candidates = availableTopics.stream()
-                    .filter(topic -> !selectedTopics.contains(topic))
-                    .toList();
-        }
-        if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
-            candidates = availableTopics;
+            throw new IllegalStateException("모의고사 돌발 주제 후보가 부족합니다.");
         }
 
         List<SurveyTopic> shuffled = new ArrayList<>(candidates);
         Collections.shuffle(shuffled, random);
-        return pickWithRepeatFallback(shuffled, SURPRISE_TOPIC_COMBO_COUNT);
-    }
-
-    private List<SurveyTopic> pickWithRepeatFallback(List<SurveyTopic> candidates, int count) {
-        if (candidates.isEmpty()) {
-            throw new IllegalStateException("질문 세트 후보가 없습니다.");
-        }
-
-        List<SurveyTopic> picked = new ArrayList<>(candidates.stream()
-                .limit(count)
-                .toList());
-        int index = 0;
-        while (picked.size() < count) {
-            picked.add(candidates.get(index % candidates.size()));
-            index++;
-        }
-        return picked;
+        return shuffled.stream()
+                .limit(SURPRISE_TOPIC_COMBO_COUNT)
+                .toList();
     }
 
     private QuestionDto selfIntroductionQuestion() {
