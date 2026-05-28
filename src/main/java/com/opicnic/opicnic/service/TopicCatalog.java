@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("java:S1192")
+
 @Component
 public class TopicCatalog {
 
@@ -22,6 +24,29 @@ public class TopicCatalog {
     private static final Map<SurveyTopic, String> GROUP_BY_TOPIC = buildGroupByTopic();
 
     private static final Set<SurveyTopic> RECOMMENDED_TOPICS = Set.copyOf(SUPPORTED_TOPICS);
+
+    private static final Map<SurveyTopic, String> TOPIC_ICONS = Map.ofEntries(
+            Map.entry(SurveyTopic.LIVING_WITH_FAMILY, "fa-people-roof"),
+            Map.entry(SurveyTopic.MOVIE_WATCHING, "fa-film"),
+            Map.entry(SurveyTopic.TV_WATCHING, "fa-tv"),
+            Map.entry(SurveyTopic.PERFORMANCE_WATCHING, "fa-masks-theater"),
+            Map.entry(SurveyTopic.PARK_GOING, "fa-tree"),
+            Map.entry(SurveyTopic.BEACH_GOING, "fa-umbrella-beach"),
+            Map.entry(SurveyTopic.SPORTS_WATCHING, "fa-futbol"),
+            Map.entry(SurveyTopic.COFFEE_SHOP_GOING, "fa-mug-hot"),
+            Map.entry(SurveyTopic.SHOPPING, "fa-bag-shopping"),
+            Map.entry(SurveyTopic.MUSIC_LISTENING, "fa-headphones"),
+            Map.entry(SurveyTopic.INSTRUMENT_PLAYING, "fa-guitar"),
+            Map.entry(SurveyTopic.READING, "fa-book-open"),
+            Map.entry(SurveyTopic.SINGING, "fa-microphone"),
+            Map.entry(SurveyTopic.COOKING, "fa-utensils"),
+            Map.entry(SurveyTopic.NO_EXERCISE, "fa-couch"),
+            Map.entry(SurveyTopic.WALKING, "fa-person-walking"),
+            Map.entry(SurveyTopic.JOGGING, "fa-person-running"),
+            Map.entry(SurveyTopic.FITNESS_GYM, "fa-dumbbell"),
+            Map.entry(SurveyTopic.STAYCATION, "fa-house"),
+            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, "fa-map-location-dot")
+    );
 
     public List<SurveyTopic> supportedTopics() {
         return SUPPORTED_TOPICS;
@@ -39,6 +64,10 @@ public class TopicCatalog {
 
     public Set<SurveyTopic> recommendedTopics() {
         return RECOMMENDED_TOPICS;
+    }
+
+    public Map<SurveyTopic, String> topicIcons() {
+        return TOPIC_ICONS;
     }
 
     public String groupOf(SurveyTopic topic) {

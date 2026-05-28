@@ -6,6 +6,7 @@ import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.TopicCatalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -21,6 +22,7 @@ public class OnboardingController {
 
     private final MemberRepository memberRepository;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final TopicCatalog topicCatalog;
 
     private static final Set<SurveyTopic> WARN_TOPICS = Set.of();
 
@@ -41,27 +43,6 @@ public class OnboardingController {
             SurveyTopic.DOMESTIC_TRAVEL, "여행 경험이 있으면 쉽게 답할 수 있어요"
     );
 
-    private static final Map<SurveyTopic, String> TOPIC_ICONS = Map.ofEntries(
-            Map.entry(SurveyTopic.MOVIE_WATCHING, "fa-film"),
-            Map.entry(SurveyTopic.TV_WATCHING, "fa-tv"),
-            Map.entry(SurveyTopic.PERFORMANCE_WATCHING, "fa-masks-theater"),
-            Map.entry(SurveyTopic.PARK_GOING, "fa-tree"),
-            Map.entry(SurveyTopic.BEACH_GOING, "fa-umbrella-beach"),
-            Map.entry(SurveyTopic.SPORTS_WATCHING, "fa-futbol"),
-            Map.entry(SurveyTopic.COFFEE_SHOP_GOING, "fa-mug-hot"),
-            Map.entry(SurveyTopic.SHOPPING, "fa-bag-shopping"),
-            Map.entry(SurveyTopic.MUSIC_LISTENING, "fa-headphones"),
-            Map.entry(SurveyTopic.INSTRUMENT_PLAYING, "fa-guitar"),
-            Map.entry(SurveyTopic.READING, "fa-book-open"),
-            Map.entry(SurveyTopic.SINGING, "fa-microphone"),
-            Map.entry(SurveyTopic.COOKING, "fa-utensils"),
-            Map.entry(SurveyTopic.NO_EXERCISE, "fa-couch"),
-            Map.entry(SurveyTopic.WALKING, "fa-person-walking"),
-            Map.entry(SurveyTopic.JOGGING, "fa-person-running"),
-            Map.entry(SurveyTopic.FITNESS_GYM, "fa-dumbbell"),
-            Map.entry(SurveyTopic.STAYCATION, "fa-house"),
-            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, "fa-map-location-dot")
-    );
 
     @GetMapping("/onboarding")
     public String showOnboarding(Model model, @AuthenticationPrincipal OAuth2User user) {
@@ -80,7 +61,7 @@ public class OnboardingController {
         model.addAttribute("recommended", RECOMMENDED);
         model.addAttribute("warnTopics", WARN_TOPICS);
         model.addAttribute("topicHints", TOPIC_HINTS);
-        model.addAttribute("topicIcons", TOPIC_ICONS);
+        model.addAttribute("topicIcons", topicCatalog.topicIcons());
         return "onboarding/onboarding";
     }
 

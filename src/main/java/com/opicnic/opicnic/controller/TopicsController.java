@@ -60,6 +60,7 @@ public class TopicsController {
         model.addAttribute("recommended", topicCatalog.recommendedTopics());
         model.addAttribute("warnTopics", WARN_TOPICS);
         model.addAttribute("hints", HINTS);
+        model.addAttribute("topicIcons", topicCatalog.topicIcons());
         return "practice/topics";
     }
 }
