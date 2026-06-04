@@ -108,6 +108,6 @@ public class HomeController {
             log.warn("모의고사 시작 불가: {}", e.getMessage());
             return "redirect:/?noTopics=true";
         }
-        return "/practice/question";
+        return "practice/question";
     }
 }

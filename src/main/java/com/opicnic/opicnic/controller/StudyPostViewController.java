@@ -23,19 +23,19 @@ public class StudyPostViewController {
     public String studyPostBoard(Model model) {
         List<StudyPostResponseDto> posts = studyPostService.findAllFiltered(null, null, null);
         model.addAttribute("posts", posts);
-        return "/studypost/board";
+        return "studypost/board";
     }
 
     @GetMapping("/{id}")
     public String studyPostDetail(@PathVariable Long id, Model model) {
         model.addAttribute("postId", id); // JS에서 fetch용으로 사용 가능
         log.info("postId: {}", id);
-        return "/studypost/detail";
+        return "studypost/detail";
     }
 
     @GetMapping("/new")
     public String studyPostWrite() {
-        return "/studypost/study-post-write";
+        return "studypost/study-post-write";
     }
 
     @GetMapping("/edit-post/{id}")
@@ -44,6 +44,6 @@ public class StudyPostViewController {
         StudyPostResponseDto post = studyPostService.findById(id);
         model.addAttribute("post", post);
         // 필요한 Enum 정보 등도 model에 추가
-        return "/studypost/edit-post"; // edit-post.html 또는 해당 템플릿 파일 이름
+        return "studypost/edit-post"; // edit-post.html 또는 해당 템플릿 파일 이름
     }
 }

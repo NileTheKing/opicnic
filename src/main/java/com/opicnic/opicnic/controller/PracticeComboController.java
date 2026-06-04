@@ -52,7 +52,7 @@ public class PracticeComboController {
             PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, findMemberId(oAuth2User), PracticeMode.COMBO);
             model.addAttribute("questions", questions);
             model.addAttribute("attemptId", attempt.attemptId());
-            return "/practice/question";
+            return "practice/question";
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("콤보 연습 시작 불가: {}", e.getMessage());
             return "redirect:/?invalidPractice=true";

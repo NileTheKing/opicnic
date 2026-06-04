@@ -19,6 +19,6 @@ public class PracticeFeedbackController {
 
         model.addAttribute(SESSION_FEEDBACK_RESULTS, feedbackResults);
         session.removeAttribute(SESSION_FEEDBACK_RESULTS);
-        return "/practice/feedback";
+        return "practice/feedback";
     }
 }

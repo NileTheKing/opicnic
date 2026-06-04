@@ -15,7 +15,7 @@ public class AuthController {
     public String login() {
 
         //log.info("카카오 로그인 페이지 호출");
-        return "/auth/login";
+        return "auth/login";
     }
     @GetMapping("/test-auth")
     public String testAuthentication(Model model, Authentication authentication) {
@@ -26,6 +26,6 @@ public class AuthController {
         } else {
             System.out.println("인증 없음");
         }
-        return "/auth/test";
+        return "auth/test";
     }
 }
