@@ -76,3 +76,85 @@ GET /practice/feedback/result
 - 기존 `Combo` 엔티티/전략 계열 제거 여부 결정
 - `QuestionSet`이 `TYPE_1~TYPE_10`을 모두 갖는지 관리자 저장 시점 또는 테스트에서 검증
 - 잘못된 topic/difficulty URL 파라미터 예외 처리
+
+---
+
+## Feedback Scoring & Analytics
+
+### 배경
+
+현재 `FeedbackResult`의 vocabulary, grammar, fluency 등 모든 항목이 자유 텍스트로 저장된다.
+집계/분석이 불가능한 구조라 취약 유형 추천, 학습 이력 시각화를 할 수 없다.
+
+### 계획
+
+**1. 프롬프트 개선 — 점수 필드 추가**
+
+LLM에게 텍스트 평가와 함께 1~5 정수 점수를 요청한다.
+
+```json
+{
+  "vocabulary": "평가 설명",
+  "vocabularyScore": 3,
+  "grammar": "평가 설명",
+  "grammarScore": 4,
+  "fluency": "평가 설명",
+  "fluencyScore": 2,
+  "content": "평가 설명",
+  "contentScore": 3,
+  "mainPoint": "평가 설명",
+  "mainPointScore": 3,
+  "overall": "평가 설명",
+  "overallGrade": "IM2"
+}
+```
+
+**2. LLM 출력 결정론적 제어**
+
+LLM 점수는 본질적으로 확률적이지만 다음 세 가지를 조합해 실용적으로 가둔다.
+
+- `temperature: 0` — 같은 입력에 일관된 출력
+- JSON Schema 강제 — integer 타입 + minimum/maximum 범위 선언
+- 앱 레벨 클램핑 — 파싱 시 범위 벗어난 값 강제 보정 (`Math.clamp(score, 1, 5)`)
+
+**3. FeedbackResult 스키마 변경**
+
+`vocabularyScore`, `grammarScore`, `fluencyScore`, `contentScore`, `mainPointScore` (INT),
+`overallGrade` (VARCHAR) 컬럼 추가.
+
+**4. 취약 유형 분석 쿼리 예시**
+
+```sql
+SELECT questionType, AVG(grammarScore), AVG(fluencyScore)
+FROM feedback_result
+WHERE member_id = ?
+GROUP BY questionType
+ORDER BY AVG(grammarScore) ASC;
+```
+
+→ "TYPE_3 문제에서 문법 점수 낮음 → C1/C2 패턴 집중 추천"
+
+### Next
+
+- [ ] GeminiService 프롬프트 + temperature 수정
+- [ ] JSON Schema 기반 structured output 적용 (Groq 지원 확인)
+- [ ] FeedbackResult 스키마 마이그레이션
+- [ ] FeedbackDTO 점수 필드 추가
+- [ ] 마이페이지 취약 유형 분석 화면
+- [ ] 복습 추천 로직 (마지막 연습일 + 평균 점수 기반)
+
+---
+
+## Learning Analytics & Recommendation
+
+### 배경
+
+FeedbackResult에 questionType, comboCategory, surveyTopicName이 쌓이기 시작했다.
+이 데이터를 사용자에게 돌려주는 화면이 아직 없다.
+
+### 계획
+
+- 마이페이지: 주제별 연습 횟수, 콤보 분포, 항목별 평균 점수 시각화
+- 취약 유형 기반 다음 연습 추천 ("vocabulary 점수 낮음 → 어휘 중심 콤보 추천")
+- 복습 주기 계산 (마지막 연습일 + 점수 기반 간격 조정)
+- 알림은 대시보드 MVP 이후 단계 (웹 푸시 FCM 또는 이메일)
