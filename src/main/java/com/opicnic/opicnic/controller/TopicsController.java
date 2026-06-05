@@ -12,7 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,13 +28,6 @@ public class TopicsController {
 
     private static final SurveyDifficulty DEFAULT_DIFFICULTY = SurveyDifficulty.LEVEL_3;
 
-    private static final Set<SurveyTopic> WARN_TOPICS = Set.of();
-
-    private static final Map<SurveyTopic, String> HINTS = Map.of(
-            SurveyTopic.LIVING_WITH_FAMILY, "출제 비중 최고 — 필수 준비",
-            SurveyTopic.NO_EXERCISE, "운동 문제 미출제 — 다른 주제 부담 줄여줘요",
-            SurveyTopic.STAYCATION, "비교적 쉬운 편"
-    );
 
     @GetMapping("/practice/topics")
     public String topicsPage(@AuthenticationPrincipal OAuth2User user, Model model) {
@@ -52,14 +49,21 @@ public class TopicsController {
         Map<String, List<SurveyTopic>> topicGroups = topicCatalog.groupedTopics();
         int topicCount = topicGroups.values().stream().mapToInt(List::size).sum();
 
+        final Set<SurveyTopic> finalMyTopics = myTopics;
+        Map<String, List<SurveyTopic>> nonMyTopicGroups = new LinkedHashMap<>();
+        topicGroups.forEach((group, topics) -> {
+            List<SurveyTopic> filtered = topics.stream()
+                    .filter(t -> !finalMyTopics.contains(t))
+                    .toList();
+            nonMyTopicGroups.put(group, filtered);
+        });
+
         model.addAttribute("topicGroups", topicGroups);
+        model.addAttribute("nonMyTopicGroups", nonMyTopicGroups);
         model.addAttribute("topicCount", topicCount);
         model.addAttribute("myTopics", myTopics);
         model.addAttribute("myTopicCount", myTopics.size());
         model.addAttribute("preferredDifficulty", preferredDifficulty);
-        model.addAttribute("recommended", topicCatalog.recommendedTopics());
-        model.addAttribute("warnTopics", WARN_TOPICS);
-        model.addAttribute("hints", HINTS);
         model.addAttribute("topicIcons", topicCatalog.topicIcons());
         return "practice/topics";
     }

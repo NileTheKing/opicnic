@@ -27,9 +27,11 @@ public class TopicCatalog {
 
     private static final Map<SurveyTopic, String> TOPIC_ICONS = Map.ofEntries(
             Map.entry(SurveyTopic.LIVING_WITH_FAMILY, "fa-people-roof"),
+            Map.entry(SurveyTopic.LIVING_ALONE, "fa-person-shelter"),
             Map.entry(SurveyTopic.MOVIE_WATCHING, "fa-film"),
             Map.entry(SurveyTopic.TV_WATCHING, "fa-tv"),
             Map.entry(SurveyTopic.PERFORMANCE_WATCHING, "fa-masks-theater"),
+            Map.entry(SurveyTopic.CONCERT_WATCHING, "fa-music"),
             Map.entry(SurveyTopic.PARK_GOING, "fa-tree"),
             Map.entry(SurveyTopic.BEACH_GOING, "fa-umbrella-beach"),
             Map.entry(SurveyTopic.SPORTS_WATCHING, "fa-futbol"),
@@ -45,7 +47,8 @@ public class TopicCatalog {
             Map.entry(SurveyTopic.JOGGING, "fa-person-running"),
             Map.entry(SurveyTopic.FITNESS_GYM, "fa-dumbbell"),
             Map.entry(SurveyTopic.STAYCATION, "fa-house"),
-            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, "fa-map-location-dot")
+            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, "fa-map-location-dot"),
+            Map.entry(SurveyTopic.INTERNATIONAL_TRAVEL, "fa-plane")
     );
 
     public List<SurveyTopic> supportedTopics() {
@@ -82,10 +85,10 @@ public class TopicCatalog {
 
     private static Map<String, List<SurveyTopic>> buildTopicGroups() {
         Map<String, List<SurveyTopic>> groups = new LinkedHashMap<>();
-        groups.put("거주 형태", List.of(SurveyTopic.LIVING_WITH_FAMILY));
+        groups.put("거주 형태", List.of(SurveyTopic.LIVING_WITH_FAMILY, SurveyTopic.LIVING_ALONE));
         groups.put("여가 활동", List.of(
                 SurveyTopic.MOVIE_WATCHING, SurveyTopic.TV_WATCHING, SurveyTopic.PERFORMANCE_WATCHING,
-                SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING,
+                SurveyTopic.CONCERT_WATCHING, SurveyTopic.PARK_GOING, SurveyTopic.BEACH_GOING,
                 SurveyTopic.SPORTS_WATCHING, SurveyTopic.COFFEE_SHOP_GOING, SurveyTopic.SHOPPING
         ));
         groups.put("취미 / 관심사", List.of(
@@ -96,7 +99,7 @@ public class TopicCatalog {
                 SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM
         ));
         groups.put("여행 / 휴가", List.of(
-                SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL
+                SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL, SurveyTopic.INTERNATIONAL_TRAVEL
         ));
         return Collections.unmodifiableMap(groups);
     }
