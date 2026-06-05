@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class FeedbackService {
     private final STTService sttService;
     private final GeminiService geminiService;
 
-    public List<QuestionDto> getComboQuestions(String topic, String difficulty) {
+    public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
         return comboPracticeService.getComboQuestions(topic, difficulty);
     }
 

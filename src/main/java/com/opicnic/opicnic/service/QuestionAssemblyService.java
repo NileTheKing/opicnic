@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +22,12 @@ public class QuestionAssemblyService {
     private final QuestionSetRepository questionSetRepository;
     private final Random random;
 
+    private final Map<SurveyTopic, List<QuestionSet>> setCache = new ConcurrentHashMap<>();
+
     @Transactional(readOnly = true)
     public List<QuestionDto> assemble(SurveyTopic topic, ComboPattern pattern) {
-        List<QuestionSet> sets = questionSetRepository.findByTopicWithDetails(topic);
+        List<QuestionSet> sets = setCache.computeIfAbsent(
+                topic, questionSetRepository::findByTopicWithDetails);
         if (sets.isEmpty()) {
             throw new IllegalArgumentException("질문 세트를 찾을 수 없습니다. topic=" + topic);
         }

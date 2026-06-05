@@ -72,7 +72,7 @@ public class PracticeAttemptApiController {
                 .map(Map.Entry::getValue)
                 .toList();
 
-        saveFeedbackResults(feedbackResults, oAuth2User);
+        saveFeedbackResults(feedbackResults, oAuth2User, attempt);
         attemptService.consume(attemptId);
         removeAttemptResults(session, attemptId);
         session.setAttribute(SESSION_FEEDBACK_RESULTS, feedbackResults);
@@ -198,7 +198,8 @@ public class PracticeAttemptApiController {
                 .orElse(null);
     }
 
-    private void saveFeedbackResults(List<FeedbackDTO> feedbackResults, OAuth2User oAuth2User) {
+    private void saveFeedbackResults(List<FeedbackDTO> feedbackResults, OAuth2User oAuth2User,
+                                      PracticeAttempt attempt) {
         if (oAuth2User == null) return;
         String provider = oAuth2User.getAttribute("provider");
         String providerId = oAuth2User.getAttribute("providerId");
@@ -209,6 +210,11 @@ public class PracticeAttemptApiController {
                 .filter(fb -> !fb.isFailed())
                 .map(fb -> FeedbackResult.builder()
                         .member(member)
+                        .questionId(fb.getQuestion().getId())
+                        .questionType(fb.getQuestion().getQuestionType())
+                        .surveyTopicName(fb.getQuestion().getSurveyTopicName())
+                        .comboPatternKey(attempt.comboPatternKey())
+                        .comboCategory(attempt.comboCategory())
                         .questionContent(fb.getQuestion().getContent())
                         .sttText(fb.getSttText())
                         .vocabulary(fb.getVocabulary())
@@ -222,6 +228,6 @@ public class PracticeAttemptApiController {
                 .toList();
 
         feedbackResultRepository.saveAll(toSave);
-        log.info("[DB 저장] 피드백 {}건 (member: {})", toSave.size(), member.getId());
+        log.info("[DB 저장] 피드백 {}건 (member: {}, combo: {})", toSave.size(), member.getId(), attempt.comboCategory());
     }
 }

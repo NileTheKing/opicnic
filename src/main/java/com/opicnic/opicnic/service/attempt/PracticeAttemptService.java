@@ -25,11 +25,13 @@ public class PracticeAttemptService {
     private final PracticeAttemptStore store;
     private final QuestionRepository questionRepository;
 
-    public PracticeAttempt createAttempt(List<QuestionDto> questions, Long memberId, PracticeMode mode) {
+    public PracticeAttempt createAttempt(List<QuestionDto> questions, Long memberId, PracticeMode mode,
+                                         String comboPatternKey, String comboCategory) {
         String attemptId = UUID.randomUUID().toString();
         List<Long> questionIds = questions.stream().map(QuestionDto::getId).toList();
         PracticeAttempt attempt = new PracticeAttempt(
                 attemptId, questionIds, memberId, mode,
+                comboPatternKey, comboCategory,
                 Instant.now().plus(2, ChronoUnit.HOURS),
                 AttemptStatus.IN_PROGRESS
         );

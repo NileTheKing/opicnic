@@ -48,9 +48,11 @@ public class PracticeComboController {
                 return "redirect:/?invalidPractice=true";
             }
 
-            List<QuestionDto> questions = feedbackService.getComboQuestions(topic, difficulty);
-            PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, findMemberId(oAuth2User), PracticeMode.COMBO);
-            model.addAttribute("questions", questions);
+            var combo = feedbackService.getComboQuestions(topic, difficulty);
+            PracticeAttempt attempt = practiceAttemptService.createAttempt(
+                    combo.questions(), findMemberId(oAuth2User), PracticeMode.COMBO,
+                    combo.comboPatternKey(), combo.comboCategory());
+            model.addAttribute("questions", combo.questions());
             model.addAttribute("attemptId", attempt.attemptId());
             return "practice/question";
         } catch (IllegalArgumentException | IllegalStateException e) {

@@ -15,13 +15,23 @@ public class QuestionDto {
     private String content;
     private String topic;
     private QuestionType questionType;
+    private String surveyTopicName;
+
+    public QuestionDto(Long id, String content, String topic, QuestionType questionType) {
+        this.id = id;
+        this.content = content;
+        this.topic = topic;
+        this.questionType = questionType;
+    }
 
     public static QuestionDto from(Question question) {
-        return new QuestionDto(
+        QuestionDto dto = new QuestionDto(
                 question.getId(),
                 question.getContent(),
                 question.getQuestionSet().getTopic().getLabel(),
                 question.getQuestionType()
         );
+        dto.setSurveyTopicName(question.getQuestionSet().getTopic().name());
+        return dto;
     }
 }

@@ -101,7 +101,7 @@ public class HomeController {
 
         try {
             List<QuestionDto> questions = mockExamService.createMockExam(profile);
-            PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM);
+            PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM, null, null);
             model.addAttribute("questions", questions);
             model.addAttribute("attemptId", attempt.attemptId());
         } catch (IllegalStateException e) {

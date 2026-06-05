@@ -21,6 +21,17 @@ public class FeedbackResult {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    private Long questionId;
+
+    @Enumerated(EnumType.STRING)
+    private com.opicnic.opicnic.domain.enums.QuestionType questionType;
+
+    private String surveyTopicName;
+
+    private String comboPatternKey;
+
+    private String comboCategory;
+
     private String questionContent;
 
     @Column(columnDefinition = "TEXT")
