@@ -1,193 +1,173 @@
-<h1 align="center">Opicnic</h1>
-<p align="center">
-  <b>OPIc 콤보 패턴 기반 AI 음성 피드백 서비스</b><br>
-  음성 답변 → STT → LLM 항목별 피드백 | Java 21 Virtual Threads 기반 병렬 처리 파이프라인
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=java" />
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.4-brightgreen?style=flat-square&logo=springboot" />
-  <img src="https://img.shields.io/badge/Groq-Whisper%20%7C%20Llama--3.3--70b-412991?style=flat-square" />
-  <img src="https://img.shields.io/badge/Virtual%20Threads-Java%2021-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/Deploy-opicnic.xyz-success?style=flat-square" />
-</p>
+# Opicnic
 
----
+**OPIc AI 피드백 서비스** — 음성 답변을 제출하면 LLM이 항목별 피드백 리포트를 생성합니다
 
-## 프로젝트 개요
+[![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_Llama--3.3--70b-412991?style=flat-square)](https://groq.com)
+[![Deploy](https://img.shields.io/badge/opicnic.xyz-live-22c55e?style=flat-square)](https://opicnic.xyz)
 
-Opicnic은 OPIc 시험 구조(콤보 I~V 패턴)에 맞춰 음성 답변을 제출하면, **STT(Groq Whisper)로 텍스트 변환 후 LLM(Llama-3.3-70b)이 어휘·문법·유창성·내용 등 6개 항목의 피드백 리포트를 생성**하는 서비스입니다.
+[**라이브 데모 →**](https://opicnic.xyz)
 
-다수의 음성 파일을 동시에 처리하는 I/O 집약적 워크로드에서 지연 시간을 최소화하는 데 집중했습니다. **opicnic.xyz** 에 배포되어 운영 중입니다.
+</div>
 
 ---
 
-## 성능 최적화 성과
+## 핵심 성능 지표
 
-### In-memory 스트리밍 + 가상 스레드
-
-> 500 VU 동시 부하 환경에서 p95 응답 지연 1,130ms → 238ms 달성 과정
-
-| 측정 항목 | 최적화 전 | 최적화 후 | 비고 |
-| :--- | :---: | :---: | :--- |
-| **p95 Latency** | **1,130ms** | **238ms** | **약 79% 단축** |
-| **처리량 (RPS)** | 96 | 242 | 가상 스레드 전환 후 2.5배 향상 |
-| **병목 원인** | 디스크 I/O Wait | 제거됨 | JFR 프로파일링으로 확정 |
-
-<details>
-<summary><b>병목 분석 과정 상세</b></summary>
-
-- **1단계 (가설 수립)**: 500 VU 도달 시 p95 1,130ms 고착 현상 발생. DB 커넥션 부족 가설로 풀 사이즈 10 → 50 확장했으나 지표 변화 없음. DB 병목 가설 기각.
-- **2단계 (격리 실험)**: 1MB 음성 파일을 1KB로 교체한 부하 테스트에서 p95 132ms로 급감 → 병목이 파일 I/O임을 논리적으로 확정.
-- **3단계 (JFR 물리적 증거)**: Java Flight Recorder 프로파일링으로 `jdk.ObjectAllocationSample`에서 대규모 byte[] 복사와 톰캣 디스크 쓰기 이벤트 포착. 기본 멀티파트 임계치(10KB)를 초과하는 파일이 디스크 I/O Wait를 유발함을 물리적으로 증명.
-- **해결**: `file-size-threshold: 2MB` 설정으로 디스크 쓰기 제거, InputStream 릴레이 구조로 메모리 직접 스트리밍.
-</details>
-
-### Structured Concurrency 병렬 처리 실측
-
-> 동일 음성 파일 3문항 기준 순차 vs 병렬 직접 측정 (2026-06-05)
-
-| 처리 방식 | 총 소요 시간 |
-| :--- | :---: |
-| 순차 (STT→LLM 직렬) | 4,877ms |
-| **병렬 (StructuredTaskScope)** | **1,474ms** |
-| **개선율** | **3.3배 (70% 단축)** |
-
-병렬 총 소요는 가장 느린 subtask에 수렴. STT + LLM이 외부 API 대기(I/O bound)이므로 Virtual Thread가 대기 시간을 겹쳐서 처리.
+<table>
+<tr>
+<td align="center">
+<strong>79%</strong><br>
+<sub>p95 지연 단축<br>1,130ms → 238ms</sub>
+</td>
+<td align="center">
+<strong>3.3×</strong><br>
+<sub>병렬 처리 속도<br>4,877ms → 1,474ms</sub>
+</td>
+<td align="center">
+<strong>2.5×</strong><br>
+<sub>처리량 향상<br>96 RPS → 242 RPS</sub>
+</td>
+<td align="center">
+<strong>22개</strong><br>
+<sub>지원 OPIc 주제<br>C1~C5 콤보 패턴</sub>
+</td>
+</tr>
+</table>
 
 ---
 
-## 시스템 아키텍처
+## 어떻게 동작하나
 
-```mermaid
-graph TB
-    subgraph Client["클라이언트"]
-        Browser["브라우저 (Thymeleaf)"]
-    end
-
-    subgraph Infra["인프라 (Oracle Cloud ARM A1)"]
-        CF["Cloudflare (SSL/CDN)"]
-        Nginx["host Nginx (SSL 종료)"]
-        AppNginx["App Nginx (reverse proxy)"]
-    end
-
-    subgraph App["Spring Boot (Java 21 Virtual Threads)"]
-        Attempt["PracticeAttempt\n(Caffeine Store)"]
-        RateLimit["Rate Limiter (Bucket4j)"]
-        SC["StructuredTaskScope\n병렬 처리"]
-        STT["STT Service\n(Groq Whisper)"]
-        LLM["LLM Service\n(Groq Llama-3.3-70b)"]
-        Cache["QuestionSet Cache\n(ConcurrentHashMap)"]
-        DB["FeedbackResult\n저장"]
-    end
-
-    subgraph Storage["저장소"]
-        MySQL[("MySQL")]
-    end
-
-    Browser -->|HTTPS| CF
-    CF --> Nginx
-    Nginx --> AppNginx
-    AppNginx --> Attempt
-    Attempt --> RateLimit
-    RateLimit --> SC
-    Cache -->|문제 복원| Attempt
-    SC -->|VirtualThread × N| STT
-    STT -->|텍스트| LLM
-    LLM -->|피드백| DB
-    DB --> MySQL
+```
+사용자 음성 녹음
+      ↓
+  attemptId 검증 (서버가 문제 원본 보관, 클라이언트 조작 차단)
+      ↓
+  N개 질문 ── VirtualThread #1 ──→ Groq STT ──→ Groq LLM ──→ 피드백
+             ── VirtualThread #2 ──→ Groq STT ──→ Groq LLM ──→ 피드백  (동시)
+             ── VirtualThread #3 ──→ Groq STT ──→ Groq LLM ──→ 피드백
+      ↓
+  항목별 피드백 리포트 (어휘·문법·유창성·내용·메인포인트·종합)
+      ↓
+  FeedbackResult DB 저장 (questionType, comboCategory, surveyTopicName 포함)
 ```
 
 ---
 
-## 핵심 엔지니어링 사례
+## 엔지니어링 하이라이트
 
-### 1. Java 21 Structured Concurrency — 병렬 처리 및 에러 전파
+### 1. 디스크 I/O 병목 제거 — p95 1,130ms → 238ms
 
-OPIc 콤보는 2~3개 질문으로 구성되며, 각 질문마다 STT → LLM 순서로 처리됩니다. `StructuredTaskScope.ShutdownOnFailure`로 N개 질문을 동시에 처리합니다.
+톰캣은 멀티파트 파일이 기본 임계치(10KB)를 초과하면 디스크에 임시 파일을 씁니다. 음성 파일은 항상 이 임계치를 초과하므로 모든 요청에서 **디스크 I/O Wait**가 발생했습니다.
 
-하위 작업 중 하나가 실패해도 나머지 결과는 보존하고, 실패 문항만 `failedIndexes`로 반환합니다. 클라이언트는 보관 중인 녹음 Blob으로 실패 문항만 재제출합니다.
+JFR 프로파일링으로 `jdk.ObjectAllocationSample`에서 대규모 byte[] 복사와 톰캣 디스크 쓰기 이벤트를 확인. `file-size-threshold: 2MB` 설정 하나로 InputStream을 메모리에서 STT API로 직접 릴레이하는 구조로 전환했습니다.
 
-실측 결과: 3문항 기준 **순차 4,877ms → 병렬 1,474ms (3.3배)**
+<details>
+<summary>병목 분석 과정</summary>
 
-### 2. In-memory 스트리밍으로 디스크 I/O 제거
+| 단계 | 가설 | 실험 | 결과 |
+|------|------|------|------|
+| 1 | DB 커넥션 부족 | 커넥션 풀 10 → 50 | 지표 변화 없음. 기각 |
+| 2 | 파일 I/O | 1MB → 1KB 음성으로 교체 | p95 132ms로 급감. 확정 |
+| 3 | 물리적 증거 | JFR 프로파일링 | 디스크 쓰기 이벤트 포착 |
 
-톰캣은 멀티파트 파일이 기본 임계치(10KB)를 초과하면 디스크에 임시 파일을 씁니다. 음성 파일(수백KB~수MB)은 항상 이 임계치를 초과하므로 모든 요청에서 디스크 I/O Wait가 발생했습니다.
+</details>
 
-`file-size-threshold: 2MB` 설정으로 InputStream을 메모리에서 STT API로 직접 릴레이. **p95 지연 1,130ms → 238ms (79% 단축)**
+---
 
-### 3. PracticeAttempt — 서버 기반 세션 무결성
+### 2. Java 21 Structured Concurrency — 실측 3.3배
 
-클라이언트가 제출 시 문제 내용을 함께 보내면 조작이 가능합니다. 문제풀이 시작 시 `attemptId`를 생성하고 `questionIds`를 서버(Caffeine)에 저장해, 제출 시 서버가 직접 DB에서 문제를 복원합니다.
+OPIc 콤보는 2~3개 질문으로 구성되며, 각 질문마다 STT → LLM을 직렬 처리하면 응답 시간이 문항 수에 비례해 증가합니다.
 
-음성 재시도 시에도 서버는 음성 원본을 보관하지 않습니다. 클라이언트가 보관 중인 Blob으로 실패 문항만 재전송합니다. Caffeine → Redis 교체 가능하도록 `PracticeAttemptStore` 인터페이스로 추상화했습니다.
+`StructuredTaskScope.ShutdownOnFailure`로 N개 Virtual Thread를 동시에 시작. STT + LLM이 모두 외부 API 대기(I/O bound)이므로 가상 스레드가 대기 시간을 겹쳐서 처리합니다.
+
+```
+[Subtask-0] VirtualThread#85 ─────────────────── 2,111ms (순차)
+[Subtask-1] VirtualThread#86 ──────── 1,282ms
+[Subtask-2] VirtualThread#87 ───────────── 1,484ms
+                                         ↑
+                               병렬: 1,474ms (가장 느린 subtask에 수렴)
+```
+
+| | 순차 | 병렬 |
+|---|---|---|
+| 문제 0 | 2,111ms | ↘ |
+| 문제 1 | 1,282ms | 1,474ms |
+| 문제 2 | 1,484ms | ↗ |
+| **합계** | **4,877ms** | **1,474ms** |
+
+`CompletableFuture` 대신 Structured Concurrency를 선택한 이유: 실패 시 나머지 작업 취소와 예외 집계를 언어 수준에서 보장받기 위해서입니다. 하나의 subtask가 실패해도 나머지 결과는 보존하고 실패 문항만 `failedIndexes`로 반환합니다.
+
+---
+
+### 3. PracticeAttempt — 클라이언트 신뢰 없는 세션 설계
+
+클라이언트가 제출 시 문제 내용을 함께 보내면 조작이 가능합니다.
+
+문제풀이 시작 시 `attemptId`를 생성하고 `questionIds`를 서버(Caffeine)에 저장합니다. 제출 시 서버가 `attemptId`로 직접 DB에서 문제를 복원해 클라이언트 조작을 원천 차단합니다.
+
+음성 재시도 시에도 서버는 음성 원본을 보관하지 않습니다. 클라이언트가 보관 중인 녹음 Blob으로 실패 문항만 재전송합니다. (모의고사 15문항 기준 서버 힙 보관 vs 클라이언트 재전송 트레이드오프에서 후자 선택)
+
+```
+PracticeAttemptStore (interface)
+└── CaffeinePracticeAttemptStore  ← 현재
+    (future: RedisPracticeAttemptStore)
+```
+
+---
 
 ### 4. OPIc 콤보 패턴 C1~C5 도메인 모델링
 
-OPIc 공식 출제 구조(콤보 I~V)를 `ComboPattern` record로 모델링했습니다.
+OPIc 공식 출제 구조(콤보 I~V)를 `ComboPattern` record로 모델링. C3 판별이 최우선인 이유: 콤보 III는 `TYPE_6,7,4`와 `TYPE_6,7,8` 두 종류가 존재해 TYPE_4 포함 여부만으로는 C2와 구분 불가능합니다.
 
 ```java
-public record ComboPattern(String name, List<QuestionType> questionTypes) {
-    public String category() {
-        if (questionTypes.contains(TYPE_6) || questionTypes.contains(TYPE_7)) return "C3";
-        if (questionTypes.contains(TYPE_9) || questionTypes.contains(TYPE_10)) return "C5";
-        if (questionTypes.contains(TYPE_5)) return "C4";
-        if (questionTypes.contains(TYPE_4)) return "C2";
-        return "C1";
-    }
+public String category() {
+    if (questionTypes.contains(TYPE_6) || questionTypes.contains(TYPE_7)) return "C3"; // 우선
+    if (questionTypes.contains(TYPE_9) || questionTypes.contains(TYPE_10)) return "C5";
+    if (questionTypes.contains(TYPE_5)) return "C4";
+    if (questionTypes.contains(TYPE_4)) return "C2";
+    return "C1";
 }
 ```
 
-C3 판별이 우선순위를 가지는 이유: 콤보 III는 TYPE_6,7,4와 TYPE_6,7,8 두 종류가 있어 TYPE_4 포함 여부만으로 C2와 구분이 불가능합니다.
-
 피드백 저장 시 `comboPatternKey`, `comboCategory`, `questionType`, `surveyTopicName`을 함께 저장해 학습 이력 분석 기반을 마련했습니다.
-
-### 5. Rate Limiting으로 외부 API 비용 제어
-
-Groq API는 사용량 기반 과금이므로 Bucket4j로 사용자 ID 기반 10회/시간 제한을 적용했습니다.
 
 ---
 
 ## 기술 스택
 
-| 분류 | 기술 |
-|------|------|
-| Language | Java 21 |
-| Framework | Spring Boot 3.4 |
-| Concurrency | Virtual Threads, StructuredTaskScope |
-| AI | Groq Whisper (STT), Groq Llama-3.3-70b (LLM) |
-| Database | MySQL 8.0, Spring Data JPA |
-| Cache | Caffeine (PracticeAttempt), ConcurrentHashMap (QuestionSet) |
-| Auth | Spring Security OAuth2 (카카오) |
-| Rate Limiting | Bucket4j |
-| Infra | Docker, host Nginx + App Nginx, Cloudflare SSL, Oracle Cloud ARM A1 |
-| Monitoring | Spring Actuator, Micrometer, Prometheus, Grafana |
+| | |
+|---|---|
+| **Language / Runtime** | Java 21, Virtual Threads |
+| **Framework** | Spring Boot 3.4, Spring AI, Spring Security OAuth2 |
+| **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70b (LLM) |
+| **Database** | MySQL 8.0, Spring Data JPA |
+| **Cache** | Caffeine (세션), ConcurrentHashMap (QuestionSet) |
+| **Rate Limiting** | Bucket4j (사용자별 10회/시간) |
+| **Infra** | Oracle Cloud ARM A1, Docker Compose, Cloudflare SSL |
+| **Monitoring** | Prometheus, Grafana, Spring Actuator |
 
 ---
 
-## 로컬 실행
+## 실행
 
 ```bash
-# 1. MySQL 실행
-docker-compose up -d
-
-# 2. 환경변수 설정
-export GROQ_API_KEY=your_groq_api_key
-
-# 3. 앱 실행
+docker-compose up -d          # MySQL
+export GROQ_API_KEY=...
 ./gradlew bootRun
 ```
 
-`STT_ENABLED=false`, `LLM_ENABLED=false` 설정 시 외부 API 없이 Mock 응답으로 동작합니다.
+`spring.ai.openai.enabled=false` 설정 시 외부 API 없이 Mock 응답으로 동작합니다.
 
 ## 배포
 
-Oracle Cloud (ARM Ampere A1) + Cloudflare SSL + host Nginx 기반 단일 서버 배포.
-현재 **[opicnic.xyz](https://opicnic.xyz)** 에서 운영 중입니다.
-
 ```bash
-cp .env.example .env   # 환경변수 작성
-./deploy.sh            # Docker Compose 빌드 + 배포
+cp .env.example .env
+./deploy.sh
 ```
 
-배포 구조: `Cloudflare(Edge) → host Nginx(SSL 종료) → App Nginx(reverse proxy) → Spring Boot`
+`Cloudflare → host Nginx (SSL 종료) → App Nginx → Spring Boot` 구조로 동일 VM에 여러 서비스를 운영합니다.
