@@ -40,11 +40,9 @@ services:
     image: nginx:alpine
     container_name: opicnic_nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:18080:80"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/cloudflare:/etc/cloudflare:ro
     depends_on:
       - app
     networks:
