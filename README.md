@@ -58,6 +58,41 @@
 
 ---
 
+## 아키텍처
+
+```mermaid
+graph TB
+    subgraph Client["클라이언트"]
+        Browser["브라우저 (Thymeleaf)"]
+    end
+
+    subgraph Infra["Oracle Cloud ARM A1"]
+        CF["Cloudflare (SSL/CDN)"]
+        HostNginx["host Nginx (SSL 종료)"]
+        AppNginx["App Nginx (reverse proxy)"]
+    end
+
+    subgraph App["Spring Boot — Java 21 Virtual Threads"]
+        Attempt["PracticeAttempt\n(Caffeine Store)"]
+        RateLimit["Rate Limiter\n(Bucket4j)"]
+        Cache["QuestionSet Cache\n(ConcurrentHashMap)"]
+        SC["StructuredTaskScope\n병렬 처리"]
+        STT["Groq Whisper\n(STT)"]
+        LLM["Groq Llama-3.3-70b\n(LLM)"]
+        DB["FeedbackResult\n저장"]
+    end
+
+    MySQL[("MySQL 8.0")]
+
+    Browser -->|HTTPS| CF --> HostNginx --> AppNginx
+    AppNginx --> RateLimit --> Attempt
+    Cache -.->|문제 복원| Attempt
+    Attempt --> SC
+    SC -->|VirtualThread × N| STT --> LLM --> DB --> MySQL
+```
+
+---
+
 ## 엔지니어링 하이라이트
 
 ### 1. 디스크 I/O 병목 제거 — p95 1,130ms → 238ms
