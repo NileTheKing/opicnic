@@ -380,6 +380,85 @@ public class DataInitializer implements CommandLineRunner {
             "What are some benefits or drawbacks of staycations compared to traveling abroad?"
         )));
 
-        System.out.println("[DataInitializer] 20개 주제 OPIc 데이터 초기화 완료.");
+        // ── 독신 (LIVING_ALONE) — 2세트 base, 롤플레이 콤보 4세트 ──────────────
+        String aloneType5 = "I also live alone. Ask me 3 or 4 questions about my home and daily life.";
+        Map<QuestionType, String> alone1 = q(
+            "Describe the home where you live alone. What does it look like and where is it located?",
+            "What is your typical daily routine at home? How do you manage your household on your own?",
+            "Tell me about a problem that recently occurred at your home. What happened and how did you resolve it?",
+            "Describe the most memorable experience you have had living on your own.",
+            aloneType5,
+            "You need to buy new appliances for your home. Call the store and ask 3 or 4 questions about what you need.",
+            "The appliance you ordered was delivered damaged. Explain the problem and suggest ways to resolve it.",
+            "Tell me about a time when something you purchased had a problem. What happened and how did you handle it?",
+            "Compare your current life living alone to when you lived with others. What are the main differences?",
+            "What are some social issues related to the growing trend of people living alone today?"
+        );
+        Map<QuestionType, String> alone2 = q(
+            "Describe the neighborhood where you live alone. What is it like and what facilities are nearby?",
+            "How do you manage household chores and meals when living by yourself? Describe your routine.",
+            "Tell me about a challenge you faced when you first started living alone. How did you overcome it?",
+            "Describe a particularly memorable moment from your life living independently.",
+            aloneType5,
+            "You want to invite friends over for a gathering at your place. Call them and ask 3 or 4 questions to plan the visit.",
+            "Something came up and you cannot host your guests as planned. Explain the situation and suggest alternatives.",
+            "Tell me about a time when you had to change or cancel plans with friends. What happened and how did you handle it?",
+            "How has the concept of living alone changed in your society over the past few decades?",
+            "What are some advantages and disadvantages of living alone compared to living with others?"
+        );
+        questionSetRepository.save(buildSet("독신-세트1", SurveyTopic.LIVING_ALONE, alone1));
+        questionSetRepository.save(buildSet("독신-세트2", SurveyTopic.LIVING_ALONE, alone2));
+        questionSetRepository.save(buildVariantSet("독신-세트1-RP2", SurveyTopic.LIVING_ALONE, alone1, Map.of(
+            TYPE_6, "Your home needs repairs. Call a repair service and ask 3 or 4 questions about availability and costs.",
+            TYPE_7, "The repair technician cannot come on the scheduled day. Explain the situation and suggest alternative arrangements.",
+            TYPE_8, "Tell me about a time when you had to deal with a home repair or maintenance issue on your own."
+        )));
+        questionSetRepository.save(buildVariantSet("독신-세트2-RP2", SurveyTopic.LIVING_ALONE, alone2, Map.of(
+            TYPE_6, "You are looking for a new apartment. Call a real estate agent and ask 3 or 4 questions about available properties.",
+            TYPE_7, "The apartment you wanted to rent was already taken. Explain the situation and ask about other options.",
+            TYPE_8, "Tell me about a time when you had difficulty finding or moving into a new place. What happened?"
+        )));
+
+        // ── 콘서트 보기 (CONCERT_WATCHING) — 2세트 ──────────────────────────────
+        Map<QuestionType, String> concert1 = q(
+            "Describe the type of concerts you enjoy attending. What genres or artists do you prefer?",
+            "How often do you go to concerts and what does your typical concert experience look like?",
+            "Tell me about a concert you attended recently. What was it like?",
+            "Describe the most unforgettable concert you have ever been to.",
+            "I also enjoy going to concerts. Ask me 3 or 4 questions about my concert experiences and preferences.",
+            "You want to buy tickets for an upcoming concert. Call the ticketing office and ask 3 or 4 questions.",
+            "The concert tickets you wanted are sold out. Explain the situation and ask about alternative options.",
+            "Tell me about a time when you had trouble getting tickets to an event. What happened and how did you deal with it?",
+            "How has the concert experience changed over the past 10 to 20 years? Compare the past and the present.",
+            "What are some issues or concerns related to the live music and concert industry today?"
+        );
+        questionSetRepository.save(buildSet("콘서트-세트1", SurveyTopic.CONCERT_WATCHING, concert1));
+        questionSetRepository.save(buildVariantSet("콘서트-세트2", SurveyTopic.CONCERT_WATCHING, concert1, Map.of(
+            TYPE_6, "You want to find out about a concert venue's facilities and services. Call the venue and ask 3 or 4 questions.",
+            TYPE_7, "The concert you planned to attend was suddenly cancelled. Explain the problem and suggest alternative plans.",
+            TYPE_8, "Tell me about a time when an event or plan you were looking forward to was unexpectedly cancelled. How did you handle it?"
+        )));
+
+        // ── 해외 여행 (INTERNATIONAL_TRAVEL) — 2세트, Set2는 TYPE_6,7,8만 다름 ──
+        Map<QuestionType, String> international1 = q(
+            "Describe a foreign country you have visited or would like to visit. What is it like?",
+            "How do you typically plan and prepare for an international trip? Describe the process.",
+            "Tell me about an international trip you took in the past. Where did you go and what was it like?",
+            "Describe the most memorable experience you have had while traveling abroad.",
+            "I also enjoy traveling internationally. Ask me 3 or 4 questions about my travel experiences and destinations.",
+            "You are planning an international trip. Call a travel agency and ask 3 or 4 questions about packages, schedules, and costs.",
+            "You arrive at your destination and find that your hotel reservation was not properly made. Explain the situation and suggest ways to resolve it.",
+            "Tell me about a time when something went wrong while traveling abroad. What happened and how did you handle it?",
+            "How has international travel changed over the past few decades? Compare the past and the present.",
+            "What are some challenges or issues related to international travel today?"
+        );
+        questionSetRepository.save(buildSet("해외여행-세트1", SurveyTopic.INTERNATIONAL_TRAVEL, international1));
+        questionSetRepository.save(buildVariantSet("해외여행-세트2", SurveyTopic.INTERNATIONAL_TRAVEL, international1, Map.of(
+            TYPE_6, "You need to change your flight schedule. Call the airline and ask 3 or 4 questions about rebooking options.",
+            TYPE_7, "Your flight was cancelled due to bad weather. Explain the situation to the airline staff and suggest alternatives.",
+            TYPE_8, "Tell me about a time when your travel plans were disrupted due to unexpected circumstances. What happened and how did you cope?"
+        )));
+
+        System.out.println("[DataInitializer] 23개 주제 OPIc 데이터 초기화 완료.");
     }
 }
