@@ -27,8 +27,6 @@ public class SurveyProfile {
     @Enumerated(EnumType.STRING)
     private OccupationType occupationType;
 
-    private boolean isStudent;
-
     @Enumerated(EnumType.STRING)
     private ResidenceType residenceType;
 
@@ -80,6 +78,7 @@ public class SurveyProfile {
 
     public enum ResidenceType {
         WITH_FAMILY("가족과 함께"),
+        ALONE("혼자"),
         WITH_FRIENDS("친구/룸메이트와 함께"),
         DORMITORY("기숙사");
 

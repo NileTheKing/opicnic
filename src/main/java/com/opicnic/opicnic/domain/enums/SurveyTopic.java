@@ -12,7 +12,7 @@ public enum SurveyTopic {
     MUSIC_LISTENING("음악 감상하기"),
     TV_WATCHING("TV 시청하기"),
     RADIO_LISTENING("라디오 청취하기"),
-    PERFORMANCE_WATCHING("공연 보기 (콘서트, 연극, 뮤지컬 등)"), // 콘서트, 연극, 뮤지컬을 포괄
+    PERFORMANCE_WATCHING("공연 보기 (연극·뮤지컬)"),
     CONCERT_WATCHING("콘서트 보기"), // 세분화된 필요가 있다면 유지
     PLAY_WATCHING("연극 보기"),     // 세분화된 필요가 있다면 유지
     MUSICAL_WATCHING("뮤지컬 보기"),   // 세분화된 필요가 있다면 유지
