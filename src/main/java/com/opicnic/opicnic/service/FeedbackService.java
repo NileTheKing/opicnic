@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -41,36 +43,66 @@ public class FeedbackService {
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             List<StructuredTaskScope.Subtask<FeedbackDTO>> subtasks = new ArrayList<>();
 
+            List<Long> subtaskDurations = new java.util.concurrent.CopyOnWriteArrayList<>();
+
             for (int i = 0; i < inputStreams.size(); i++) {
                 final int idx = i;
                 final InputStream is = inputStreams.get(i);
                 final QuestionDto question = questions.get(i);
 
                 subtasks.add(scope.fork(() -> {
+                    long subtaskStart = System.currentTimeMillis();
                     log.info("[Subtask-{}] STT & LLM 처리 시작 (Thread: {})", idx, Thread.currentThread());
-                    try {
-                        String speechText = sttService.sendStreamToStt(is, "audio_" + idx + ".webm");
-                        var feedbackMap = geminiService.getOpicFeedback(speechText, question);
 
-                        return FeedbackDTO.builder()
-                                .question(question)
-                                .sttText(speechText)
-                                .vocabulary(feedbackMap.get("vocabulary"))
-                                .grammar(feedbackMap.get("grammar"))
-                                .mainPoint(feedbackMap.get("mainPoint"))
-                                .fluency(feedbackMap.get("fluency"))
-                                .content(feedbackMap.get("content"))
-                                .overall(feedbackMap.get("overall"))
-                                .improvements(feedbackMap.get("improvements"))
-                                .build();
-                    } catch (Exception e) {
-                        log.error("[Subtask-{}] 분석 실패: {}", idx, e.getMessage());
-                        return FeedbackDTO.builder()
-                                .question(question)
-                                .failed(true)
-                                .errorMessage(e.getMessage())
-                                .build();
+                    byte[] audioBuffer = is.readAllBytes();
+                    int maxAttempts = 3;
+                    Exception lastException = null;
+
+                    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+                        try {
+                            if (attempt > 0) {
+                                long delay = (1000L << (attempt - 1))
+                                        + ThreadLocalRandom.current().nextLong(300);
+                                log.warn("[Subtask-{}] 재시도 {}/{}, {}ms 대기", idx, attempt, maxAttempts - 1, delay);
+                                Thread.sleep(delay);
+                            }
+
+                            String speechText = sttService.sendStreamToStt(
+                                    new ByteArrayInputStream(audioBuffer), "audio_" + idx + ".webm");
+                            var feedbackMap = geminiService.getOpicFeedback(speechText, question);
+
+                            long subtaskMs = System.currentTimeMillis() - subtaskStart;
+                            subtaskDurations.add(subtaskMs);
+                            log.info("[Subtask-{}] 완료: {}ms{}", idx, subtaskMs,
+                                    attempt > 0 ? " (재시도 " + attempt + "회)" : "");
+
+                            return FeedbackDTO.builder()
+                                    .question(question)
+                                    .sttText(speechText)
+                                    .vocabulary(feedbackMap.get("vocabulary"))
+                                    .grammar(feedbackMap.get("grammar"))
+                                    .mainPoint(feedbackMap.get("mainPoint"))
+                                    .fluency(feedbackMap.get("fluency"))
+                                    .content(feedbackMap.get("content"))
+                                    .overall(feedbackMap.get("overall"))
+                                    .improvements(feedbackMap.get("improvements"))
+                                    .build();
+
+                        } catch (Exception e) {
+                            lastException = e;
+                            log.warn("[Subtask-{}] 시도 {}/{} 실패: {}", idx, attempt + 1, maxAttempts, e.getMessage());
+                        }
                     }
+
+                    long subtaskMs = System.currentTimeMillis() - subtaskStart;
+                    subtaskDurations.add(subtaskMs);
+                    log.error("[Subtask-{}] 최종 실패 ({}회 시도): {}ms | {}",
+                            idx, maxAttempts, subtaskMs, lastException.getMessage());
+                    return FeedbackDTO.builder()
+                            .question(question)
+                            .failed(true)
+                            .errorMessage(lastException.getMessage())
+                            .build();
                 }));
             }
 
@@ -81,12 +113,51 @@ public class FeedbackService {
                     .map(StructuredTaskScope.Subtask::get)
                     .toList();
 
-            log.info("[Structured Concurrency 완료] 소요 시간: {}ms", System.currentTimeMillis() - start);
+            long parallelMs = System.currentTimeMillis() - start;
+            long sequentialEstimateMs = subtaskDurations.stream().mapToLong(Long::longValue).sum();
+            log.info("[Structured Concurrency 완료] 병렬: {}ms | 순차 예상: {}ms | 단축: {}ms ({}%)",
+                    parallelMs, sequentialEstimateMs,
+                    sequentialEstimateMs - parallelMs,
+                    sequentialEstimateMs > 0 ? (sequentialEstimateMs - parallelMs) * 100 / sequentialEstimateMs : 0);
             return results;
 
         } catch (Exception e) {
             log.error("병렬 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("피드백 분석 중 오류가 발생했습니다.", e);
         }
+    }
+
+    public List<FeedbackDTO> getComboFeedbackSequential(
+            List<InputStream> inputStreams, List<QuestionDto> questions) {
+
+        log.info("[Sequential] 피드백 분석 시작 ({}개)", inputStreams.size());
+        long start = System.currentTimeMillis();
+        List<FeedbackDTO> results = new ArrayList<>();
+
+        for (int i = 0; i < inputStreams.size(); i++) {
+            long t = System.currentTimeMillis();
+            try {
+                String speechText = sttService.sendStreamToStt(inputStreams.get(i), "audio_" + i + ".webm");
+                var feedbackMap = geminiService.getOpicFeedback(speechText, questions.get(i));
+                log.info("[Sequential-{}] 완료: {}ms", i, System.currentTimeMillis() - t);
+                results.add(FeedbackDTO.builder()
+                        .question(questions.get(i))
+                        .sttText(speechText)
+                        .vocabulary(feedbackMap.get("vocabulary"))
+                        .grammar(feedbackMap.get("grammar"))
+                        .mainPoint(feedbackMap.get("mainPoint"))
+                        .fluency(feedbackMap.get("fluency"))
+                        .content(feedbackMap.get("content"))
+                        .overall(feedbackMap.get("overall"))
+                        .improvements(feedbackMap.get("improvements"))
+                        .build());
+            } catch (Exception e) {
+                log.error("[Sequential-{}] 실패: {}ms | {}", i, System.currentTimeMillis() - t, e.getMessage());
+                results.add(FeedbackDTO.builder().question(questions.get(i)).failed(true).errorMessage(e.getMessage()).build());
+            }
+        }
+
+        log.info("[Sequential 완료] 총 소요: {}ms", System.currentTimeMillis() - start);
+        return results;
     }
 }
