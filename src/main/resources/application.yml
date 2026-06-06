@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: dev
   threads:
     virtual:
       enabled: true

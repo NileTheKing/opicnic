@@ -31,6 +31,9 @@ public class GeminiService {
     @Value("${spring.ai.openai.enabled:true}")
     private boolean aiEnabled;
 
+    @Value("${LLM_MOCK_DELAY_MS:0}")
+    private long mockDelayMs;
+
     private static final String SYSTEM_PROMPT =
             "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 시제, 문법, 어휘, 발화량으로 평가. 적절한 filler word는 감점 요소가 아닙니다.)\n" +
                     "사용자의 응답은 음성이 stt된 것이므로 더듬은 부분이나 filler words는 감안해야합니다.:\n" +
@@ -48,7 +51,10 @@ public class GeminiService {
 
     public Map<String, String> getOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
-            log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환");
+            if (mockDelayMs > 0) {
+                try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
+            log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환 (delay={}ms)", mockDelayMs);
             String mock = "{\"vocabulary\":\"Good usage.\",\"grammar\":\"Correct tenses.\",\"mainPoint\":\"Clear focus.\",\"fluency\":\"Smooth flow.\",\"content\":\"Relevant.\",\"overall\":\"IM2\",\"improvements\":\"Use more diverse adjectives.\"}";
             return parseResponse(mock);
         }

@@ -23,20 +23,26 @@ public class STTService {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final boolean enabled;
+    private final long mockDelayMs;
 
     public STTService(@Value("${spring.ai.stt.api-key}") String apiKey,
                       @Value("${spring.ai.stt.enabled:true}") boolean enabled,
+                      @Value("${STT_MOCK_DELAY_MS:0}") long mockDelayMs,
                       ObjectMapper objectMapper) {
         this.restClient = RestClient.builder()
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
         this.enabled = enabled;
+        this.mockDelayMs = mockDelayMs;
         this.objectMapper = objectMapper;
     }
 
     public String sendStreamToStt(InputStream inputStream, String filename) {
         if (!enabled) {
-            log.info("[MOCK] STT 스킵, 고정 텍스트 반환");
+            if (mockDelayMs > 0) {
+                try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
+            log.info("[MOCK] STT 스킵, 고정 텍스트 반환 (delay={}ms)", mockDelayMs);
             return "I went to the beautiful park yesterday and had a great time with my best friends.";
         }
 

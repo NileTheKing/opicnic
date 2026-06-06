@@ -7,6 +7,7 @@ import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionAssemblyService {
@@ -26,8 +28,13 @@ public class QuestionAssemblyService {
 
     @Transactional(readOnly = true)
     public List<QuestionDto> assemble(SurveyTopic topic, ComboPattern pattern) {
+        boolean cacheHit = setCache.containsKey(topic);
+        long start = System.currentTimeMillis();
         List<QuestionSet> sets = setCache.computeIfAbsent(
                 topic, questionSetRepository::findByTopicWithDetails);
+        long elapsed = System.currentTimeMillis() - start;
+        log.info("[QuestionSet 캐시] topic={} | {} | {}ms",
+                topic, cacheHit ? "HIT" : "MISS(DB)", elapsed);
         if (sets.isEmpty()) {
             throw new IllegalArgumentException("질문 세트를 찾을 수 없습니다. topic=" + topic);
         }
