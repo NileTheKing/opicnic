@@ -3,8 +3,10 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       lang="ko">
 <body>
-<div th:fragment="sidebar"
-     class="w-56 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shrink-0">
+<th:block th:fragment="sidebar">
+
+<!-- 데스크탑 사이드바 -->
+<div class="hidden md:flex w-56 bg-white border-r border-gray-100 flex-col h-screen sticky top-0 shrink-0">
 
     <!-- 로고 -->
     <div class="px-5 pt-5 pb-4">
@@ -54,7 +56,6 @@
          th:with="profile=${#authentication.principal.attributes['kakao_account'] != null ? #authentication.principal.attributes['kakao_account']['profile'] : null}"
          class="relative px-3 py-3 border-t border-gray-100">
 
-        <!-- 드롭다운 (위로 열림) -->
         <div id="sidebar-profile-dropdown"
              class="hidden absolute bottom-full left-3 right-3 mb-1 bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden">
             <a href="/mypage" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
@@ -68,7 +69,6 @@
             </a>
         </div>
 
-        <!-- 프로필 버튼 -->
         <button id="sidebar-profile-btn"
                 class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition-colors">
             <div class="w-7 h-7 rounded-full bg-indigo-100 overflow-hidden shrink-0 flex items-center justify-center">
@@ -96,5 +96,36 @@
         </script>
     </div>
 </div>
+
+<!-- 모바일 하단 네비바 -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 flex items-center justify-around px-2 py-2 safe-area-bottom">
+    <a href="/" class="mobile-nav-item flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-gray-400 transition-colors">
+        <i class="fa-solid fa-graduation-cap text-lg"></i>
+        <span class="text-[10px] font-medium">연습</span>
+    </a>
+    <a href="/mypage" class="mobile-nav-item flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-gray-400 transition-colors">
+        <i class="fa-solid fa-user text-lg"></i>
+        <span class="text-[10px] font-medium">마이페이지</span>
+    </a>
+    <a href="/studypost" class="mobile-nav-item flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-gray-400 transition-colors">
+        <i class="fa-solid fa-comments text-lg"></i>
+        <span class="text-[10px] font-medium">스터디</span>
+    </a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const path = window.location.pathname;
+            document.querySelectorAll('.mobile-nav-item').forEach(a => {
+                const href = a.getAttribute('href');
+                const isActive = href === '/' ? path === '/' : path.startsWith(href);
+                if (isActive) {
+                    a.classList.add('text-indigo-600');
+                    a.classList.remove('text-gray-400');
+                }
+            });
+        });
+    </script>
+</nav>
+
+</th:block>
 </body>
 </html>

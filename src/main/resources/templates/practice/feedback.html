@@ -24,11 +24,9 @@
 <div class="container mx-auto px-4 py-8">
     <header th:replace="~{fragments/header :: header}"></header>
     <header class="mb-10">
-        <div class="flex items-center justify-between">
-            <h1 class="text-3xl font-bold text-indigo-600">영어 학습 피드백 결과</h1>
-            <div class="text-right">
-                <p class="text-gray-500">평가일: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">2025-04-10</span></p>
-            </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-600">영어 학습 피드백 결과</h1>
+            <p class="text-sm text-gray-500">평가일: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">2025-04-10</span></p>
         </div>
         <div class="mt-4 bg-white p-6 rounded-lg shadow-md">
             <div class="flex items-center space-x-2">
