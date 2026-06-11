@@ -44,10 +44,9 @@ function buildMultipart(textFields, fileEntries) {
 
 export const options = {
     stages: [
-        { duration: '15s', target: 50  },  // 웜업
-        { duration: '30s', target: 100 },  // T20 기준선
-        { duration: '30s', target: 300 },  // 압박 증가
-        { duration: '30s', target: 500 },  // 피크 (T20 동일)
+        { duration: '15s', target: 20  },  // 웜업
+        { duration: '30s', target: 50  },  // 압박
+        { duration: '30s', target: 100 },  // 피크 (macOS 소켓 고갈 방지)
         { duration: '15s', target: 0   },  // 쿨다운
     ],
     thresholds: {
@@ -74,6 +73,7 @@ export default function () {
     });
     if (!startOk) {
         errorRate.add(1);
+        console.log(`[start fail] status=${startRes.status} body=${startRes.body}`);
         return;
     }
     errorRate.add(0);
@@ -108,6 +108,9 @@ export default function () {
             } catch (_) { return false; }
         },
     });
+    if (!answersOk) {
+        console.log(`[answers fail] status=${answersRes.status} body=${answersRes.body ? answersRes.body.substring(0, 200) : 'null'}`);
+    }
     errorRate.add(answersOk ? 0 : 1);
 
     sleep(1);
