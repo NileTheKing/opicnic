@@ -20,6 +20,12 @@ public class FeedbackDTO {
     private String fluency;
     private String content;
     private String overall;
+    private String overallGrade;
+    private Integer vocabularyScore;
+    private Integer grammarScore;
+    private Integer mainPointScore;
+    private Integer fluencyScore;
+    private Integer contentScore;
     private String improvements;
 
     @Builder.Default

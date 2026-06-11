@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -79,13 +80,19 @@ public class FeedbackService {
                             return FeedbackDTO.builder()
                                     .question(question)
                                     .sttText(speechText)
-                                    .vocabulary(feedbackMap.get("vocabulary"))
-                                    .grammar(feedbackMap.get("grammar"))
-                                    .mainPoint(feedbackMap.get("mainPoint"))
-                                    .fluency(feedbackMap.get("fluency"))
-                                    .content(feedbackMap.get("content"))
-                                    .overall(feedbackMap.get("overall"))
-                                    .improvements(feedbackMap.get("improvements"))
+                                    .vocabulary(str(feedbackMap, "vocabulary"))
+                                    .vocabularyScore(score(feedbackMap, "vocabularyScore"))
+                                    .grammar(str(feedbackMap, "grammar"))
+                                    .grammarScore(score(feedbackMap, "grammarScore"))
+                                    .mainPoint(str(feedbackMap, "mainPoint"))
+                                    .mainPointScore(score(feedbackMap, "mainPointScore"))
+                                    .fluency(str(feedbackMap, "fluency"))
+                                    .fluencyScore(score(feedbackMap, "fluencyScore"))
+                                    .content(str(feedbackMap, "content"))
+                                    .contentScore(score(feedbackMap, "contentScore"))
+                                    .overall(str(feedbackMap, "overall"))
+                                    .overallGrade(str(feedbackMap, "overallGrade"))
+                                    .improvements(str(feedbackMap, "improvements"))
                                     .build();
 
                         } catch (Exception e) {
@@ -127,6 +134,18 @@ public class FeedbackService {
         }
     }
 
+    private static String str(Map<String, Object> map, String key) {
+        Object v = map.get(key);
+        return v == null ? null : v.toString();
+    }
+
+    private static Integer score(Map<String, Object> map, String key) {
+        Object v = map.get(key);
+        if (v == null) return null;
+        if (v instanceof Integer i) return i;
+        try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
+    }
+
     public List<FeedbackDTO> getComboFeedbackSequential(
             List<InputStream> inputStreams, List<QuestionDto> questions) {
 
@@ -143,13 +162,19 @@ public class FeedbackService {
                 results.add(FeedbackDTO.builder()
                         .question(questions.get(i))
                         .sttText(speechText)
-                        .vocabulary(feedbackMap.get("vocabulary"))
-                        .grammar(feedbackMap.get("grammar"))
-                        .mainPoint(feedbackMap.get("mainPoint"))
-                        .fluency(feedbackMap.get("fluency"))
-                        .content(feedbackMap.get("content"))
-                        .overall(feedbackMap.get("overall"))
-                        .improvements(feedbackMap.get("improvements"))
+                        .vocabulary(str(feedbackMap, "vocabulary"))
+                        .vocabularyScore(score(feedbackMap, "vocabularyScore"))
+                        .grammar(str(feedbackMap, "grammar"))
+                        .grammarScore(score(feedbackMap, "grammarScore"))
+                        .mainPoint(str(feedbackMap, "mainPoint"))
+                        .mainPointScore(score(feedbackMap, "mainPointScore"))
+                        .fluency(str(feedbackMap, "fluency"))
+                        .fluencyScore(score(feedbackMap, "fluencyScore"))
+                        .content(str(feedbackMap, "content"))
+                        .contentScore(score(feedbackMap, "contentScore"))
+                        .overall(str(feedbackMap, "overall"))
+                        .overallGrade(str(feedbackMap, "overallGrade"))
+                        .improvements(str(feedbackMap, "improvements"))
                         .build());
             } catch (Exception e) {
                 log.error("[Sequential-{}] 실패: {}ms | {}", i, System.currentTimeMillis() - t, e.getMessage());

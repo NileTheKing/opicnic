@@ -35,27 +35,35 @@ public class GeminiService {
     private long mockDelayMs;
 
     private static final String SYSTEM_PROMPT =
-            "OPIC 시험의 평가 기준에 따라 사용자의 영어 음성을 평가합니다.(확실한 메인포인트, 풍부한 감정표현, 시제, 문법, 어휘, 발화량으로 평가. 적절한 filler word는 감점 요소가 아닙니다.)\n" +
-                    "사용자의 응답은 음성이 stt된 것이므로 더듬은 부분이나 filler words는 감안해야합니다.:\n" +
-                    "문맥에 맞지 않는 단어가 나온다면 stt가 잘못된 것일수도 있으니 평가점수에서 크기 감점을 하지 않도록 한다\n" +
-                    "문제에 대한 사용자의 영어 음성 응답 텍스트를 분석하고 다음 형식을 철저히 지켜 JSON 으로 응답해주세요\n" +
+            "당신은 OPIc 시험 전문 평가자입니다. 반드시 한국어로만 응답하세요.\n" +
+                    "평가 기준: 확실한 메인포인트, 시제, 문법, 어휘, 발화량. 적절한 filler word는 감점 요소가 아닙니다.\n" +
+                    "음성 STT 결과이므로 더듬음·filler words는 감안하고, 문맥에 맞지 않는 단어는 STT 오류로 간주해 크게 감점하지 마세요.\n" +
+                    "각 항목을 평가하고, 아래 JSON 형식을 철저히 지켜 응답하세요.\n" +
+                    "score 필드는 1(매우 미흡)~5(매우 우수) 정수입니다.\n" +
+                    "overallGrade는 OPIc 등급 문자열(IL, IM1, IM2, IM3, IH, AL)만 단독으로 입력하세요.\n" +
                     "{\n" +
-                    "  \"vocabulary\": \"어휘에 대한 평가\",\n" +
-                    "  \"grammar\": \"문법에 대한 평가\",\n" +
-                    "  \"mainPoint\": \"메인포인트에 대한 평가\",\n" +
-                    "  \"fluency\": \"발화량 및 유창성에 대한 평가\",\n" +
-                    "  \"content\": \"내용 구성에 대한 평가\",\n" +
-                    "  \"overall\": \"전반적인 영어 능력 평가 (IL, IM, IH, AL 중 하나 포함)\",\n" +
-                    "  \"improvements\": \"개선점에 대한 구체적인 조언\"\n" +
+                    "  \"vocabulary\": \"어휘에 대한 평가 (한국어)\",\n" +
+                    "  \"vocabularyScore\": 3,\n" +
+                    "  \"grammar\": \"문법에 대한 평가 (한국어)\",\n" +
+                    "  \"grammarScore\": 3,\n" +
+                    "  \"mainPoint\": \"메인포인트에 대한 평가 (한국어)\",\n" +
+                    "  \"mainPointScore\": 3,\n" +
+                    "  \"fluency\": \"발화량 및 유창성에 대한 평가 (한국어)\",\n" +
+                    "  \"fluencyScore\": 3,\n" +
+                    "  \"content\": \"내용 구성에 대한 평가 (한국어)\",\n" +
+                    "  \"contentScore\": 3,\n" +
+                    "  \"overall\": \"전반적인 영어 능력 평가 (한국어)\",\n" +
+                    "  \"overallGrade\": \"IM2\",\n" +
+                    "  \"improvements\": \"개선점에 대한 구체적인 조언 (한국어)\"\n" +
                     "}";
 
-    public Map<String, String> getOpicFeedback(String speechText, QuestionDto question) {
+    public Map<String, Object> getOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
             log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환 (delay={}ms)", mockDelayMs);
-            String mock = "{\"vocabulary\":\"Good usage.\",\"grammar\":\"Correct tenses.\",\"mainPoint\":\"Clear focus.\",\"fluency\":\"Smooth flow.\",\"content\":\"Relevant.\",\"overall\":\"IM2\",\"improvements\":\"Use more diverse adjectives.\"}";
+            String mock = "{\"vocabulary\":\"어휘 사용이 적절합니다.\",\"vocabularyScore\":3,\"grammar\":\"시제가 올바릅니다.\",\"grammarScore\":3,\"mainPoint\":\"메인포인트가 명확합니다.\",\"mainPointScore\":3,\"fluency\":\"발화가 자연스럽습니다.\",\"fluencyScore\":3,\"content\":\"내용이 관련성 있습니다.\",\"contentScore\":3,\"overall\":\"전반적으로 중급 수준입니다.\",\"overallGrade\":\"IM2\",\"improvements\":\"더 다양한 형용사를 사용해보세요.\"}";
             return parseResponse(mock);
         }
 
@@ -84,9 +92,9 @@ public class GeminiService {
         }
     }
 
-    private Map<String, String> parseResponse(String response) {
+    private Map<String, Object> parseResponse(String response) {
         try {
-            return objectMapper.readValue(response, new TypeReference<Map<String, String>>() {});
+            return objectMapper.readValue(response, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
             log.error("LLM JSON 파싱 오류: {}", e.getMessage());
             throw new RuntimeException("LLM 응답 파싱 중 오류가 발생했습니다.", e);

@@ -55,6 +55,14 @@ public class FeedbackResult {
     @Column(columnDefinition = "TEXT")
     private String overall;
 
+    private String overallGrade;
+
+    private Integer vocabularyScore;
+    private Integer grammarScore;
+    private Integer mainPointScore;
+    private Integer fluencyScore;
+    private Integer contentScore;
+
     @Column(columnDefinition = "TEXT")
     private String improvements;
 
