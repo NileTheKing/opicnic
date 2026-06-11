@@ -18,6 +18,9 @@
 - 재시도 API 분리
 - finalize API 분리
 - 결과 페이지 이동 전 `beforeunload` 이탈 경고 추가
+- 지수 백오프 + Jitter 서버 자동 재시도 (max 3회, VirtualThread park 활용) — 2026-06-06
+- dev/prod 프로파일 분리 — `/start`, `/sequential-benchmark`를 `@Profile("dev")` 전용 컨트롤러로 분리 — 2026-06-06
+- 모바일 반응형 — 사이드바 `hidden md:flex`, 하단 bottom nav 추가 — 2026-06-06
 
 ### Current Shape
 
@@ -45,6 +48,7 @@ GET /practice/feedback/result
 
 ### Next
 
+- `restoreQuestionsForIndexes` 캐싱 — 500 VU 부하테스트에서 발견된 병목. 매 제출마다 DB 조회 → ConcurrentHashMap 캐싱으로 해소 예정
 - API 응답 DTO 정리
 - `HttpServletRequest#getParameter`, `getParts` 직접 파싱 제거
 - 결과 누적용 session 제거 여부 결정

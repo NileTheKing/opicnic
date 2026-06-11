@@ -8,7 +8,7 @@
 - Bucket4j Rate Limiting (사용자 ID 기반, 10회/시간).
 - FeedbackResult DB 저장 (Member 연관, 성공한 피드백만 저장).
 - 피드백 실패 시 부분 결과 반환 (전체 오류 대신 실패 카드 표시).
-- Oracle Cloud + DuckDNS + Nginx + Let's Encrypt 배포 환경 구성 (VM 확보 후 실행 예정).
+- Oracle Cloud + ~~DuckDNS + Let's Encrypt~~ **Cloudflare + Origin Certificate** + Nginx 배포 완료 (2026-06-04). DuckDNS는 Let's Encrypt SERVFAIL 반복으로 포기, Cloudflare로 전환.
 
 ## 📈 Phase 2: System Integration & Data Driven
 - **MCP Server 도입:** 백엔드 API와 AI의 유기적 결합 (자율 에이전트화).
