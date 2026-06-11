@@ -8,7 +8,6 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +24,9 @@ public class PracticeAttemptService {
 
     private final PracticeAttemptStore store;
     private final QuestionRepository questionRepository;
+
+    // Question은 정적 데이터 — 앱 수명 동안 캐시 유효
+    private final Map<Long, Question> questionCache = new ConcurrentHashMap<>();
 
     public PracticeAttempt createAttempt(List<QuestionDto> questions, Long memberId, PracticeMode mode,
                                          String comboPatternKey, String comboCategory) {
@@ -40,7 +43,7 @@ public class PracticeAttemptService {
     }
 
     // 특정 인덱스의 문제만 복원 (submit/retry 시 해당 인덱스만 처리)
-    @Transactional(readOnly = true)
+    // @Transactional 제거 — 캐시 히트 시 SQL 없음. 캐시 미스 시 findAllById가 자체 트랜잭션 사용
     public List<QuestionDto> restoreQuestionsForIndexes(String attemptId, List<Integer> indexes) {
         PracticeAttempt attempt = requireValidAttempt(attemptId);
         List<Long> allIds = attempt.questionIds();
@@ -52,12 +55,17 @@ public class PracticeAttemptService {
                 .map(allIds::get)
                 .toList();
 
-        Map<Long, Question> questionMap = questionRepository.findAllById(
-                        targetIds.stream().filter(Objects::nonNull).toList())
-                .stream().collect(Collectors.toMap(Question::getId, q -> q));
+        List<Long> cacheMissIds = targetIds.stream()
+                .filter(id -> id != null && !questionCache.containsKey(id))
+                .distinct()
+                .toList();
+        if (!cacheMissIds.isEmpty()) {
+            questionRepository.findAllById(cacheMissIds)
+                    .forEach(q -> questionCache.put(q.getId(), q));
+        }
 
         return targetIds.stream()
-                .map(id -> id == null ? selfIntroDto() : QuestionDto.from(requireQuestion(questionMap, id)))
+                .map(id -> id == null ? selfIntroDto() : QuestionDto.from(requireQuestion(questionCache, id)))
                 .toList();
     }
 
