@@ -75,7 +75,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - `MockExamService` creates a 15-question mock exam: 1 self-introduction + 5 combo slots.
 - The mock exam uses 3 selected-topic combos and 2 surprise-topic combos.
 - Surprise combo slots are randomized among the 5 combo slots.
-- There is no dedicated surprise-topic question bank yet. Current implementation uses unselected supported topics as a temporary substitute.
+- Surprise topics use a dedicated pool of 23 topics (5 groups) defined in `TopicCatalog.surpriseTopics()`. These are completely separate from the 22 background-survey topics and have their own QuestionSets in DB (DataInitializer V1/V2/V3).
 
 ### Important Current Classes
 
@@ -89,12 +89,23 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ### Important Constraints
 
 - Do not treat persisted `Combo` as the source of truth for OPIc exam generation.
-- Do not claim true OPIc surprise topics are fully implemented.
-- Do not hardcode topic counts such as `22`.
+- Do not hardcode topic counts such as `22` or `23`.
 - Do not reintroduce difficulty selection into the topic exploration page. Difficulty comes from onboarding/profile.
 - Keep `docs/local/` ignored. It is for local development notes.
+
+### Architecture Notes
+
+**PracticeAttempt / attemptId 설계 배경**
+
+`PracticeAttemptService.createAttempt()`는 서버가 문제를 조립한 뒤 `attemptId → questionIds[]`를 Caffeine 캐시(2시간 TTL)에 저장한다. 클라이언트는 `attemptId`만 받고, 제출 시 오디오 blob + attemptId만 전송한다.
+
+**주목적: 제출-재시도-finalize 3단계 멀티스텝 플로우 지원.**
+실패 문항만 재제출할 때 서버가 원본 questionIds를 복원해야 retry 매핑이 가능하기 때문이다.
+부수효과로 클라이언트가 question content나 ID를 조작할 수 없게 된다.
+
+캐시(인메모리)를 쓰는 이유: 연습 완료 전의 임시 상태라 DB 영구 저장이 불필요하고, 서버 재시작 시 만료돼도 무해하다.
 
 ### Verification Notes
 
 - `./gradlew compileJava` currently passes.
-- `./gradlew test` currently fails because `QuestionSetAdminIntegrationTest` still references the old `QuestionSet.difficulty` model.
+- `./gradlew test` currently fails because `QuestionSetAdminIntegrationTest` requires Docker (Testcontainers). Docker not running = test fails. Code itself is correct.

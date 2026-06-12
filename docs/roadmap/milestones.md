@@ -1,6 +1,6 @@
 # Roadmap & Milestones
 
-## 🚀 Phase 1: MVP (Completed)
+## 🚀 Phase 1: MVP + Core Features (Completed)
 - OPIc 출제 알고리즘 (Topic & Difficulty 기반 랜덤 콤보) 구현.
 - Groq Whisper 기반 STT 연동 (초기 Gemini → Groq 마이그레이션).
 - Groq llama-3.3-70b 기반 피드백 엔진 구축 (Spring AI OpenAI starter 호환).
@@ -9,6 +9,11 @@
 - FeedbackResult DB 저장 (Member 연관, 성공한 피드백만 저장).
 - 피드백 실패 시 부분 결과 반환 (전체 오류 대신 실패 카드 표시).
 - Oracle Cloud + ~~DuckDNS + Let's Encrypt~~ **Cloudflare + Origin Certificate** + Nginx 배포 완료 (2026-06-04). DuckDNS는 Let's Encrypt SERVFAIL 반복으로 포기, Cloudflare로 전환.
+- dev/prod 프로파일 분리 + 모바일 반응형 (2026-06-06).
+- `restoreQuestionsForIndexes` ConcurrentHashMap 캐싱 + `@Transactional` 제거 → start p95 20ms, answers p95 3.73s (2026-06-11).
+- Feedback 점수 필드 6개 (vocabularyScore~overallGrade) + 한국어 전용 프롬프트 (2026-06-11).
+- 돌발 주제 23개 전용 풀 분리 + QuestionSet 데이터 완성 + MockExamService 정합화 (2026-06-12).
+- 주제탐색 카테고리화 UI + 토픽 토글 즉시 반영 (2026-06-12).
 
 ## 📈 Phase 2: System Integration & Data Driven
 - **MCP Server 도입:** 백엔드 API와 AI의 유기적 결합 (자율 에이전트화).
