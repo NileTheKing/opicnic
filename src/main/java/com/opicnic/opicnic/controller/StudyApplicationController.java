@@ -5,11 +5,13 @@ import com.opicnic.opicnic.dto.StudyApplicationResponseDto;
 import com.opicnic.opicnic.service.StudyApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Profile("dev")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/study-posts")
