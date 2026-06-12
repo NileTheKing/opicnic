@@ -37,8 +37,9 @@ public class MockExamService {
         List<Integer> surpriseSlots = pickSurpriseSlots(patterns.size());
         List<SurveyTopic> availableTopics = findAvailablePracticeTopics();
 
+        List<SurveyTopic> availableSurpriseTopics = findAvailableSurpriseTopics();
         List<SurveyTopic> selectedTopics = pickSelectedTopics(profile.getSelectedTopics(), availableTopics);
-        List<SurveyTopic> surpriseTopics = pickSurpriseTopics(profile.getSelectedTopics(), selectedTopics, availableTopics);
+        List<SurveyTopic> surpriseTopics = pickSurpriseTopics(selectedTopics, availableSurpriseTopics);
 
         List<QuestionDto> questions = new ArrayList<>();
         questions.add(selfIntroductionQuestion());
@@ -124,27 +125,32 @@ public class MockExamService {
         return picked;
     }
 
-    private List<SurveyTopic> pickSurpriseTopics(List<SurveyTopic> profileTopics,
-                                                List<SurveyTopic> selectedTopics,
-                                                List<SurveyTopic> availableTopics) {
-        Set<SurveyTopic> excluded = new LinkedHashSet<>(profileTopics);
-        excluded.addAll(selectedTopics);
-        excluded.add(SurveyTopic.NO_EXERCISE);
+    private List<SurveyTopic> findAvailableSurpriseTopics() {
+        List<SurveyTopic> surprisePool = topicCatalog.surpriseTopics();
+        List<SurveyTopic> existing = questionSetRepository.findExistingTopics(surprisePool);
+        List<SurveyTopic> available = surprisePool.stream().filter(existing::contains).toList();
+        if (available.size() < SURPRISE_TOPIC_COMBO_COUNT) {
+            throw new IllegalStateException("돌발 주제 question set이 부족합니다. (필요: " + SURPRISE_TOPIC_COMBO_COUNT + ", 현재: " + available.size() + ")");
+        }
+        return available;
+    }
 
-        // TODO: 별도 돌발 주제 문제은행이 생기면 supported topic 대체 후보가 아니라
-        // 서베이 밖 돌발 주제 pool에서만 선택하도록 분리한다.
-        List<SurveyTopic> candidates = availableTopics.stream()
-                .filter(topic -> !excluded.contains(topic))
-                .toList();
+    private List<SurveyTopic> pickSurpriseTopics(List<SurveyTopic> alreadySelected,
+                                                  List<SurveyTopic> availableSurpriseTopics) {
+        Set<SurveyTopic> excluded = new LinkedHashSet<>(alreadySelected);
+        List<SurveyTopic> candidates = availableSurpriseTopics.stream()
+                .filter(t -> !excluded.contains(t))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+
+        if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
+            candidates = new ArrayList<>(availableSurpriseTopics);
+        }
         if (candidates.size() < SURPRISE_TOPIC_COMBO_COUNT) {
             throw new IllegalStateException("모의고사 돌발 주제 후보가 부족합니다.");
         }
 
-        List<SurveyTopic> shuffled = new ArrayList<>(candidates);
-        Collections.shuffle(shuffled, random);
-        return shuffled.stream()
-                .limit(SURPRISE_TOPIC_COMBO_COUNT)
-                .toList();
+        Collections.shuffle(candidates, random);
+        return candidates.stream().limit(SURPRISE_TOPIC_COMBO_COUNT).toList();
     }
 
     private QuestionDto selfIntroductionQuestion() {

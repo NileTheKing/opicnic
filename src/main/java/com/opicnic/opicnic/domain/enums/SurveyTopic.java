@@ -86,10 +86,31 @@ public enum SurveyTopic {
     TECHNOLOGY("기술 관련"), // 기술 관련 (직업/학업과 연관)
     HOUSEWORK("집안일"),
     // 추가될 수 있는 일반적인 질문 카테고리
-    GENERAL_INTERESTS("일반적 관심사"), // 특정 카테고리에 속하지 않는 일반적 주제
-    PERSONAL_EXPERIENCE("개인적인 경험"), // 개인의 경험을 묻는 질문
-    EDUCATION_STUDY("교육/학습"), // 학업 관련
-    HEALTH_WELLNESS("건강/웰빙"); // 건강 관련
+    GENERAL_INTERESTS("일반적 관심사"),
+    PERSONAL_EXPERIENCE("개인적인 경험"),
+    EDUCATION_STUDY("교육/학습"),
+    HEALTH_WELLNESS("건강/웰빙"),
+
+    // --- 돌발 주제 (Surprise Topics — 배경설문 외 출제, 23개 빈출 풀) ---
+    BANK_VISIT("은행 가기"),
+    LIBRARY_VISIT("도서관 가기"),
+    HOTEL_STAY("호텔 이용하기"),
+    RESTAURANT_VISIT("식당 가기"),
+    PUBLIC_TRANSPORTATION("교통수단"),
+    WEATHER("날씨"),
+    HOLIDAY_FESTIVAL("명절/휴일"),
+    FASHION("의상"),
+    NEIGHBORHOOD("이웃"),
+    TECHNOLOGY_INTERNET("인터넷"),
+    MOBILE_PHONE("핸드폰"),
+    FOOD("음식"),
+    FURNITURE("가구"),
+    GEOGRAPHY("지형"),
+    APPOINTMENT("약속"),
+    PARTY("파티"),
+    DIET("다이어트"),
+    HOME_APPLIANCE("가전제품"),
+    LEISURE_GENERAL("여가활동");
 
     private final String label; // 한국어 레이블
 

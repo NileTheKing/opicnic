@@ -32,8 +32,8 @@
 <sub>처리량 향상<br>96 RPS → 242 RPS</sub>
 </td>
 <td align="center">
-<strong>22개</strong><br>
-<sub>지원 OPIc 주제<br>C1~C5 콤보 패턴</sub>
+<strong>45개</strong><br>
+<sub>배경설문 22 + 돌발 23<br>C1~C5 콤보 패턴</sub>
 </td>
 </tr>
 </table>

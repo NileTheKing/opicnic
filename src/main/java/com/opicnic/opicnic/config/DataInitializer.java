@@ -31,6 +31,18 @@ public class DataInitializer implements CommandLineRunner {
         if (questionSetRepository.count() == 0) {
             populateData();
         }
+        if (questionSetRepository.findExistingTopics(
+                List.of(SurveyTopic.BANK_VISIT)).isEmpty()) {
+            populateSurpriseData();
+        }
+        if (questionSetRepository.findExistingTopics(
+                List.of(SurveyTopic.MOBILE_PHONE)).isEmpty()) {
+            populateSurpriseDataV2();
+        }
+        if (questionSetRepository.findExistingTopics(
+                List.of(SurveyTopic.TECHNOLOGY)).isEmpty()) {
+            populateSurpriseDataV3();
+        }
     }
 
     private void addStandardCombos(QuestionSet set) {
@@ -460,5 +472,342 @@ public class DataInitializer implements CommandLineRunner {
         )));
 
         System.out.println("[DataInitializer] 23개 주제 OPIc 데이터 초기화 완료.");
+    }
+
+    private void populateSurpriseData() {
+
+        // ── 은행 (BANK_VISIT) ────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("은행-세트1", SurveyTopic.BANK_VISIT, q(
+            "Describe the bank you usually use. Where is it located and what does it look like?",
+            "How often do you visit the bank and what kinds of tasks do you usually handle there?",
+            "Tell me about the last time you visited a bank. What did you go there for?",
+            "Describe the most memorable experience you have had at a bank.",
+            "I also use a bank regularly. Ask me 3 or 4 questions about my banking habits.",
+            "You need to open a new account. Call the bank and ask 3 or 4 questions about the process and requirements.",
+            "You go to the bank but the system is down and you cannot complete your transaction. Explain the situation and suggest alternatives.",
+            "Have you ever had a problem at a bank or with a financial service? Tell me what happened and how you resolved it.",
+            "How has banking changed over the past 10 to 20 years with the rise of online and mobile banking?",
+            "What are some issues or concerns related to personal finance and banking services today?"
+        )));
+
+        // ── 도서관 (LIBRARY_VISIT) ───────────────────────────────────────────
+        questionSetRepository.save(buildSet("도서관-세트1", SurveyTopic.LIBRARY_VISIT, q(
+            "Describe the library you use or have used. What does it look like and what facilities does it have?",
+            "How often do you go to the library and what do you usually do there?",
+            "Tell me about your most recent visit to a library. What did you do?",
+            "Describe the most memorable experience you have had at a library.",
+            "I also enjoy using libraries. Ask me 3 or 4 questions about my library habits.",
+            "You want to borrow a specific book. Call the library and ask 3 or 4 questions about availability and borrowing rules.",
+            "The book you need is already checked out. Explain the situation and ask about alternatives.",
+            "Have you ever had a problem at a library? Tell me what happened and how you dealt with it.",
+            "How have libraries changed with the rise of digital books and online resources?",
+            "What are some challenges facing public libraries in modern times?"
+        )));
+
+        // ── 호텔 (HOTEL_STAY) ────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("호텔-세트1", SurveyTopic.HOTEL_STAY, q(
+            "Describe a hotel you have stayed at. What was it like?",
+            "What do you usually look for when choosing a hotel? Describe your preferences.",
+            "Tell me about your most recent hotel stay. What was your experience like?",
+            "Describe the most memorable hotel experience you have ever had.",
+            "I also stay at hotels when I travel. Ask me 3 or 4 questions about my hotel preferences.",
+            "You want to make a hotel reservation. Call the hotel and ask 3 or 4 questions about rooms, prices, and amenities.",
+            "You check in and find that your room is not what you reserved. Explain the problem to the staff and suggest solutions.",
+            "Have you ever had a problem during a hotel stay? Tell me what happened and how it was resolved.",
+            "How has the hotel industry changed with the rise of online booking and platforms like Airbnb?",
+            "What are some issues or concerns related to hotels and the accommodation industry today?"
+        )));
+
+        // ── 식당 (RESTAURANT_VISIT) ──────────────────────────────────────────
+        questionSetRepository.save(buildSet("식당-세트1", SurveyTopic.RESTAURANT_VISIT, q(
+            "Describe a restaurant you enjoy going to. What is it like and what kind of food do they serve?",
+            "How often do you eat out and what is your typical restaurant experience?",
+            "Tell me about a restaurant you visited recently. What did you order and how was the food?",
+            "Describe the most memorable dining experience you have ever had.",
+            "I also enjoy eating out. Ask me 3 or 4 questions about my restaurant preferences.",
+            "You want to make a reservation at a restaurant. Call and ask 3 or 4 questions about the menu and booking.",
+            "You arrive at the restaurant but your reservation cannot be found. Explain the problem and suggest alternatives.",
+            "Have you ever had a bad experience at a restaurant? Tell me what happened and how you handled it.",
+            "How has the restaurant industry changed over the past few decades?",
+            "What are some issues or concerns related to the food service industry today?"
+        )));
+
+        // ── 대중교통 (PUBLIC_TRANSPORTATION) ─────────────────────────────────
+        questionSetRepository.save(buildSet("대중교통-세트1", SurveyTopic.PUBLIC_TRANSPORTATION, q(
+            "Describe the public transportation system in your city. What options are available?",
+            "How often do you use public transportation and what is your typical commute like?",
+            "Tell me about your most recent experience using public transportation. How was it?",
+            "Describe the most memorable or unusual experience you have had on public transportation.",
+            "I also use public transportation regularly. Ask me 3 or 4 questions about my commuting habits.",
+            "You need to find out about bus or subway routes for a trip. Call the transportation office and ask 3 or 4 questions.",
+            "Your train or bus is delayed and you will be late for an important appointment. Explain the situation and suggest alternatives.",
+            "Have you ever had a problem or unexpected experience while using public transportation? Tell me about it.",
+            "How has public transportation changed in your city over the past few decades?",
+            "What are some issues or challenges related to public transportation in your country today?"
+        )));
+
+        // ── 날씨 (WEATHER) ───────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("날씨-세트1", SurveyTopic.WEATHER, q(
+            "Describe the climate in your area. What are the seasons like?",
+            "How does the weather affect your daily routine and activities?",
+            "Tell me about an extreme weather event you have experienced recently.",
+            "Describe the most memorable weather-related experience you have ever had.",
+            "I also pay close attention to the weather. Ask me 3 or 4 questions about how weather affects my life.",
+            "You are planning an outdoor event but the forecast looks bad. Call a venue and ask 3 or 4 questions about indoor alternatives.",
+            "Your outdoor event is ruined by unexpected rain. Explain the situation and suggest ways to handle it.",
+            "Have you ever had to cancel or change plans because of bad weather? Tell me about it.",
+            "How has the weather or climate in your region changed over the past few decades?",
+            "What are some concerns related to climate change and extreme weather events today?"
+        )));
+
+        // ── 명절/휴일 (HOLIDAY_FESTIVAL) ────────────────────────────────────
+        questionSetRepository.save(buildSet("명절-세트1", SurveyTopic.HOLIDAY_FESTIVAL, q(
+            "Describe an important holiday or festival in your country. What is it like?",
+            "What do you usually do during major holidays? Describe your typical routine.",
+            "Tell me about how you spent a recent holiday. What did you do?",
+            "Describe the most memorable holiday celebration you have ever experienced.",
+            "I also celebrate holidays. Ask me 3 or 4 questions about my holiday traditions.",
+            "You are planning a holiday gathering. Call a venue or restaurant and ask 3 or 4 questions about arrangements.",
+            "Something goes wrong with your holiday plans at the last minute. Explain the situation and suggest solutions.",
+            "Have you ever had a holiday experience that did not go as planned? Tell me about it.",
+            "How have holiday traditions and celebrations changed over the past few decades?",
+            "What are some issues or concerns related to national holidays or cultural festivals today?"
+        )));
+
+        // ── 패션/의류 (FASHION) ──────────────────────────────────────────────
+        questionSetRepository.save(buildSet("패션-세트1", SurveyTopic.FASHION, q(
+            "Describe your personal style. What kinds of clothes do you prefer to wear?",
+            "How often do you shop for clothes and what is your typical shopping routine?",
+            "Tell me about something you bought recently to wear. What was it and why did you choose it?",
+            "Describe the most memorable fashion-related experience you have ever had.",
+            "I also pay attention to fashion and clothing. Ask me 3 or 4 questions about my style.",
+            "You are looking for a specific item of clothing. Call a store and ask 3 or 4 questions about what is available.",
+            "The item you wanted is not in your size or is out of stock. Explain the situation and ask about alternatives.",
+            "Have you ever had a problem related to buying or wearing clothes? Tell me about it.",
+            "How has fashion and clothing culture changed over the past few decades?",
+            "What are some issues related to fast fashion, sustainability, or the clothing industry today?"
+        )));
+
+        // ── 동네/이웃 (NEIGHBORHOOD) ─────────────────────────────────────────
+        questionSetRepository.save(buildSet("동네-세트1", SurveyTopic.NEIGHBORHOOD, q(
+            "Describe the neighborhood where you live. What is it like and what makes it special?",
+            "What do you usually do in your neighborhood? Describe your typical activities nearby.",
+            "Tell me about something that happened recently in your neighborhood.",
+            "Describe the most memorable experience you have had in your neighborhood.",
+            "I also have a neighborhood I enjoy. Ask me 3 or 4 questions about where I live.",
+            "You want to report a problem in your neighborhood. Call the local office and ask 3 or 4 questions about the process.",
+            "A neighbor is causing a disturbance. Explain the situation and suggest ways to resolve it.",
+            "Have you ever had a conflict or issue with a neighbor or in your community? Tell me about it.",
+            "How has your neighborhood changed over the years? Compare the past and the present.",
+            "What are some issues or concerns related to urban neighborhoods and communities today?"
+        )));
+
+        // ── 인터넷/기술 (TECHNOLOGY_INTERNET) ───────────────────────────────
+        questionSetRepository.save(buildSet("인터넷기술-세트1", SurveyTopic.TECHNOLOGY_INTERNET, q(
+            "Describe how you use the internet in your daily life. What do you mainly use it for?",
+            "How much time do you spend online each day and what are your typical online activities?",
+            "Tell me about a useful or interesting thing you did online recently.",
+            "Describe the most memorable experience you have had related to technology or the internet.",
+            "I also use the internet a lot. Ask me 3 or 4 questions about my online habits.",
+            "Your internet service is not working properly. Call the provider and ask 3 or 4 questions to get it fixed.",
+            "Your device crashes and you lose important data. Explain the situation and suggest ways to recover.",
+            "Have you ever had a serious problem with a device or internet service? Tell me what happened.",
+            "How has the internet changed the way people live and work over the past 20 years?",
+            "What are some concerns related to internet use, privacy, or technology dependence today?"
+        )));
+
+        System.out.println("[DataInitializer] 돌발 주제 10개 데이터 초기화 완료.");
+    }
+
+    private void populateSurpriseDataV2() {
+
+        // ── 핸드폰 (MOBILE_PHONE) ─────────────────────────────────────────────
+        questionSetRepository.save(buildSet("핸드폰-세트1", SurveyTopic.MOBILE_PHONE, q(
+            "Describe the mobile phone you currently use. What model is it and what features do you like most?",
+            "How do you use your mobile phone on a daily basis? What do you mainly use it for?",
+            "Tell me about a recent experience you had with your mobile phone. Was there anything memorable?",
+            "Describe the most memorable experience you have had related to a mobile phone.",
+            "I also use a smartphone regularly. Ask me 3 or 4 questions about how I use my phone.",
+            "Your mobile phone is broken and you need to get it repaired. Call the service center and ask 3 or 4 questions about the repair process.",
+            "You find out the repair will take longer than expected and you need your phone urgently. Explain the situation and suggest alternatives.",
+            "Have you ever had a problem with your mobile phone or had to get it repaired? Tell me about it.",
+            "How have mobile phones changed over the past 10 to 20 years? Compare the past and the present.",
+            "What are some issues or concerns related to mobile phone use and smartphone culture today?"
+        )));
+
+        // ── 음식 (FOOD) ───────────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("음식-세트1", SurveyTopic.FOOD, q(
+            "Describe your favorite type of food. What do you enjoy eating and why?",
+            "What do you usually eat on a typical day? Describe your eating habits and routine.",
+            "Tell me about a meal you had recently that was particularly good or interesting.",
+            "Describe the most memorable food or dining experience you have ever had.",
+            "I also enjoy good food. Ask me 3 or 4 questions about my food preferences and eating habits.",
+            "You want to order a special meal for a gathering. Call a restaurant and ask 3 or 4 questions about the menu and service.",
+            "The food you ordered arrived incorrectly or was not what you expected. Explain the problem and suggest a solution.",
+            "Have you ever had a bad or unexpected experience related to food? Tell me about it.",
+            "How has food culture and eating habits changed in your country over the past few decades?",
+            "What are some issues related to food safety, nutrition, or dietary trends today?"
+        )));
+
+        // ── 가구 (FURNITURE) ──────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("가구-세트1", SurveyTopic.FURNITURE, q(
+            "Describe the furniture in your home. What pieces do you have and what do you like about them?",
+            "How do you usually choose furniture for your home? Describe your preferences and process.",
+            "Tell me about a piece of furniture you bought or changed recently. Why did you make that change?",
+            "Describe the most memorable experience you have had related to buying or using furniture.",
+            "I also recently got new furniture. Ask me 3 or 4 questions about my home and furniture choices.",
+            "You want to buy new furniture. Call a furniture store and ask 3 or 4 questions about available items and delivery.",
+            "The furniture you ordered arrived damaged or was the wrong item. Explain the problem and suggest ways to resolve it.",
+            "Have you ever had a problem when buying furniture or home items? Tell me about it.",
+            "How have furniture styles and home interior trends changed over the years?",
+            "What are some issues related to furniture, interior design, or sustainable home products today?"
+        )));
+
+        // ── 지형 (GEOGRAPHY) ─────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("지형-세트1", SurveyTopic.GEOGRAPHY, q(
+            "Describe the geography or landscape of the area where you live. What is it like?",
+            "How does the geography of your region affect your daily life and activities?",
+            "Tell me about a place with interesting or beautiful geography that you have visited recently.",
+            "Describe the most memorable geographical feature or landscape you have ever seen.",
+            "I am also curious about geography. Ask me 3 or 4 questions about the geography of my area.",
+            "You are planning a trip to a region with unique geography. Call a travel agency and ask 3 or 4 questions about the area.",
+            "You arrive at your destination but find the conditions are very different from what you expected. Explain and suggest alternatives.",
+            "Have you ever been surprised by the geography or landscape of a place you visited? Tell me about it.",
+            "How has the geography or environment of your area changed over time due to development or climate?",
+            "What are some issues related to geography, land use, or environmental changes in your country today?"
+        )));
+
+        // ── 약속 (APPOINTMENT) ────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("약속-세트1", SurveyTopic.APPOINTMENT, q(
+            "Describe how you typically manage your schedule and appointments. What tools or methods do you use?",
+            "How often do you make plans with friends or colleagues? What kinds of appointments do you usually have?",
+            "Tell me about a recent plan or appointment you had. How did it go?",
+            "Describe the most memorable appointment or gathering you have ever attended.",
+            "I also manage a busy schedule. Ask me 3 or 4 questions about how I handle appointments and plans.",
+            "You need to schedule a meeting with someone. Call them and ask 3 or 4 questions to arrange a suitable time and place.",
+            "Something came up and you need to cancel or change your plans at the last minute. Explain the situation and suggest alternatives.",
+            "Have you ever had to cancel an important appointment? Tell me what happened and how you dealt with it.",
+            "How has the way people make and manage appointments changed with technology?",
+            "What are some challenges related to time management and keeping commitments in modern life?"
+        )));
+
+        // ── 파티 (PARTY) ──────────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("파티-세트1", SurveyTopic.PARTY, q(
+            "Describe the kinds of parties or gatherings you enjoy attending. What are they like?",
+            "How often do you attend parties or social gatherings? What is your usual experience?",
+            "Tell me about a party or gathering you attended recently. What was it like?",
+            "Describe the most memorable party or celebration you have ever been to.",
+            "I also enjoy attending parties. Ask me 3 or 4 questions about my social life and gatherings.",
+            "You are organizing a party. Call a venue or catering service and ask 3 or 4 questions about arrangements.",
+            "Something goes wrong with your party plans at the last minute, such as a venue cancellation. Explain and suggest solutions.",
+            "Have you ever had a problem organizing or attending a party? Tell me about it.",
+            "How have parties and social gatherings changed over the past few decades?",
+            "What are some concerns related to social events or party culture in modern society?"
+        )));
+
+        // ── 다이어트 (DIET) ───────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("다이어트-세트1", SurveyTopic.DIET, q(
+            "Describe your current diet or eating habits. What do you usually eat to stay healthy?",
+            "How do you manage your diet on a daily basis? Do you follow any specific guidelines?",
+            "Tell me about a recent change you made to your diet or health routine. How did it go?",
+            "Describe the most memorable experience you have had related to dieting or changing your eating habits.",
+            "I am also trying to maintain a healthy diet. Ask me 3 or 4 questions about my habits.",
+            "You want to consult a nutritionist or dietitian. Call and ask 3 or 4 questions about their services and advice.",
+            "You follow a diet plan but find it very difficult to stick to. Explain the challenges and suggest ways to overcome them.",
+            "Have you ever tried a specific diet or made a major change to your eating habits? Tell me about your experience.",
+            "How have attitudes toward dieting and healthy eating changed over the years?",
+            "What are some issues related to diet culture, body image, or food trends in society today?"
+        )));
+
+        // ── 가전제품 (HOME_APPLIANCE) ─────────────────────────────────────────
+        questionSetRepository.save(buildSet("가전제품-세트1", SurveyTopic.HOME_APPLIANCE, q(
+            "Describe the home appliances you use most often. What are they and why are they important to you?",
+            "How do you use home appliances in your daily routine? Describe how they help you.",
+            "Tell me about a home appliance you bought or started using recently. How has it been?",
+            "Describe the most memorable experience you have had related to a home appliance.",
+            "I also rely on home appliances every day. Ask me 3 or 4 questions about the appliances I use.",
+            "One of your home appliances has broken down. Call a repair service and ask 3 or 4 questions about getting it fixed.",
+            "The technician says the appliance cannot be repaired and needs to be replaced. Explain the situation and suggest solutions.",
+            "Have you ever had a major home appliance break down at an inconvenient time? Tell me about it.",
+            "How have home appliances changed and improved over the past few decades?",
+            "What are some issues related to energy use, smart appliances, or home technology today?"
+        )));
+
+        // ── 여가활동 (LEISURE_GENERAL) ────────────────────────────────────────
+        questionSetRepository.save(buildSet("여가활동-세트1", SurveyTopic.LEISURE_GENERAL, q(
+            "Describe how you typically spend your free time. What leisure activities do you enjoy?",
+            "How often do you have free time and what do you usually do to relax or have fun?",
+            "Tell me about a leisure activity you enjoyed recently. What did you do?",
+            "Describe the most memorable leisure experience you have ever had.",
+            "I also enjoy spending my free time doing various activities. Ask me 3 or 4 questions about my hobbies.",
+            "You want to join a leisure club or activity group. Call and ask 3 or 4 questions about how to get involved.",
+            "The activity you planned for your day off was cancelled or unavailable. Explain the situation and suggest alternatives.",
+            "Have you ever had a free time plan fall through? Tell me what happened and what you did instead.",
+            "How have people's leisure activities and hobbies changed over the past few decades?",
+            "What are some issues related to work-life balance and the importance of leisure in modern life?"
+        )));
+
+        System.out.println("[DataInitializer] 돌발 주제 추가 9개 초기화 완료.");
+    }
+
+    private void populateSurpriseDataV3() {
+
+        // ── 기술 (TECHNOLOGY) ─────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("기술-세트1", SurveyTopic.TECHNOLOGY, q(
+            "Describe a piece of technology you use regularly. What is it and why is it important to you?",
+            "How does technology play a role in your daily life? What do you use most often?",
+            "Tell me about a new technology you started using recently. How has it changed things for you?",
+            "Describe the most impressive or memorable technology-related experience you have had.",
+            "I also use various technologies in my life. Ask me 3 or 4 questions about how I use technology.",
+            "You are having a problem with a device or piece of technology. Call the support center and ask 3 or 4 questions to get help.",
+            "The technical support cannot solve your problem immediately and it is urgent. Explain the situation and suggest alternatives.",
+            "Have you ever had a serious problem with technology that affected your daily life? Tell me about it.",
+            "How has technology changed the way people live and work over the past 20 years?",
+            "What are some concerns about technology, such as privacy, addiction, or job displacement, that people face today?"
+        )));
+
+        // ── 건강 (HEALTH_WELLNESS) ────────────────────────────────────────────
+        questionSetRepository.save(buildSet("건강-세트1", SurveyTopic.HEALTH_WELLNESS, q(
+            "Describe how you take care of your health. What habits do you follow to stay well?",
+            "What does your health routine look like on a typical day? What do you do to maintain good health?",
+            "Tell me about a recent experience related to your health or wellness. What happened?",
+            "Describe the most memorable experience you have had related to health or taking care of yourself.",
+            "I also try to maintain a healthy lifestyle. Ask me 3 or 4 questions about my health habits.",
+            "You want to join a health program or consult a specialist. Call and ask 3 or 4 questions about the options available.",
+            "You are following a health program but find it difficult to maintain. Explain the challenges and ask for advice.",
+            "Have you ever made a significant change to improve your health? Tell me about the experience.",
+            "How have people's attitudes toward health and wellness changed over the past few decades?",
+            "What are some major health issues or concerns facing society today?"
+        )));
+
+        // ── 산업 (INDUSTRY) ───────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("산업-세트1", SurveyTopic.INDUSTRY, q(
+            "Describe the main industries in your country or region. What do you know about them?",
+            "How do the major industries in your country affect everyday life and the economy?",
+            "Tell me about a recent development or change in an industry that caught your attention.",
+            "Describe the most memorable experience or moment you have had related to work or industry.",
+            "I am also curious about industries and the economy. Ask me 3 or 4 questions about my perspective.",
+            "You are interested in learning about a particular industry. Call a company and ask 3 or 4 questions about how they operate.",
+            "You apply for a job in an industry but find the working conditions are very different from what you expected. Explain and suggest solutions.",
+            "Have you ever had an interesting or surprising experience related to a job or industry? Tell me about it.",
+            "How have the major industries in your country changed over the past few decades?",
+            "What are some challenges or issues facing industries in your country today, such as automation or environmental concerns?"
+        )));
+
+        // ── 재활용 (RECYCLING) ────────────────────────────────────────────────
+        questionSetRepository.save(buildSet("재활용-세트1", SurveyTopic.RECYCLING, q(
+            "Describe how recycling is done in your home or community. What systems are in place?",
+            "What do you usually do to recycle or reduce waste in your daily life?",
+            "Tell me about a recent experience you had related to recycling or being environmentally conscious.",
+            "Describe the most memorable experience you have had related to environmental issues or recycling.",
+            "I also try to be environmentally conscious. Ask me 3 or 4 questions about my recycling habits.",
+            "You want to find out more about recycling programs in your area. Call the local office and ask 3 or 4 questions.",
+            "Your neighborhood does not have a proper recycling system and it is causing problems. Explain the issue and suggest solutions.",
+            "Have you ever taken action to help the environment or encountered a major environmental issue? Tell me about it.",
+            "How have recycling and environmental awareness changed over the past few decades?",
+            "What are some major environmental challenges, such as waste management or climate change, that your country faces today?"
+        )));
+
+        System.out.println("[DataInitializer] 돌발 주제 기술/건강/산업/재활용 초기화 완료.");
     }
 }

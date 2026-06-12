@@ -140,12 +140,10 @@ public class OnboardingController {
         if (selectedTopics != null) {
             profile.getSelectedTopics().addAll(selectedTopics);
         }
-        // 거주 형태에 따라 거주 주제 자동 추가
-        if (residenceType == SurveyProfile.ResidenceType.ALONE) {
-            profile.getSelectedTopics().add(SurveyTopic.LIVING_ALONE);
-        } else {
-            profile.getSelectedTopics().add(SurveyTopic.LIVING_WITH_FAMILY);
-        }
+        // 거주 형태 주제가 누락된 경우 안전하게 자동 추가 (폼 미선택 방어)
+        SurveyTopic residenceTopic = (residenceType == SurveyProfile.ResidenceType.ALONE)
+                ? SurveyTopic.LIVING_ALONE : SurveyTopic.LIVING_WITH_FAMILY;
+        profile.getSelectedTopics().add(residenceTopic);
 
         surveyProfileRepository.save(profile);
         return "redirect:/";

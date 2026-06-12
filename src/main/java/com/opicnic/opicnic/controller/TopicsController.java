@@ -51,20 +51,22 @@ public class TopicsController {
 
         final Set<SurveyTopic> finalMyTopics = myTopics;
         Map<String, List<SurveyTopic>> nonMyTopicGroups = new LinkedHashMap<>();
+        Map<String, List<SurveyTopic>> myTopicGroups = new LinkedHashMap<>();
         topicGroups.forEach((group, topics) -> {
-            List<SurveyTopic> filtered = topics.stream()
-                    .filter(t -> !finalMyTopics.contains(t))
-                    .toList();
-            nonMyTopicGroups.put(group, filtered);
+            nonMyTopicGroups.put(group, topics.stream().filter(t -> !finalMyTopics.contains(t)).toList());
+            List<SurveyTopic> mine = topics.stream().filter(finalMyTopics::contains).toList();
+            if (!mine.isEmpty()) myTopicGroups.put(group, mine);
         });
 
         model.addAttribute("topicGroups", topicGroups);
         model.addAttribute("nonMyTopicGroups", nonMyTopicGroups);
+        model.addAttribute("myTopicGroups", myTopicGroups);
         model.addAttribute("topicCount", topicCount);
         model.addAttribute("myTopics", myTopics);
         model.addAttribute("myTopicCount", myTopics.size());
         model.addAttribute("preferredDifficulty", preferredDifficulty);
         model.addAttribute("topicIcons", topicCatalog.topicIcons());
+        model.addAttribute("surpriseTopicGroups", topicCatalog.surpriseTopicGroups());
         return "practice/topics";
     }
 }

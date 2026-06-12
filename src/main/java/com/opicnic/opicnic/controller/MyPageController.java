@@ -94,6 +94,31 @@ public class MyPageController {
         return "redirect:/mypage";
     }
 
+    @PostMapping("/mypage/topics/toggle")
+    @ResponseBody
+    public Map<String, Object> toggleTopic(
+            @RequestParam SurveyTopic topic,
+            @AuthenticationPrincipal OAuth2User user) {
+        String providerId = user.getName();
+        String provider = user.getAttributes().get("provider").toString();
+        Member member = memberRepository.findByProviderAndProviderId(provider, providerId).orElseThrow();
+
+        SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
+                .orElseGet(() -> SurveyProfile.builder().member(member).build());
+
+        boolean added;
+        if (profile.getSelectedTopics().contains(topic)) {
+            profile.getSelectedTopics().remove(topic);
+            added = false;
+        } else {
+            profile.getSelectedTopics().add(topic);
+            added = true;
+        }
+
+        surveyProfileRepository.save(profile);
+        return Map.of("added", added, "count", profile.getSelectedTopics().size());
+    }
+
     private Map<String, List<SurveyTopic>> buildTopicGroups() {
         Map<String, List<SurveyTopic>> groups = new LinkedHashMap<>();
         groups.put("여가 활동", List.of(
