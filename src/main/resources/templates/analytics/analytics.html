@@ -94,6 +94,8 @@
                                       class="text-xs text-gray-400" th:text="${stat.count} + '회'"></span>
                                 <span th:if="${stat.count > 0}"
                                       class="text-sm font-semibold text-gray-700 w-6 text-right" th:text="${stat.avgScore}"></span>
+                                <a th:href="@{/practice/type(type=${stat.typeKey})}"
+                                   class="text-[10px] text-indigo-500 hover:underline font-medium shrink-0">연습</a>
                             </div>
                         </div>
                     </div>

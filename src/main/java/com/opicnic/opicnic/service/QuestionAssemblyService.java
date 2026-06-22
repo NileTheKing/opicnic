@@ -46,6 +46,15 @@ public class QuestionAssemblyService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public QuestionDto assembleSingle(SurveyTopic topic, QuestionType type) {
+        List<QuestionSet> sets = setCache.computeIfAbsent(
+                topic, questionSetRepository::findByTopicWithDetails);
+        if (sets.isEmpty()) throw new IllegalArgumentException("topic=" + topic);
+        QuestionSet set = sets.get(random.nextInt(sets.size()));
+        return QuestionDto.from(findQuestion(set, type));
+    }
+
     private Question findQuestion(QuestionSet set, QuestionType type) {
         return set.getQuestions().stream()
                 .filter(question -> question.getQuestionType() == type)
