@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.stream.Stream;
 
 @SuppressWarnings("java:S1192")
 
@@ -87,9 +88,7 @@ public class TopicCatalog {
     }
 
     public List<SurveyTopic> practiceTopics() {
-        return SUPPORTED_TOPICS.stream()
-                .filter(topic -> topic != SurveyTopic.NO_EXERCISE)
-                .toList();
+        return Stream.concat(SUPPORTED_TOPICS.stream(), SURPRISE_TOPICS_LIST.stream()).toList();
     }
 
     public Map<String, List<SurveyTopic>> groupedTopics() {
@@ -162,7 +161,7 @@ public class TopicCatalog {
                 SurveyTopic.READING, SurveyTopic.SINGING, SurveyTopic.COOKING
         ));
         groups.put("운동", List.of(
-                SurveyTopic.NO_EXERCISE, SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM
+                SurveyTopic.WALKING, SurveyTopic.JOGGING, SurveyTopic.FITNESS_GYM
         ));
         groups.put("여행 / 휴가", List.of(
                 SurveyTopic.STAYCATION, SurveyTopic.DOMESTIC_TRAVEL, SurveyTopic.INTERNATIONAL_TRAVEL
