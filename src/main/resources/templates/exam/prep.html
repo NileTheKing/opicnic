@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시험 준비 - Opicnic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <main class="flex-1 p-5 md:p-8 pb-24 md:pb-8 min-w-0">
+        <div class="max-w-xl mx-auto">
+
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-gray-900">시험 준비</h1>
+        </div>
+
+        <!-- 시험 미등록 -->
+        <div th:if="${schedule == null}">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center mb-4">
+                <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-calendar-plus text-2xl text-indigo-400"></i>
+                </div>
+                <p class="text-base font-bold text-gray-800 mb-1">시험일을 등록해보세요</p>
+                <p class="text-sm text-gray-400 mb-6">목표에 맞는 맞춤 학습 계획을 만들어드릴게요</p>
+                <button onclick="document.getElementById('schedule-form').scrollIntoView({behavior:'smooth'})"
+                        class="bg-indigo-600 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
+                    시험일 등록하기
+                </button>
+            </div>
+        </div>
+
+        <!-- D-day 헤더 + 학습 계획 (시험 등록 후) -->
+        <div th:if="${plan != null}">
+
+            <!-- D-day 배너 -->
+            <div class="bg-indigo-600 rounded-2xl p-5 mb-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-indigo-200 text-xs font-medium mb-0.5" th:text="${schedule.examDate} + ' 시험'"></p>
+                        <p class="text-4xl font-black" th:text="'D-' + ${plan.daysLeft()}"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-indigo-200 text-xs mb-0.5">목표</p>
+                        <p class="text-2xl font-black" th:text="${schedule.targetGrade.label}"></p>
+                    </div>
+                </div>
+                <div th:if="${diagnosis.sufficient()}" class="mt-3 pt-3 border-t border-indigo-500 flex items-center justify-between">
+                    <span class="text-indigo-200 text-xs">현재 추정</span>
+                    <span class="text-white text-sm font-bold" th:text="${diagnosis.estimatedGrade().label}"></span>
+                </div>
+            </div>
+
+            <!-- 메시지 -->
+            <div class="bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-700" th:text="${plan.message()}"></p>
+            </div>
+
+            <!-- 이번 주 할 것 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+                <h2 class="text-sm font-bold text-gray-700 mb-3">이번 주 할 것</h2>
+                <div class="flex flex-col gap-2">
+
+                    <!-- 콤보 연습 -->
+                    <a href="/practice/topics"
+                       class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl hover:bg-indigo-50 transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-layer-group text-indigo-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">콤보 연습</p>
+                                <p class="text-xs text-gray-400">3문항 세트로 실전 감각 훈련</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-black text-indigo-600" th:text="${plan.comboCount()} + '회'"></span>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-indigo-400 transition-colors"></i>
+                        </div>
+                    </a>
+
+                    <!-- 유형 연습 -->
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-bullseye text-violet-500 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">유형 연습</p>
+                                    <p class="text-xs text-gray-400">약한 유형 집중 공략</p>
+                                </div>
+                            </div>
+                            <span class="text-lg font-black text-violet-600" th:text="${plan.typeCount()} + '회'"></span>
+                        </div>
+                        <!-- 집중 유형 링크 있을 때 -->
+                        <div th:if="${!plan.focusTypes().isEmpty()}" class="pl-4 flex flex-col gap-1">
+                            <a th:each="type : ${plan.focusTypes()}"
+                               th:href="@{/practice/type(type=${type.name()})}"
+                               class="flex items-center justify-between bg-violet-50 rounded-xl px-3 py-2 hover:bg-violet-100 transition-colors group">
+                                <span class="text-xs text-violet-700 font-medium" th:text="${type.description}"></span>
+                                <span class="text-xs text-violet-300 group-hover:text-violet-500 transition-colors">연습 →</span>
+                            </a>
+                        </div>
+                        <!-- 집중 유형 없을 때 fallback -->
+                        <div th:if="${plan.focusTypes().isEmpty()}" class="pl-4">
+                            <a href="/practice/topics"
+                               class="flex items-center justify-between bg-violet-50 rounded-xl px-3 py-2 hover:bg-violet-100 transition-colors group">
+                                <span class="text-xs text-violet-700 font-medium">유형별 연습 시작하기</span>
+                                <span class="text-xs text-violet-300 group-hover:text-violet-500 transition-colors">→</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 모의고사 -->
+                    <a href="/mock"
+                       class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl hover:bg-amber-50 transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-file-pen text-amber-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">모의고사</p>
+                                <p class="text-xs text-gray-400">실제 시험과 동일한 구성</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-black text-amber-600" th:text="${plan.mockCount()} + '회'"></span>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-amber-400 transition-colors"></i>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- 약한 영역 -->
+            <div th:if="${!plan.focusAreas().isEmpty()}" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+                <h2 class="text-sm font-bold text-gray-700 mb-3">지금 약한 것</h2>
+                <div class="flex gap-2">
+                    <div th:each="area : ${plan.focusAreas()}"
+                         class="flex-1 bg-red-50 rounded-xl p-3 text-center">
+                        <p class="text-sm font-bold text-red-500" th:text="${area}"></p>
+                        <p class="text-xs text-red-300 mt-0.5" th:text="${diagnosis.scoreAvgs()[area] != null ? diagnosis.scoreAvgs()[area] + '점' : ''}"></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 시험 일정 등록/수정 폼 -->
+        <div id="schedule-form" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h2 class="text-sm font-bold text-gray-700 mb-3"
+                th:text="${schedule == null ? '시험 일정 등록' : '시험 일정 수정'}"></h2>
+            <form th:action="@{/exam/schedule}" method="post" class="space-y-3">
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">시험 날짜</label>
+                        <input type="date" name="examDate"
+                               th:value="${schedule != null ? schedule.examDate : ''}"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"/>
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">목표 등급</label>
+                        <select name="targetGrade" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400">
+                            <option th:each="grade : ${targetGrades}"
+                                    th:value="${grade.name()}"
+                                    th:text="${grade.label}"
+                                    th:selected="${schedule != null && schedule.targetGrade == grade}"></option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit"
+                        class="w-full bg-indigo-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors"
+                        th:text="${schedule == null ? '등록하기' : '수정하기'}">
+                </button>
+            </form>
+        </div>
+
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
