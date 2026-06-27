@@ -6,6 +6,14 @@
     <title>시험 준비 - Opicnic</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+    <style>
+        .flatpickr-calendar { font-family: inherit; border-radius: 1rem; border: 1px solid #e5e7eb; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #4f46e5; border-color: #4f46e5; }
+        .flatpickr-day:hover { background: #eef2ff; }
+        .flatpickr-months .flatpickr-month { color: #1f2937; }
+        .flatpickr-current-month .cur-month, .flatpickr-current-month input.cur-year { color: #1f2937; font-weight: 700; }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
@@ -117,7 +125,7 @@
                     </div>
 
                     <!-- 모의고사 -->
-                    <a href="/mock"
+                    <a href="/practice/mock"
                        class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl hover:bg-amber-50 transition-colors group">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
@@ -159,9 +167,10 @@
                 <div class="flex gap-3">
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 mb-1 block">시험 날짜</label>
-                        <input type="date" name="examDate"
+                        <input type="text" id="examDatePicker" name="examDate"
                                th:value="${schedule != null ? schedule.examDate : ''}"
-                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"/>
+                               placeholder="날짜 선택"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 cursor-pointer"/>
                     </div>
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 mb-1 block">목표 등급</label>
@@ -184,5 +193,18 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<script>
+    flatpickr("#examDatePicker", {
+        locale: "ko",
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disableMobile: false,
+        onChange: function(selectedDates, dateStr) {
+            document.getElementById("examDatePicker").value = dateStr;
+        }
+    });
+</script>
 </body>
 </html>
