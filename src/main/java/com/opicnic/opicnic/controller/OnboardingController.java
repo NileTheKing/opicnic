@@ -43,7 +43,7 @@ public class OnboardingController {
             Map.entry(SurveyTopic.TV_WATCHING, 1),
             Map.entry(SurveyTopic.PERFORMANCE_WATCHING, 1),
             Map.entry(SurveyTopic.CONCERT_WATCHING, 2),
-            Map.entry(SurveyTopic.PARK_GOING, 2),
+            Map.entry(SurveyTopic.PARK_GOING, 1),
             Map.entry(SurveyTopic.BEACH_GOING, 1),
             Map.entry(SurveyTopic.SPORTS_WATCHING, 1),
             Map.entry(SurveyTopic.COFFEE_SHOP_GOING, 1),
@@ -54,12 +54,12 @@ public class OnboardingController {
             Map.entry(SurveyTopic.SINGING, 1),
             Map.entry(SurveyTopic.COOKING, 1),
             Map.entry(SurveyTopic.NO_EXERCISE, 1),
-            Map.entry(SurveyTopic.WALKING, 2),
+            Map.entry(SurveyTopic.WALKING, 1),
             Map.entry(SurveyTopic.JOGGING, 1),
             Map.entry(SurveyTopic.FITNESS_GYM, 1),
             Map.entry(SurveyTopic.STAYCATION, 1),
-            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, 2),
-            Map.entry(SurveyTopic.INTERNATIONAL_TRAVEL, 2)
+            Map.entry(SurveyTopic.DOMESTIC_TRAVEL, 1),
+            Map.entry(SurveyTopic.INTERNATIONAL_TRAVEL, 1)
     );
 
 
