@@ -25,51 +25,37 @@
 
     <!-- ───── 인트로 ───── -->
     <div th:if="${showIntro}">
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 px-8 pt-10 pb-8 text-white text-center mb-4 shadow-xl">
-            <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full"></div>
-            <div class="absolute -bottom-6 -left-6 w-28 h-28 bg-white/10 rounded-full"></div>
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 px-8 pt-14 pb-12 text-white text-center mb-5 shadow-xl">
+            <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full"></div>
+            <div class="absolute -bottom-8 -left-8 w-36 h-36 bg-white/10 rounded-full"></div>
             <div class="relative">
-                <div class="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-5">
-                    <i class="fa-solid fa-bolt text-yellow-300 text-[10px]"></i> 고득점 최단기 코스
-                </div>
-                <h2 class="text-3xl font-extrabold leading-tight mb-3">고득점에 유리한<br>설정만 골랐어요</h2>
-                <p class="text-indigo-100 text-sm leading-relaxed">
-                    복잡한 서베이 고민 없이<br>2분이면 준비 끝이에요.
-                </p>
+                <h2 class="text-4xl font-black leading-tight mb-4">고득점에 유리한<br>설정만 골랐어요</h2>
+                <p class="text-indigo-200 text-sm">2분이면 준비 끝이에요</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 mb-4">
-            <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100">
-                <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-2.5">
-                    <i class="fa-solid fa-compass text-indigo-500 text-base"></i>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">진행 순서</p>
+            <div class="flex flex-col gap-5">
+                <div class="flex items-center gap-4">
+                    <div class="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">1</div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">내 정보 입력</p>
+                        <p class="text-xs text-gray-400 mt-0.5">거주형태 · 목표등급 설정</p>
+                    </div>
                 </div>
-                <p class="text-xs font-bold text-gray-700 mb-1">방향을 잡아드려요</p>
-                <p class="text-[11px] text-gray-400 leading-snug">뭘 공부할지<br>고민 끝</p>
-            </div>
-            <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100">
-                <div class="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center mx-auto mb-2.5">
-                    <i class="fa-solid fa-microphone text-violet-500 text-base"></i>
+                <div class="flex items-center gap-4">
+                    <div class="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">2</div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">주제 선택</p>
+                        <p class="text-xs text-gray-400 mt-0.5">고득점 추천 주제 중 고르기</p>
+                    </div>
                 </div>
-                <p class="text-xs font-bold text-gray-700 mb-1">실전처럼 연습해요</p>
-                <p class="text-[11px] text-gray-400 leading-snug">출제 패턴<br>그대로</p>
             </div>
-            <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100">
-                <div class="w-10 h-10 bg-fuchsia-50 rounded-xl flex items-center justify-center mx-auto mb-2.5">
-                    <i class="fa-solid fa-magnifying-glass-chart text-fuchsia-500 text-base"></i>
-                </div>
-                <p class="text-xs font-bold text-gray-700 mb-1">약점이 보여요</p>
-                <p class="text-[11px] text-gray-400 leading-snug">AI가<br>짚어드려요</p>
-            </div>
-        </div>
-
-        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-5 text-xs text-amber-700">
-            <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5 shrink-0"></i>
-            <span>실제 OPIc 시험에는 더 많은 옵션이 있어요. 여기선 고득점에 불리한 항목을 의도적으로 제외했어요 — 시험장에서 당황하지 마세요.</span>
         </div>
 
         <a th:href="@{/onboarding(start=true)}"
-           class="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-bold text-base hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
+           class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-base hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
             시작하기 <i class="fa-solid fa-arrow-right"></i>
         </a>
         <p class="text-center text-xs text-gray-400 mt-3">2분이면 설정 끝나요</p>
@@ -103,7 +89,7 @@
                 </div>
                 <p class="text-xs text-gray-400 mb-4 ml-9">책 개수 = 준비 범위 (많을수록 다양한 문제 유형 출제)</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <label class="sel-card relative flex flex-col items-center gap-3 p-5 border-2 rounded-2xl cursor-pointer border-indigo-500 bg-indigo-500 text-white">
+                    <label class="sel-card relative flex flex-col items-center gap-3 p-5 border-2 rounded-2xl cursor-pointer !border-indigo-500 !bg-indigo-500 !text-white">
                         <input type="radio" name="residenceType" value="WITH_FAMILY" class="sr-only" checked>
                         <span class="check-badge hidden absolute top-2.5 right-2.5 w-5 h-5 bg-white/20 rounded-full items-center justify-center">
                             <i class="fa-solid fa-check text-white text-[9px]"></i>
@@ -131,7 +117,7 @@
                                 <i class="fa-solid fa-book text-[11px] text-indigo-300"></i>
                                 <i class="fa-solid fa-book text-[11px] text-indigo-300"></i>
                             </div>
-                            <p class="card-sub text-[10px] text-gray-400 mt-1">2~4세트</p>
+                            <p class="card-sub text-[10px] text-gray-400 mt-1">2세트</p>
                         </div>
                     </label>
                 </div>
@@ -146,19 +132,16 @@
                     <h3 class="text-base font-bold text-gray-800">목표 등급</h3>
                 </div>
                 <p class="text-xs text-gray-400 mb-4 ml-9">선택한 등급에 맞는 연습 난이도가 자동 설정돼요</p>
-                <div class="grid grid-cols-4 gap-2 mb-3">
+                <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-3">
                     <label th:each="grade : ${targetGrades}"
-                           class="sel-card relative flex flex-col items-center gap-0.5 py-3 border-2 rounded-xl cursor-pointer border-gray-200 bg-white text-gray-500"
-                           th:classappend="${grade.name() == 'IM2'} ? ' !border-indigo-500 !bg-indigo-500 !text-white' : ''">
+                           class="sel-card flex-1 flex flex-col items-center py-2.5 cursor-pointer border-r border-gray-200 last:border-r-0 bg-white text-gray-500 transition-none"
+                           th:classappend="${grade.name() == 'IM2'} ? ' !bg-indigo-600 !text-white' : ''">
                         <input type="radio" name="targetGrade" th:value="${grade.name()}" class="sr-only"
                                th:checked="${grade.name() == 'IM2'}">
-                        <span class="text-sm font-extrabold" th:text="${grade.label}"></span>
+                        <span class="text-xs font-extrabold" th:text="${grade.label}"></span>
                     </label>
                 </div>
-                <div id="grade-hint" class="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 rounded-xl px-3 py-2">
-                    <i class="fa-solid fa-circle-info text-indigo-400"></i>
-                    <span>IM2 목표 → 레벨 4 권장</span>
-                </div>
+                <p id="grade-hint" class="text-xs text-gray-400 mt-1 pl-1">IM2 목표 → 레벨 4 권장</p>
             </div>
 
             <!-- 연습 난이도 -->
@@ -192,9 +175,8 @@
                         <span class="text-[10px] card-sub text-gray-400">AL</span>
                     </label>
                 </div>
-                <div id="diff-warn" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2">
-                    <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0 text-amber-400"></i>
-                    <span id="diff-warn-text"></span>
+                <div id="diff-warn" class="hidden border-l-2 border-amber-400 pl-3 mt-1">
+                    <p id="diff-warn-text" class="text-xs text-gray-500"></p>
                 </div>
             </div>
 
@@ -205,6 +187,7 @@
         </form>
 
         <p class="text-center text-xs text-gray-400 mt-4">나중에 마이페이지에서 언제든 변경할 수 있어요.</p>
+        <p class="text-center text-[11px] text-gray-300 mt-2">* 실제 시험 옵션과 다를 수 있어요. 고득점에 유리한 설정만 추렸어요.</p>
     </div>
 </div>
 
@@ -218,7 +201,7 @@
             const badge = label.querySelector('.check-badge');
             if (badge) badge.style.display = 'flex';
         } else {
-            label.classList.remove('!border-indigo-500', '!bg-indigo-500', '!text-white');
+            label.classList.remove('!border-indigo-500', '!bg-indigo-500', '!text-white', 'border-indigo-500', 'bg-indigo-500', 'text-white');
             label.classList.add('border-gray-200', 'bg-white', 'text-gray-500');
             label.querySelectorAll('.card-sub').forEach(el => { el.classList.remove('opacity-80'); el.classList.add('text-gray-400'); });
             label.querySelectorAll('.card-icon').forEach(i => { i.classList.add('text-indigo-400'); });
@@ -263,14 +246,24 @@
     let currentGrade = 'IM2';
     const gradeHintEl = document.getElementById('grade-hint');
 
+    function applyGradeStyle(label, selected) {
+        if (selected) {
+            label.classList.add('!bg-indigo-600', '!text-white');
+            label.classList.remove('bg-white', 'text-gray-500');
+        } else {
+            label.classList.remove('!bg-indigo-600', '!text-white', 'bg-indigo-600', 'text-white');
+            label.classList.add('bg-white', 'text-gray-500');
+        }
+    }
+
     document.querySelectorAll('label:has(input[name="targetGrade"])').forEach(label => {
-        applyCardStyle(label, label.querySelector('input').checked);
+        applyGradeStyle(label, label.querySelector('input').checked);
         label.querySelector('input').addEventListener('change', function () {
-            document.querySelectorAll('label:has(input[name="targetGrade"])').forEach(l => applyCardStyle(l, false));
-            applyCardStyle(label, true);
+            document.querySelectorAll('label:has(input[name="targetGrade"])').forEach(l => applyGradeStyle(l, false));
+            applyGradeStyle(label, true);
             currentGrade = this.value;
             const cfg = GRADE_CONFIG[currentGrade];
-            if (gradeHintEl) gradeHintEl.querySelector('span').textContent = cfg ? cfg.hint : '';
+            if (gradeHintEl) gradeHintEl.textContent = cfg ? cfg.hint : '';
             if (cfg) { selectDiff(cfg.recommended); checkDiffWarn(currentGrade, cfg.recommended); }
         });
     });
@@ -285,6 +278,7 @@
     });
 
     document.querySelectorAll('label:has(input[name="residenceType"])').forEach(label => {
+        applyCardStyle(label, label.querySelector('input').checked);
         label.querySelector('input').addEventListener('change', function () {
             document.querySelectorAll('label:has(input[name="residenceType"])').forEach(l => applyCardStyle(l, false));
             applyCardStyle(label, true);
