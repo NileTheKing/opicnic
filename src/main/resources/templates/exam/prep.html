@@ -57,103 +57,101 @@
                 <p class="text-sm text-gray-700" th:text="${plan.message()}"></p>
             </div>
 
-            <!-- 이번 주 할 것 -->
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-bold text-gray-700">이번 주 할 것</h2>
-                    <span class="text-xs text-gray-400" th:text="'주 ' + ${plan.weeklyComboTarget()} + '콤보'"></span>
+            <!-- 콤보 연습 카드 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-3">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-layer-group text-indigo-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">콤보 연습</p>
+                            <p class="text-xs text-gray-400">하루 <span th:text="${plan.dailyComboTarget()}"></span>회 목표</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-indigo-600" th:text="'주 ' + ${plan.weeklyComboTarget()} + '회'"></span>
                 </div>
-                <div class="flex flex-col gap-2">
-
-                    <!-- 콤보 연습 -->
-                    <div class="flex flex-col gap-1.5">
-                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-layer-group text-indigo-500 text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-800">콤보 연습</p>
-                                    <p class="text-xs text-gray-400">하루 <span th:text="${plan.dailyComboTarget()}"></span>회 목표</p>
-                                </div>
-                            </div>
-                            <span class="text-lg font-black text-indigo-600" th:text="${plan.weeklyComboTarget()} + '회'"></span>
-                        </div>
-                        <div th:if="${!plan.weakCombos().isEmpty()}" class="pl-4 flex flex-col gap-1">
-                            <p class="text-[11px] text-indigo-400 px-1 mb-0.5">연습 기록 분석 기반 · 약한 순 추천</p>
-                            <th:block th:each="combo, stat : ${plan.weakCombos()}">
-                                <a th:if="${stat.index < 2}"
-                                   th:href="@{/practice/combo(category=${combo.category()})}"
-                                   class="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-2 hover:bg-indigo-100 transition-colors group">
-                                    <div class="flex items-center gap-2">
-                                        <span th:if="${combo.count() == 0}"
-                                              class="text-[10px] bg-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded font-medium">미연습</span>
-                                        <span th:if="${combo.count() > 0}"
-                                              class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">약점</span>
-                                        <span class="text-xs text-indigo-700 font-medium" th:text="${combo.label()}"></span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span th:if="${combo.count() > 0}" class="text-xs text-indigo-400" th:text="${combo.avgScore()} + '점'"></span>
-                                        <span class="text-xs text-indigo-300 group-hover:text-indigo-500 transition-colors">연습 →</span>
-                                    </div>
-                                </a>
-                            </th:block>
-                        </div>
-                    </div>
-
-                    <!-- 유형 연습 -->
-                    <div class="flex flex-col gap-1.5">
-                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-bullseye text-violet-500 text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-800">유형 연습</p>
-                                    <p class="text-xs text-gray-400">약한 유형 집중 공략</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div th:if="${!plan.weakTypes().isEmpty()}" class="pl-4 flex flex-col gap-1">
-                            <p class="text-[11px] text-violet-400 px-1 mb-0.5">연습 기록 분석 기반 · 약한 순 추천</p>
-                            <th:block th:each="type, stat : ${plan.weakTypes()}">
-                                <a th:if="${stat.index < 2}"
-                                   th:href="@{/practice/type(type=${type.typeKey()})}"
-                                   class="flex items-center justify-between bg-violet-50 rounded-xl px-3 py-2 hover:bg-violet-100 transition-colors group">
-                                    <div class="flex items-center gap-2">
-                                        <span th:if="${type.count() == 0}"
-                                              class="text-[10px] bg-violet-200 text-violet-700 px-1.5 py-0.5 rounded font-medium">미연습</span>
-                                        <span th:if="${type.count() > 0}"
-                                              class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">약점</span>
-                                        <span class="text-xs text-violet-700 font-medium" th:text="${type.typeLabel()}"></span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span th:if="${type.count() > 0}" class="text-xs text-violet-400" th:text="${type.avgScore()} + '점'"></span>
-                                        <span class="text-xs text-violet-300 group-hover:text-violet-500 transition-colors">연습 →</span>
-                                    </div>
-                                </a>
-                            </th:block>
-                        </div>
-                    </div>
-
-                    <!-- 모의고사 -->
-                    <a href="/practice/mock"
-                       class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl hover:bg-amber-50 transition-colors group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-file-pen text-amber-500 text-xs"></i>
-                            </div>
+                <div th:if="${!plan.weakCombos().isEmpty()}" class="flex flex-col gap-1.5">
+                    <p class="text-[11px] text-indigo-400 mb-0.5">약한 순 추천 · 기록 기반</p>
+                    <th:block th:each="combo, stat : ${plan.weakCombos()}">
+                        <a th:if="${stat.index < 2}"
+                           th:href="@{/practice/combo(category=${combo.category()})}"
+                           class="flex items-center justify-between bg-indigo-50 rounded-xl px-4 py-3 hover:bg-indigo-100 transition-colors group">
                             <div>
-                                <p class="text-sm font-semibold text-gray-800">모의고사</p>
-                                <p class="text-xs text-gray-400"
-                                   th:text="${plan.daysLeft() <= 7} ? '시험 막바지, 지금 추천해요' : '실제 시험과 동일한 구성'"></p>
+                                <div class="flex items-center gap-2 mb-0.5">
+                                    <span th:if="${combo.count() == 0}"
+                                          class="text-[10px] bg-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
+                                    <span th:if="${combo.count() > 0}"
+                                          class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-semibold">약점</span>
+                                    <span class="text-xs text-indigo-800 font-semibold" th:text="${combo.label()}"></span>
+                                </div>
+                                <p class="text-[10px] text-indigo-400"
+                                   th:text="${combo.category() == 'C1'} ? '묘사 → 루틴 → 최근 경험' :
+                                             (${combo.category() == 'C2'} ? '묘사 → 경험 → 인상적인 경험' :
+                                             (${combo.category() == 'C3'} ? '정보요청 → 문제해결 → 유사경험' :
+                                             (${combo.category() == 'C4'} ? '묘사 → 질문하기' :
+                                             (${combo.category() == 'C5'} ? '비교/대조 → 이슈 설명' : ''))))">
+                                </p>
                             </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-amber-400 transition-colors"></i>
-                    </a>
-
+                            <div class="flex items-center gap-2">
+                                <span th:if="${combo.count() > 0}" class="text-xs text-indigo-400" th:text="${combo.avgScore()} + '점'"></span>
+                                <span class="text-xs text-indigo-300 group-hover:text-indigo-500 transition-colors">연습 →</span>
+                            </div>
+                        </a>
+                    </th:block>
                 </div>
             </div>
+
+            <!-- 유형 연습 카드 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-3">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-bullseye text-violet-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">유형 연습</p>
+                            <p class="text-xs text-gray-400">약한 유형 집중 공략</p>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${!plan.weakTypes().isEmpty()}" class="flex flex-col gap-1.5">
+                    <p class="text-[11px] text-violet-400 mb-0.5">약한 순 추천 · 기록 기반</p>
+                    <th:block th:each="type, stat : ${plan.weakTypes()}">
+                        <a th:if="${stat.index < 2}"
+                           th:href="@{/practice/type(type=${type.typeKey()})}"
+                           class="flex items-center justify-between bg-violet-50 rounded-xl px-4 py-3 hover:bg-violet-100 transition-colors group">
+                            <div class="flex items-center gap-2">
+                                <span th:if="${type.count() == 0}"
+                                      class="text-[10px] bg-violet-200 text-violet-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
+                                <span th:if="${type.count() > 0}"
+                                      class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-semibold">약점</span>
+                                <span class="text-xs text-violet-800 font-semibold" th:text="${type.typeLabel()}"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span th:if="${type.count() > 0}" class="text-xs text-violet-400" th:text="${type.avgScore()} + '점'"></span>
+                                <span class="text-xs text-violet-300 group-hover:text-violet-500 transition-colors">연습 →</span>
+                            </div>
+                        </a>
+                    </th:block>
+                </div>
+            </div>
+
+            <!-- 모의고사 카드 -->
+            <a href="/practice/mock"
+               class="flex items-center justify-between bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 hover:border-amber-200 hover:bg-amber-50 transition-colors group mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-file-pen text-amber-500 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">모의고사</p>
+                        <p class="text-xs text-gray-400"
+                           th:text="${plan.daysLeft() <= 7} ? '시험 막바지, 지금 추천해요' : '실제 시험과 동일한 구성 · 15문항'"></p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-amber-400 transition-colors"></i>
+            </a>
 
             <!-- 시험 일정 수정 토글 -->
             <button onclick="toggleScheduleForm()"
