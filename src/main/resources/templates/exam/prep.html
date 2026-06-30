@@ -30,20 +30,6 @@
             <h1 class="text-xl font-bold text-gray-900">시험 준비</h1>
         </div>
 
-        <!-- 시험 미등록 -->
-        <div th:if="${schedule == null}">
-            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center mb-4">
-                <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-solid fa-calendar-plus text-2xl text-indigo-400"></i>
-                </div>
-                <p class="text-base font-bold text-gray-800 mb-1">시험일을 등록해보세요</p>
-                <p class="text-sm text-gray-400 mb-6">목표에 맞는 맞춤 학습 계획을 만들어드릴게요</p>
-                <button onclick="document.getElementById('schedule-form').scrollIntoView({behavior:'smooth'})"
-                        class="bg-indigo-600 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
-                    시험일 등록하기
-                </button>
-            </div>
-        </div>
 
         <!-- D-day 헤더 + 학습 계획 (시험 등록 후) -->
         <div th:if="${plan != null}">
