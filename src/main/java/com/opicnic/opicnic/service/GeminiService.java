@@ -35,10 +35,14 @@ public class GeminiService {
     private long mockDelayMs;
 
     private static final String SYSTEM_PROMPT =
-            "당신은 OPIc 시험 전문 평가자입니다. 모든 텍스트 필드는 반드시 한국어로만 작성하세요.\n" +
+            "당신은 OPIc 시험 전문 평가자입니다.\n" +
                     "입력은 음성 STT 결과이므로 더듬음·filler words는 감안하고, 문맥에 맞지 않는 단어는 STT 오류로 간주해 크게 감점하지 마세요.\n" +
                     "\n" +
-                    "【채점 기준 — 문제 유형과 무관하게 적용】\n" +
+                    "【채점 + 피드백 규칙】\n" +
+                    "각 항목 텍스트 필드는 한국어 진단 + 영어 예시 형식으로 작성:\n" +
+                    "  형식: 한국어로 약점을 짚고, 예) \"[사용자 실제 발화]\" → \"[개선된 영어 표현]\"\n" +
+                    "  영어 예시 없이 한국어 조언만 쓰는 것 금지.\n" +
+                    "\n" +
                     "mainPoint (메인포인트 명확성 및 구조):\n" +
                     "  5=첫 문장에 명확한 MP, MP→부가설명→결론 구조 완성\n" +
                     "  4=MP 명확하나 구조 약간 불완전\n" +
@@ -60,21 +64,12 @@ public class GeminiService {
                     "  2=잦은 오류로 이해 어려움\n" +
                     "  1=기본 문법도 불안정\n" +
                     "\n" +
-                    "fluency (발화량 — STT 텍스트 단어 수 기준):\n" +
-                    "  5=130단어 이상 (약 1분20초+, 자연스러운 흐름)\n" +
-                    "  4=90~129단어\n" +
-                    "  3=60~89단어\n" +
-                    "  2=30~59단어\n" +
-                    "  1=29단어 이하\n" +
-                    "\n" +
                     "content (내용 구성 — 주제 부합도 및 이유/예시 전개):\n" +
                     "  5=주제 완전 부합, 이유+예시 충분히 전개\n" +
                     "  4=주제 부합, 전개 약간 부족\n" +
                     "  3=주제 부합하나 단순한 수준\n" +
                     "  2=주제와 부분적으로만 관련\n" +
                     "  1=주제와 무관\n" +
-                    "\n" +
-                    "improvements: 가장 낮은 점수 항목 기준으로 1가지. 형식: '[사용자 실제 발화 인용]' → [MP 명확성 / 형용사·비유 표현 / 문법 구조 / 내용 전개 중 해당 기준] 관점에서 '[개선된 표현 예시]'처럼 바꿔보세요. 예시 없이 조언만 하는 것 금지.\n" +
                     "\n" +
                     "【모범답안 생성 — 아래 유형별 전략은 모범답안에만 적용, 채점에 영향 주지 말 것】\n" +
                     "질문 내용을 먼저 파악한 뒤 아래 유형 전략을 적용할 것.\n" +
@@ -92,20 +87,17 @@ public class GeminiService {
                     "modelAnswer: 위 유형 전략을 적용한 모범 답변 (영어, 130단어 이상)\n" +
                     "modelAnswerComment: MP가 어디인지, 어떤 전략을 적용했는지 (한국어, 2~3줄)\n" +
                     "\n" +
-                    "아래 JSON 형식을 철저히 지켜 응답하세요:\n" +
+                    "아래 JSON 형식을 철저히 지켜 응답하세요. fluencyScore는 반드시 0으로 출력:\n" +
                     "{\n" +
-                    "  \"mainPoint\": \"메인포인트 평가\",\n" +
+                    "  \"mainPoint\": \"진단 + 예) 'actual quote' → 'improved version'\",\n" +
                     "  \"mainPointScore\": 3,\n" +
-                    "  \"vocabulary\": \"어휘/묘사 능력 평가\",\n" +
+                    "  \"vocabulary\": \"진단 + 예) 'actual quote' → 'improved version'\",\n" +
                     "  \"vocabularyScore\": 3,\n" +
-                    "  \"grammar\": \"문법 평가\",\n" +
+                    "  \"grammar\": \"진단 + 예) 'actual quote' → 'improved version'\",\n" +
                     "  \"grammarScore\": 3,\n" +
-                    "  \"fluency\": \"발화량 평가 (단어 수 포함)\",\n" +
-                    "  \"fluencyScore\": 3,\n" +
-                    "  \"content\": \"내용 구성 평가\",\n" +
+                    "  \"fluencyScore\": 0,\n" +
+                    "  \"content\": \"진단 + 예) 'actual quote' → 'improved version'\",\n" +
                     "  \"contentScore\": 3,\n" +
-                    "  \"overall\": \"전반적인 평가\",\n" +
-                    "  \"improvements\": \"가장 중요한 개선점 1가지\",\n" +
                     "  \"modelAnswer\": \"모범 답변 영어 텍스트\",\n" +
                     "  \"modelAnswerComment\": \"모범 답변 핵심 포인트 한국어 설명\"\n" +
                     "}";

@@ -55,10 +55,14 @@ public class CoachingService {
         }
         sb.append("\n");
 
-        sb.append("【최근 개선 포인트 패턴】\n");
-        results.stream().limit(RECENT_TEXT_LIMIT)
-                .filter(r -> r.getImprovements() != null && !r.getImprovements().isBlank())
-                .forEach(r -> sb.append("- ").append(r.getImprovements()).append("\n"));
+        sb.append("【최근 문항별 피드백 (최신 순)】\n");
+        results.stream().limit(RECENT_TEXT_LIMIT).forEach(r -> {
+            sb.append("[").append(r.getQuestionType()).append("]\n");
+            if (r.getMainPoint()   != null) sb.append("  핵심전달: ").append(r.getMainPoint()).append("\n");
+            if (r.getVocabulary()  != null) sb.append("  어휘/묘사: ").append(r.getVocabulary()).append("\n");
+            if (r.getGrammar()     != null) sb.append("  문법: ").append(r.getGrammar()).append("\n");
+            if (r.getContent()     != null) sb.append("  내용구성: ").append(r.getContent()).append("\n");
+        });
 
         return sb.toString();
     }

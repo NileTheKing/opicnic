@@ -81,27 +81,28 @@ public class FeedbackService {
                             log.info("[Subtask-{}] 완료: {}ms{}", idx, subtaskMs,
                                     attempt > 0 ? " (재시도 " + attempt + "회)" : "");
 
+                            int fluencyScore = computeFluencyScore(speechText);
+                            int mpScore    = score(feedbackMap, "mainPointScore");
+                            int vocScore   = score(feedbackMap, "vocabularyScore");
+                            int grScore    = score(feedbackMap, "grammarScore");
+                            int ctScore    = score(feedbackMap, "contentScore");
+                            String grade   = computeGrade(mpScore, vocScore, grScore, fluencyScore, ctScore);
+
                             return FeedbackDTO.builder()
                                     .question(question)
                                     .sttText(speechText)
-                                    .vocabulary(str(feedbackMap, "vocabulary"))
-                                    .vocabularyScore(score(feedbackMap, "vocabularyScore"))
-                                    .grammar(str(feedbackMap, "grammar"))
-                                    .grammarScore(score(feedbackMap, "grammarScore"))
                                     .mainPoint(str(feedbackMap, "mainPoint"))
-                                    .mainPointScore(score(feedbackMap, "mainPointScore"))
-                                    .fluency(str(feedbackMap, "fluency"))
-                                    .fluencyScore(computeFluencyScore(speechText))
+                                    .mainPointScore(mpScore)
+                                    .vocabulary(str(feedbackMap, "vocabulary"))
+                                    .vocabularyScore(vocScore)
+                                    .grammar(str(feedbackMap, "grammar"))
+                                    .grammarScore(grScore)
+                                    .fluency(computeFluencyText(speechText, fluencyScore))
+                                    .fluencyScore(fluencyScore)
                                     .content(str(feedbackMap, "content"))
-                                    .contentScore(score(feedbackMap, "contentScore"))
-                                    .overall(str(feedbackMap, "overall"))
-                                    .overallGrade(computeGrade(
-                                            score(feedbackMap, "mainPointScore"),
-                                            score(feedbackMap, "vocabularyScore"),
-                                            score(feedbackMap, "grammarScore"),
-                                            computeFluencyScore(speechText),
-                                            score(feedbackMap, "contentScore")))
-                                    .improvements(str(feedbackMap, "improvements"))
+                                    .contentScore(ctScore)
+                                    .overall(computeOverallText(grade, mpScore, vocScore, grScore, fluencyScore, ctScore))
+                                    .overallGrade(grade)
                                     .modelAnswer(str(feedbackMap, "modelAnswer"))
                                     .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
                                     .build();
@@ -154,6 +155,31 @@ public class FeedbackService {
                 .mainPointScore(1).vocabularyScore(1).grammarScore(1).fluencyScore(1).contentScore(1)
                 .improvements("답변을 녹음해주세요.")
                 .build();
+    }
+
+    private static String computeFluencyText(String text, int score) {
+        int words = (text == null || text.isBlank()) ? 0 : text.trim().split("\\s+").length;
+        return switch (score) {
+            case 5 -> words + "단어. 발화량이 충분합니다.";
+            case 4 -> words + "단어. 조금 더 말하면 만점이에요. (목표: 130단어+)";
+            case 3 -> words + "단어. 발화량을 더 늘려보세요. (목표: 90단어+)";
+            case 2 -> words + "단어. 더 길게 말하는 연습이 필요해요. (목표: 60단어+)";
+            default -> words + "단어. 발화량이 많이 부족해요.";
+        };
+    }
+
+    private static String computeOverallText(String grade, Integer... scores) {
+        String[] labels = {"핵심전달", "어휘/묘사", "문법", "발화량", "내용구성"};
+        int minScore = 5;
+        String weakest = null;
+        for (int i = 0; i < scores.length; i++) {
+            if (scores[i] != null && scores[i] < minScore) {
+                minScore = scores[i];
+                weakest = labels[i];
+            }
+        }
+        String base = grade + " 수준입니다.";
+        return weakest != null ? base + " " + weakest + " 개선이 다음 목표예요." : base;
     }
 
     private static int computeFluencyScore(String text) {
