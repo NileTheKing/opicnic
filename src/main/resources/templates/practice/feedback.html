@@ -3,176 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>영어 학습 피드백</title>
+    <title>피드백 - Opicnic</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <style>
-        .feedback-card {
-            transition: all 0.3s ease;
-        }
-        .feedback-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .level-IL { color: #6366F1; }
-        .level-IM { color: #8B5CF6; }
-        .level-IH { color: #EC4899; }
-        .level-AL { color: #F59E0B; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="bg-gray-50 min-h-screen">
-<div class="container mx-auto px-4 py-8">
-    <header th:replace="~{fragments/header :: header}"></header>
-    <header class="mb-10">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-600">영어 학습 피드백 결과</h1>
-            <p class="text-sm text-gray-500">평가일: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">2025-04-10</span></p>
-        </div>
-        <div class="mt-4 bg-white p-6 rounded-lg shadow-md">
-            <div class="flex items-center space-x-2">
-                <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-                <p class="text-gray-700">각 문제에 대한 상세 피드백입니다. 각 영역별 평가를 확인하고 개선점을 참고하세요.</p>
+
+<div class="max-w-xl mx-auto px-4 py-6 pb-16">
+
+    <!-- 탑바 -->
+    <div class="flex items-center justify-between mb-6">
+        <a href="/" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+            <span>홈</span>
+        </a>
+        <span class="text-sm font-semibold text-gray-900">연습 결과</span>
+        <div class="w-10"></div>
+    </div>
+
+    <!-- 문항 카드 -->
+    <div class="space-y-4" th:each="feedback, iterStat : ${feedbackResults}">
+
+        <!-- 실패 카드 -->
+        <div th:if="${feedback.failed}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <span class="text-sm font-semibold text-gray-700"
+                      th:text="'문항 ' + ${iterStat.count}"></span>
+            </div>
+            <div class="px-5 py-4">
+                <p class="text-sm text-gray-500 mb-3 leading-relaxed"
+                   th:text="${feedback.question.content}"></p>
+                <div class="flex items-center gap-2 bg-red-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-circle-exclamation text-red-400 text-sm shrink-0"></i>
+                    <p class="text-sm text-red-600">분석에 실패했습니다. 다시 시도해 주세요.</p>
+                </div>
             </div>
         </div>
-    </header>
 
-    <div class="space-y-8">
-        <div class="feedback-card bg-white rounded-xl shadow-md overflow-hidden"
-             th:each="feedback, iterStat : ${feedbackResults}">
-            <div class="bg-indigo-600 p-4">
-                <h2 class="text-xl font-semibold text-white flex items-center">
-                    <span class="mr-2">Question</span>
-                    <span class="bg-white text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center"
-                          th:text="${iterStat.count}">1</span>
-                </h2>
-            </div>
+        <!-- 정상 카드 -->
+        <div th:unless="${feedback.failed}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
 
-            <!-- 분석 실패 카드 -->
-            <div class="p-6" th:if="${feedback.failed}">
-                <div class="mb-6 bg-indigo-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">문제</h3>
-                    <p class="text-gray-700" th:text="${feedback.question.content}">문제 텍스트</p>
+            <!-- 카드 헤더: 문항번호 + 등급 -->
+            <div class="px-5 pt-5 pb-4">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-medium text-gray-400"
+                          th:text="'문항 ' + ${iterStat.count}"></span>
+                    <!-- 등급 배지 -->
+                    <span th:if="${feedback.overallGrade != null}"
+                          th:text="${feedback.overallGrade}"
+                          th:classappend="${feedback.overallGrade == 'AL'} ? 'bg-purple-100 text-purple-700' :
+                                          (${feedback.overallGrade == 'IH'} ? 'bg-blue-100 text-blue-700' :
+                                          (${feedback.overallGrade.startsWith('IM')} ? 'bg-indigo-100 text-indigo-700' :
+                                          'bg-gray-100 text-gray-500'))"
+                          class="text-xs font-bold px-3 py-1 rounded-full"></span>
                 </div>
-                <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                    <div class="flex items-center">
-                        <i class="fas fa-exclamation-circle text-red-400 mr-3 text-xl"></i>
-                        <div>
-                            <p class="font-medium text-red-800">분석에 실패했습니다</p>
-                            <p class="mt-1 text-sm text-red-600">일시적인 오류로 이 문제의 피드백을 가져오지 못했습니다. 다시 시도해 주세요.</p>
+
+                <!-- 5개 점수 바 -->
+                <div class="space-y-2">
+                    <div th:if="${feedback.mainPointScore != null}" class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-14 shrink-0">핵심전달</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-indigo-500"
+                                 th:style="'width: ' + ${feedback.mainPointScore * 20} + '%'"></div>
                         </div>
+                        <span class="text-xs font-semibold text-gray-600 w-4 text-right shrink-0"
+                              th:text="${feedback.mainPointScore}"></span>
                     </div>
-                </div>
-            </div>
-
-            <div class="p-6" th:unless="${feedback.failed}">
-                <!-- 문제 내용 -->
-                <div class="mb-6 bg-indigo-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">문제</h3>
-                    <p class="text-gray-700" th:text="${feedback.question.content}">문제 텍스트</p>
-                </div>
-
-                <!-- 사용자 응답 내용 -->
-                <div class="mb-6 bg-indigo-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">응답</h3>
-                    <p class="text-gray-700" th:text="${feedback.sttText}">문제 텍스트</p>
-                </div>
-
-                <!-- 피드백 영역 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-book text-indigo-500 mr-2"></i>어휘</h4>
-                        <p class="text-gray-600" th:text="${feedback.vocabulary}">어휘 피드백</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-pen text-indigo-500 mr-2"></i>문법</h4>
-                        <p class="text-gray-600" th:text="${feedback.grammar}">문법 피드백</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-pen text-indigo-500 mr-2"></i>메인포인트</h4>
-                        <p class="text-gray-600" th:text="${feedback.mainPoint}">메인포인트 피드백</p>
-                    </div>
-<!--                    <div class="bg-gray-50 p-4 rounded-lg">-->
-<!--                        <h4 class="font-medium text-gray-700"><i class="fas fa-microphone text-indigo-500 mr-2"></i>발음</h4>-->
-<!--                        <p class="text-gray-600" th:text="${feedback.pronunciation}">발음 피드백</p>-->
-<!--                    </div>-->
-
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-comment-dots text-indigo-500 mr-2"></i>유창성</h4>
-                        <p class="text-gray-600" th:text="${feedback.fluency}">유창성 피드백</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-file-alt text-indigo-500 mr-2"></i>내용 구성</h4>
-                        <p class="text-gray-600" th:text="${feedback.content}">내용 피드백</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg col-span-full">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h4 class="font-medium text-gray-700"><i class="fas fa-star text-indigo-500 mr-2"></i>전반적 평가</h4>
-                            <span th:if="${feedback.overallGrade != null}"
-                                  th:text="${feedback.overallGrade}"
-                                  th:classappend="${feedback.overallGrade == 'AL'} ? 'bg-purple-100 text-purple-700' :
-                                                  (${feedback.overallGrade == 'IH'} ? 'bg-blue-100 text-blue-700' :
-                                                  (${feedback.overallGrade.startsWith('IM')} ? 'bg-green-100 text-green-700' :
-                                                  'bg-gray-100 text-gray-600'))"
-                                  class="text-sm font-bold px-3 py-0.5 rounded-full"></span>
+                    <div th:if="${feedback.vocabularyScore != null}" class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-14 shrink-0">어휘/묘사</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-indigo-500"
+                                 th:style="'width: ' + ${feedback.vocabularyScore * 20} + '%'"></div>
                         </div>
-                        <p class="text-gray-600" th:text="${feedback.overall}"></p>
+                        <span class="text-xs font-semibold text-gray-600 w-4 text-right shrink-0"
+                              th:text="${feedback.vocabularyScore}"></span>
                     </div>
-                </div>
-
-                <!-- 개선점 -->
-                <div class="mt-6 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                    <div class="flex">
-                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
-                        <div>
-                            <h3 class="text-sm font-medium text-yellow-800">개선점</h3>
-                            <p class="mt-2 text-sm text-yellow-700" th:text="${feedback.improvements}">개선점 텍스트</p>
+                    <div th:if="${feedback.grammarScore != null}" class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-14 shrink-0">문법</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-indigo-500"
+                                 th:style="'width: ' + ${feedback.grammarScore * 20} + '%'"></div>
                         </div>
+                        <span class="text-xs font-semibold text-gray-600 w-4 text-right shrink-0"
+                              th:text="${feedback.grammarScore}"></span>
                     </div>
-                </div>
-
-                <!-- 모범 답변 -->
-                <div class="mt-4" th:if="${feedback.modelAnswer != null}">
-                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180')"
-                                class="w-full flex items-center justify-between p-4 bg-indigo-50 hover:bg-indigo-100 transition-colors text-left">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-star text-indigo-400 text-sm"></i>
-                                <span class="text-sm font-medium text-indigo-700">모범 답변 보기</span>
-                            </div>
-                            <i class="fas fa-chevron-down toggle-icon text-indigo-400 text-xs transition-transform duration-200"></i>
-                        </button>
-                        <div class="hidden p-4 bg-white space-y-3">
-                            <p class="text-sm text-gray-700 leading-relaxed" th:text="${feedback.modelAnswer}"></p>
-                            <div class="pt-3 border-t border-gray-100" th:if="${feedback.modelAnswerComment != null}">
-                                <p class="text-xs text-indigo-600 leading-relaxed" th:text="${feedback.modelAnswerComment}"></p>
-                            </div>
+                    <div th:if="${feedback.fluencyScore != null}" class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-14 shrink-0">발화량</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-indigo-500"
+                                 th:style="'width: ' + ${feedback.fluencyScore * 20} + '%'"></div>
                         </div>
+                        <span class="text-xs font-semibold text-gray-600 w-4 text-right shrink-0"
+                              th:text="${feedback.fluencyScore}"></span>
+                    </div>
+                    <div th:if="${feedback.contentScore != null}" class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-14 shrink-0">내용구성</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-indigo-500"
+                                 th:style="'width: ' + ${feedback.contentScore * 20} + '%'"></div>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-600 w-4 text-right shrink-0"
+                              th:text="${feedback.contentScore}"></span>
                     </div>
                 </div>
             </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            <!-- 세부 피드백 (접기/펼치기) -->
+            <div>
+                <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')"
+                        class="w-full flex items-center justify-between px-5 py-3.5 text-left">
+                    <span class="text-xs font-semibold text-gray-500">세부 피드백</span>
+                    <i class="chevron fa-solid fa-chevron-down text-xs text-gray-300 transition-transform duration-200"></i>
+                </button>
+
+                <div class="hidden px-5 pb-4 space-y-4">
+                    <!-- 질문 -->
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 mb-1">질문</p>
+                        <p class="text-sm text-gray-700 leading-relaxed"
+                           th:text="${feedback.question.content}"></p>
+                    </div>
+
+                    <!-- 내 답변 -->
+                    <div th:if="${feedback.sttText != null and !feedback.sttText.isBlank()}">
+                        <p class="text-xs font-medium text-gray-400 mb-1">내 답변</p>
+                        <p class="text-sm text-gray-500 leading-relaxed italic"
+                           th:text="${feedback.sttText}"></p>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-4 space-y-3">
+                        <div th:if="${feedback.mainPoint != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">핵심전달</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.mainPoint}"></p>
+                        </div>
+                        <div th:if="${feedback.vocabulary != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">어휘/묘사</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.vocabulary}"></p>
+                        </div>
+                        <div th:if="${feedback.grammar != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">문법</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.grammar}"></p>
+                        </div>
+                        <div th:if="${feedback.fluency != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">발화량</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.fluency}"></p>
+                        </div>
+                        <div th:if="${feedback.content != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">내용구성</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.content}"></p>
+                        </div>
+                        <div th:if="${feedback.overall != null}">
+                            <p class="text-xs font-semibold text-indigo-500 mb-0.5">전반적 평가</p>
+                            <p class="text-sm text-gray-600 leading-relaxed" th:text="${feedback.overall}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            <!-- 개선점 -->
+            <div th:if="${feedback.improvements != null}" class="px-5 py-4">
+                <div class="flex gap-3 bg-amber-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-lightbulb text-amber-400 text-sm mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1">개선점</p>
+                        <p class="text-sm text-amber-800 leading-relaxed"
+                           th:text="${feedback.improvements}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 모범 답변 -->
+            <div th:if="${feedback.modelAnswer != null}" class="px-5 pb-5">
+                <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron2').classList.toggle('rotate-180')"
+                        class="w-full flex items-center justify-between bg-indigo-50 hover:bg-indigo-100 transition-colors rounded-xl px-4 py-3 text-left">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-400 text-xs"></i>
+                        <span class="text-xs font-semibold text-indigo-700">모범 답변 보기</span>
+                    </div>
+                    <i class="chevron2 fa-solid fa-chevron-down text-xs text-indigo-300 transition-transform duration-200"></i>
+                </button>
+                <div class="hidden mt-2 px-4 py-3 bg-gray-50 rounded-xl space-y-3">
+                    <p class="text-sm text-gray-700 leading-relaxed"
+                       th:text="${feedback.modelAnswer}"></p>
+                    <div th:if="${feedback.modelAnswerComment != null}" class="pt-2 border-t border-gray-200">
+                        <p class="text-xs text-indigo-500 leading-relaxed"
+                           th:text="${feedback.modelAnswerComment}"></p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- 돌아가기 버튼 -->
-    <div class="mt-12 mb-6 flex justify-center">
-        <a href="/" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-            <i class="fas fa-chevron-left mr-2"></i> 홈으로 돌아가기
+    <!-- 하단 버튼 -->
+    <div class="mt-6 space-y-3">
+        <a href="/"
+           class="flex items-center justify-center gap-2 w-full py-3.5 bg-indigo-600 text-white text-sm font-semibold rounded-2xl hover:bg-indigo-700 transition-colors">
+            다음 연습하기
+        </a>
+        <a href="/analytics"
+           class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+            기록 보기
         </a>
     </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const cards = document.querySelectorAll('.feedback-card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, 100 * index);
-        });
-    });
-</script>
+</div>
 </body>
 </html>

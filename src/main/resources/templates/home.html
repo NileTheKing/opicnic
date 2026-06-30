@@ -86,70 +86,19 @@
                     </a>
                 </div>
 
-                <!-- 주제 탐색 -->
+                <!-- 집중 연습 -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                            <i class="fa-solid fa-book-open text-indigo-500"></i>
+                            <i class="fa-solid fa-crosshairs text-indigo-500"></i>
                         </div>
-                        <span class="text-xs bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full"
-                              th:text="${supportedTopicCount} + '개 주제'">20개 주제</span>
+                        <span class="text-xs bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full">주제·콤보·유형</span>
                     </div>
-                    <h3 class="font-bold text-gray-800 mb-1">주제 탐색</h3>
-                    <p class="text-sm text-gray-400 mb-4">다른 주제 문제 확인하기</p>
-                    <a href="/practice/topics"
+                    <h3 class="font-bold text-gray-800 mb-1">집중 연습</h3>
+                    <p class="text-sm text-gray-400 mb-4">원하는 방식으로 골라서 연습</p>
+                    <a href="/practice/focus"
                        class="block w-full py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium text-center hover:bg-indigo-100 transition">
-                        탐색하기
-                    </a>
-                </div>
-            </div>
-
-            <!-- 유형별 연습 -->
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mt-4">
-                <div class="flex items-center gap-2 mb-3">
-                    <i class="fa-solid fa-layer-group text-indigo-400 text-sm"></i>
-                    <h3 class="font-bold text-gray-800 text-sm">유형별 연습</h3>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <a href="/practice/type?type=TYPE_1" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 1</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">현재 상태 묘사</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_2" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 2</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">루틴 / 습관</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_3" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 3</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">최근 경험</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_4" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 4</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">인상적인 경험</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_5" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 5</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">롤플레이 질문</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_6" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 6</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">롤플레이 정보요청</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_7" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 7</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">롤플레이 문제해결</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_8" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 8</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">유사 경험 설명</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_9" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 9</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">비교 / 대조</span>
-                    </a>
-                    <a href="/practice/type?type=TYPE_10" class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 rounded-xl transition group">
-                        <span class="text-xs text-gray-500 group-hover:text-indigo-600">유형 10</span>
-                        <span class="text-xs text-gray-400 truncate group-hover:text-indigo-500">이슈 설명</span>
+                        선택하기
                     </a>
                 </div>
             </div>
