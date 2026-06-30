@@ -66,6 +66,12 @@ public class FeedbackResult {
     @Column(columnDefinition = "TEXT")
     private String improvements;
 
+    @Column(columnDefinition = "TEXT")
+    private String modelAnswer;
+
+    @Column(columnDefinition = "TEXT")
+    private String modelAnswerComment;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

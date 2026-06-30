@@ -104,18 +104,18 @@
                         <h4 class="font-medium text-gray-700"><i class="fas fa-file-alt text-indigo-500 mr-2"></i>내용 구성</h4>
                         <p class="text-gray-600" th:text="${feedback.content}">내용 피드백</p>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-700"><i class="fas fa-star text-indigo-500 mr-2"></i>전반적 평가</h4>
-                        <p class="text-gray-600">
-                            <span th:text="${feedback.overall}"
-                                  th:classappend="|
-                                      ${feedback.overall.contains('IL')} ? 'font-bold level-IL' :
-                                      ${feedback.overall.contains('IM')} ? 'font-bold level-IM' :
-                                      ${feedback.overall.contains('IH')} ? 'font-bold level-IH' :
-                                      ${feedback.overall.contains('AL')} ? 'font-bold level-AL' : ''
-                                  |">
-                            </span>
-                        </p>
+                    <div class="bg-gray-50 p-4 rounded-lg col-span-full">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h4 class="font-medium text-gray-700"><i class="fas fa-star text-indigo-500 mr-2"></i>전반적 평가</h4>
+                            <span th:if="${feedback.overallGrade != null}"
+                                  th:text="${feedback.overallGrade}"
+                                  th:classappend="${feedback.overallGrade == 'AL'} ? 'bg-purple-100 text-purple-700' :
+                                                  (${feedback.overallGrade == 'IH'} ? 'bg-blue-100 text-blue-700' :
+                                                  (${feedback.overallGrade.startsWith('IM')} ? 'bg-green-100 text-green-700' :
+                                                  'bg-gray-100 text-gray-600'))"
+                                  class="text-sm font-bold px-3 py-0.5 rounded-full"></span>
+                        </div>
+                        <p class="text-gray-600" th:text="${feedback.overall}"></p>
                     </div>
                 </div>
 
@@ -126,6 +126,26 @@
                         <div>
                             <h3 class="text-sm font-medium text-yellow-800">개선점</h3>
                             <p class="mt-2 text-sm text-yellow-700" th:text="${feedback.improvements}">개선점 텍스트</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 모범 답변 -->
+                <div class="mt-4" th:if="${feedback.modelAnswer != null}">
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180')"
+                                class="w-full flex items-center justify-between p-4 bg-indigo-50 hover:bg-indigo-100 transition-colors text-left">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-star text-indigo-400 text-sm"></i>
+                                <span class="text-sm font-medium text-indigo-700">모범 답변 보기</span>
+                            </div>
+                            <i class="fas fa-chevron-down toggle-icon text-indigo-400 text-xs transition-transform duration-200"></i>
+                        </button>
+                        <div class="hidden p-4 bg-white space-y-3">
+                            <p class="text-sm text-gray-700 leading-relaxed" th:text="${feedback.modelAnswer}"></p>
+                            <div class="pt-3 border-t border-gray-100" th:if="${feedback.modelAnswerComment != null}">
+                                <p class="text-xs text-indigo-600 leading-relaxed" th:text="${feedback.modelAnswerComment}"></p>
+                            </div>
                         </div>
                     </div>
                 </div>

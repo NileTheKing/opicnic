@@ -230,6 +230,8 @@ public class PracticeAttemptApiController {
                         .overall(fb.getOverall())
                         .overallGrade(fb.getOverallGrade())
                         .improvements(fb.getImprovements())
+                        .modelAnswer(fb.getModelAnswer())
+                        .modelAnswerComment(fb.getModelAnswerComment())
                         .build())
                 .toList();
 

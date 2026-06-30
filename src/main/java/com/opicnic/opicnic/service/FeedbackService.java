@@ -70,6 +70,10 @@ public class FeedbackService {
 
                             String speechText = sttService.sendStreamToStt(
                                     new ByteArrayInputStream(audioBuffer), "audio_" + idx + ".webm");
+                            if (speechText == null || speechText.trim().split("\\s+").length < 5) {
+                                subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
+                                return noResponseDto(question, speechText);
+                            }
                             var feedbackMap = geminiService.getOpicFeedback(speechText, question);
 
                             long subtaskMs = System.currentTimeMillis() - subtaskStart;
@@ -91,8 +95,15 @@ public class FeedbackService {
                                     .content(str(feedbackMap, "content"))
                                     .contentScore(score(feedbackMap, "contentScore"))
                                     .overall(str(feedbackMap, "overall"))
-                                    .overallGrade(str(feedbackMap, "overallGrade"))
+                                    .overallGrade(computeGrade(
+                                            score(feedbackMap, "mainPointScore"),
+                                            score(feedbackMap, "vocabularyScore"),
+                                            score(feedbackMap, "grammarScore"),
+                                            score(feedbackMap, "fluencyScore"),
+                                            score(feedbackMap, "contentScore")))
                                     .improvements(str(feedbackMap, "improvements"))
+                                    .modelAnswer(str(feedbackMap, "modelAnswer"))
+                                    .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
                                     .build();
 
                         } catch (Exception e) {
@@ -134,6 +145,33 @@ public class FeedbackService {
         }
     }
 
+    private static FeedbackDTO noResponseDto(QuestionDto question, String speechText) {
+        return FeedbackDTO.builder()
+                .question(question)
+                .sttText(speechText)
+                .overall("응답이 감지되지 않았습니다.")
+                .overallGrade("IL")
+                .mainPointScore(1).vocabularyScore(1).grammarScore(1).fluencyScore(1).contentScore(1)
+                .improvements("답변을 녹음해주세요.")
+                .build();
+    }
+
+    private static String computeGrade(Integer... scores) {
+        double avg = 0;
+        int count = 0;
+        for (Integer s : scores) {
+            if (s != null) { avg += s; count++; }
+        }
+        if (count == 0) return "IM1";
+        avg /= count;
+        if (avg >= 4.5) return "AL";
+        if (avg >= 3.8) return "IH";
+        if (avg >= 3.2) return "IM3";
+        if (avg >= 2.6) return "IM2";
+        if (avg >= 2.0) return "IM1";
+        return "IL";
+    }
+
     private static String str(Map<String, Object> map, String key) {
         Object v = map.get(key);
         return v == null ? null : v.toString();
@@ -146,43 +184,4 @@ public class FeedbackService {
         try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
     }
 
-    public List<FeedbackDTO> getComboFeedbackSequential(
-            List<InputStream> inputStreams, List<QuestionDto> questions) {
-
-        log.info("[Sequential] 피드백 분석 시작 ({}개)", inputStreams.size());
-        long start = System.currentTimeMillis();
-        List<FeedbackDTO> results = new ArrayList<>();
-
-        for (int i = 0; i < inputStreams.size(); i++) {
-            long t = System.currentTimeMillis();
-            try {
-                String speechText = sttService.sendStreamToStt(inputStreams.get(i), "audio_" + i + ".webm");
-                var feedbackMap = geminiService.getOpicFeedback(speechText, questions.get(i));
-                log.info("[Sequential-{}] 완료: {}ms", i, System.currentTimeMillis() - t);
-                results.add(FeedbackDTO.builder()
-                        .question(questions.get(i))
-                        .sttText(speechText)
-                        .vocabulary(str(feedbackMap, "vocabulary"))
-                        .vocabularyScore(score(feedbackMap, "vocabularyScore"))
-                        .grammar(str(feedbackMap, "grammar"))
-                        .grammarScore(score(feedbackMap, "grammarScore"))
-                        .mainPoint(str(feedbackMap, "mainPoint"))
-                        .mainPointScore(score(feedbackMap, "mainPointScore"))
-                        .fluency(str(feedbackMap, "fluency"))
-                        .fluencyScore(score(feedbackMap, "fluencyScore"))
-                        .content(str(feedbackMap, "content"))
-                        .contentScore(score(feedbackMap, "contentScore"))
-                        .overall(str(feedbackMap, "overall"))
-                        .overallGrade(str(feedbackMap, "overallGrade"))
-                        .improvements(str(feedbackMap, "improvements"))
-                        .build());
-            } catch (Exception e) {
-                log.error("[Sequential-{}] 실패: {}ms | {}", i, System.currentTimeMillis() - t, e.getMessage());
-                results.add(FeedbackDTO.builder().question(questions.get(i)).failed(true).errorMessage(e.getMessage()).build());
-            }
-        }
-
-        log.info("[Sequential 완료] 총 소요: {}ms", System.currentTimeMillis() - start);
-        return results;
-    }
 }

@@ -27,6 +27,8 @@ public class FeedbackDTO {
     private Integer fluencyScore;
     private Integer contentScore;
     private String improvements;
+    private String modelAnswer;
+    private String modelAnswerComment;
 
     @Builder.Default
     private boolean failed = false;
