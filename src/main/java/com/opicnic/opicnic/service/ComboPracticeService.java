@@ -21,16 +21,23 @@ public class ComboPracticeService {
     public ComboQuestionsResult getComboQuestions(String topicStr, String difficultyStr) {
         SurveyTopic topic = SurveyTopic.valueOf(topicStr);
         SurveyDifficulty difficulty = SurveyDifficulty.valueOf(difficultyStr);
+        return buildResult(topic, difficulty, null);
+    }
 
+    public ComboQuestionsResult getComboQuestionsByCategory(SurveyTopic topic, SurveyDifficulty difficulty, String category) {
+        return buildResult(topic, difficulty, category);
+    }
+
+    private ComboQuestionsResult buildResult(SurveyTopic topic, SurveyDifficulty difficulty, String category) {
         List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty);
+        if (category != null) {
+            List<ComboPattern> filtered = patterns.stream()
+                    .filter(p -> p.category().equals(category))
+                    .toList();
+            if (!filtered.isEmpty()) patterns = filtered;
+        }
         ComboPattern pattern = patterns.get(random.nextInt(patterns.size()));
         List<QuestionDto> questions = questionAssemblyService.assemble(topic, pattern);
-
-        return new ComboQuestionsResult(
-                pattern.name(),
-                pattern.patternKey(),
-                pattern.category(),
-                questions
-        );
+        return new ComboQuestionsResult(pattern.name(), pattern.patternKey(), pattern.category(), questions);
     }
 }

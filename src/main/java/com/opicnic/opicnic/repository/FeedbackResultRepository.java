@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface FeedbackResultRepository extends JpaRepository<FeedbackResult, Long> {
     List<FeedbackResult> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+    List<FeedbackResult> findByMemberIdOrderByCreatedAtDesc(Long memberId, org.springframework.data.domain.Pageable pageable);
+    long countByMemberId(Long memberId);
 }

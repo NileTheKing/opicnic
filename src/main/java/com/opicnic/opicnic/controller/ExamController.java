@@ -42,7 +42,11 @@ public class ExamController {
 
         Optional<ExamSchedule> schedule = examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId());
         schedule.ifPresent(s -> {
-            ExamPlanService.StudyPlan plan = examPlanService.buildPlan(diagnosis, s.getTargetGrade(), s.getExamDate());
+            int dailyMinutes = s.getDailyMinutes() != null ? s.getDailyMinutes() : 60;
+            int studyDaysPerWeek = s.getStudyDaysPerWeek() != null ? s.getStudyDaysPerWeek() : 5;
+            ExamPlanService.StudyPlan plan = examPlanService.buildPlan(
+                    diagnosis, s.getTargetGrade(), s.getExamDate(),
+                    dailyMinutes, studyDaysPerWeek, results);
             model.addAttribute("schedule", s);
             model.addAttribute("plan", plan);
         });
@@ -54,12 +58,16 @@ public class ExamController {
     public String saveSchedule(
             @AuthenticationPrincipal OAuth2User oAuth2User,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate examDate,
-            @RequestParam TargetGrade targetGrade) {
+            @RequestParam TargetGrade targetGrade,
+            @RequestParam(defaultValue = "60") int dailyMinutes,
+            @RequestParam(defaultValue = "5") int studyDaysPerWeek) {
         Member member = resolveMember(oAuth2User);
         examScheduleRepository.save(ExamSchedule.builder()
                 .member(member)
                 .examDate(examDate)
                 .targetGrade(targetGrade)
+                .dailyMinutes(dailyMinutes)
+                .studyDaysPerWeek(studyDaysPerWeek)
                 .build());
         return "redirect:/exam";
     }

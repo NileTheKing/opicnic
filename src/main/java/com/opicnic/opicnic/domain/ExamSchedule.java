@@ -28,6 +28,10 @@ public class ExamSchedule {
     @Enumerated(EnumType.STRING)
     private SurveyProfile.TargetGrade targetGrade;
 
+    private Integer dailyMinutes;
+
+    private Integer studyDaysPerWeek;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

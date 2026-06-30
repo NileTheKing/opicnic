@@ -78,9 +78,7 @@ public class SurveyProfile {
 
     public enum ResidenceType {
         WITH_FAMILY("가족과 함께"),
-        ALONE("혼자"),
-        WITH_FRIENDS("친구/룸메이트와 함께"),
-        DORMITORY("기숙사");
+        ALONE("혼자");
 
         public final String label;
         ResidenceType(String label) { this.label = label; }

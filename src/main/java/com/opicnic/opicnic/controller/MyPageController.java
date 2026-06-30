@@ -48,7 +48,6 @@ public class MyPageController {
         model.addAttribute("notificationSetting", setting);
         model.addAttribute("member", member);
         model.addAttribute("surveyProfile", surveyProfile);
-        model.addAttribute("occupationTypes", SurveyProfile.OccupationType.values());
         model.addAttribute("residenceTypes", SurveyProfile.ResidenceType.values());
         model.addAttribute("topicGroups", buildTopicGroups());
         return "mypage/mypage";
