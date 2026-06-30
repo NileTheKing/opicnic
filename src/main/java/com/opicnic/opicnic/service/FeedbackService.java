@@ -91,7 +91,7 @@ public class FeedbackService {
                                     .mainPoint(str(feedbackMap, "mainPoint"))
                                     .mainPointScore(score(feedbackMap, "mainPointScore"))
                                     .fluency(str(feedbackMap, "fluency"))
-                                    .fluencyScore(score(feedbackMap, "fluencyScore"))
+                                    .fluencyScore(computeFluencyScore(speechText))
                                     .content(str(feedbackMap, "content"))
                                     .contentScore(score(feedbackMap, "contentScore"))
                                     .overall(str(feedbackMap, "overall"))
@@ -99,7 +99,7 @@ public class FeedbackService {
                                             score(feedbackMap, "mainPointScore"),
                                             score(feedbackMap, "vocabularyScore"),
                                             score(feedbackMap, "grammarScore"),
-                                            score(feedbackMap, "fluencyScore"),
+                                            computeFluencyScore(speechText),
                                             score(feedbackMap, "contentScore")))
                                     .improvements(str(feedbackMap, "improvements"))
                                     .modelAnswer(str(feedbackMap, "modelAnswer"))
@@ -154,6 +154,16 @@ public class FeedbackService {
                 .mainPointScore(1).vocabularyScore(1).grammarScore(1).fluencyScore(1).contentScore(1)
                 .improvements("답변을 녹음해주세요.")
                 .build();
+    }
+
+    private static int computeFluencyScore(String text) {
+        if (text == null || text.isBlank()) return 1;
+        int words = text.trim().split("\\s+").length;
+        if (words >= 130) return 5;
+        if (words >= 90)  return 4;
+        if (words >= 60)  return 3;
+        if (words >= 30)  return 2;
+        return 1;
     }
 
     private static String computeGrade(Integer... scores) {
