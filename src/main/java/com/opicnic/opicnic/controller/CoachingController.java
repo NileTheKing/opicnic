@@ -10,6 +10,7 @@ import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.CoachingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
@@ -34,6 +35,9 @@ public class CoachingController {
     private final CoachingService coachingService;
     private final ObjectMapper objectMapper;
 
+    @Value("${opicnic.coaching.min-count:3}")
+    private int coachingMinCount;
+
     @GetMapping
     public String coachingPage(@AuthenticationPrincipal OAuth2User oAuth2User, Model model) {
         Member member = resolveMember(oAuth2User);
@@ -42,7 +46,7 @@ public class CoachingController {
                 .findTopByMemberIdOrderByCreatedAtDesc(member.getId()).orElse(null);
 
         model.addAttribute("totalCount", totalCount);
-        model.addAttribute("canGenerate", totalCount >= 20);
+        model.addAttribute("canGenerate", totalCount >= coachingMinCount);
         model.addAttribute("latestReport", latestReport);
         model.addAttribute("latestReportParsed", parseReport(latestReport));
         model.addAttribute("reports",
@@ -69,7 +73,7 @@ public class CoachingController {
     }
 
     private boolean canGenerate(Member member) {
-        return feedbackResultRepository.countByMemberId(member.getId()) >= 20;
+        return feedbackResultRepository.countByMemberId(member.getId()) >= coachingMinCount;
     }
 
     private Member resolveMember(OAuth2User oAuth2User) {

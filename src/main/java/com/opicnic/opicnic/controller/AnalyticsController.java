@@ -5,6 +5,7 @@ import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.ExamPlanService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
@@ -22,13 +23,16 @@ public class AnalyticsController {
     private final MemberRepository memberRepository;
     private final ExamPlanService examPlanService;
 
+    @Value("${opicnic.coaching.min-count:3}")
+    private int coachingMinCount;
+
     private static final LinkedHashMap<String, String> SCORE_LABELS = new LinkedHashMap<>();
     static {
-        SCORE_LABELS.put("mainPoint",   "핵심 전달");
-        SCORE_LABELS.put("content",     "근거 전개");
-        SCORE_LABELS.put("vocabulary",  "표현력");
-        SCORE_LABELS.put("fluency",     "유창성");
-        SCORE_LABELS.put("grammar",     "정확성");
+        SCORE_LABELS.put("mainPoint",   "핵심전달");
+        SCORE_LABELS.put("content",     "내용전개");
+        SCORE_LABELS.put("expression",  "표현력");
+        SCORE_LABELS.put("fluency",     "발화량");
+        SCORE_LABELS.put("accuracy",    "정확성");
     }
 
     public record ScoreStat(String key, String label, double avg, int pct) {}
@@ -61,7 +65,7 @@ public class AnalyticsController {
         model.addAttribute("weakestLabel", weakestLabel);
         model.addAttribute("typeStats", examPlanService.buildWeakTypes(results));
         model.addAttribute("comboStats", examPlanService.buildWeakCombos(results));
-        model.addAttribute("coachingAvailable", results.size() >= 20);
+        model.addAttribute("coachingAvailable", results.size() >= coachingMinCount);
 
         return "analytics/analytics";
     }
@@ -72,9 +76,9 @@ public class AnalyticsController {
             double avg = ExamPlanService.weightedAvg(results, r -> switch (key) {
                 case "mainPoint"  -> r.getMainPointScore();
                 case "content"    -> r.getContentScore();
-                case "vocabulary" -> r.getVocabularyScore();
+                case "expression" -> r.getExpressionScore();
                 case "fluency"    -> r.getFluencyScore();
-                case "grammar"    -> r.getGrammarScore();
+                case "accuracy"   -> r.getAccuracyScore();
                 default -> null;
             });
             avg = Math.round(avg * 10.0) / 10.0;

@@ -78,6 +78,10 @@ management:
     web:
       exposure:
         include: prometheus, health, info
+opicnic:
+  coaching:
+    min-count: 3
+
 logging:
   level:
     com.zaxxer.hikari: INFO
