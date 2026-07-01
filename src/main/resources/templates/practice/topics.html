@@ -8,15 +8,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .topic-card { transition: all 150ms ease; }
-        .topic-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px 0 rgba(99,102,241,0.10); }
+        .topic-card:hover { transform: tranbrandY(-2px); box-shadow: 0 4px 16px 0 rgba(99,102,241,0.10); }
         .remove-btn:hover i { color: rgb(239 68 68); }
         #toast {
             transition: opacity 300ms ease, transform 300ms ease;
         }
-        #toast.hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+        #toast.hidden { opacity: 0; transform: tranbrandY(8px); pointer-events: none; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans flex">
+<body class="bg-gray-50 min-h-screen font-sans flex">
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <!-- difficulty 값을 JS에서 참조하기 위해 숨겨둠 -->
@@ -26,25 +26,25 @@
 <main class="flex-1 p-4 sm:p-6 max-w-4xl mx-auto w-full pb-20 md:pb-6">
 
     <!-- 히어로 -->
-    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-6 sm:p-8 text-white shadow-xl mb-6">
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-600 to-fuchsia-500 p-6 sm:p-8 text-white shadow-xl mb-6">
         <div class="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-white/10 pointer-events-none"></div>
         <div class="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/8 pointer-events-none"></div>
         <div class="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <p class="text-xs font-semibold text-indigo-200 uppercase tracking-widest mb-2">practice topics</p>
+                <p class="text-xs font-semibold text-brand-200 uppercase tracking-widest mb-2">practice topics</p>
                 <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">주제 탐색</h1>
-                <p class="text-sm text-indigo-100">
+                <p class="text-sm text-brand-100">
                     난이도 <span class="font-bold text-white" th:text="${preferredDifficulty.label}"></span>
-                    <a href="/mypage" class="ml-2 text-indigo-200 hover:text-white text-xs underline underline-offset-2 transition">변경</a>
+                    <a href="/mypage" class="ml-2 text-brand-200 hover:text-white text-xs underline underline-offset-2 transition">변경</a>
                 </p>
             </div>
             <div class="grid grid-cols-2 gap-3 shrink-0">
                 <div class="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur text-center">
-                    <p class="text-[11px] text-indigo-200 mb-0.5">내 주제</p>
+                    <p class="text-[11px] text-brand-200 mb-0.5">내 주제</p>
                     <p id="myTopicCountHero" class="text-2xl font-black leading-none" th:text="${myTopicCount}">0</p>
                 </div>
                 <div class="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur text-center border border-white/20">
-                    <p class="text-[11px] text-indigo-200 mb-0.5">전체</p>
+                    <p class="text-[11px] text-brand-200 mb-0.5">전체</p>
                     <p class="text-2xl font-black leading-none" th:text="${topicCount}">0</p>
                 </div>
             </div>
@@ -54,52 +54,52 @@
     <!-- ── 내 주제 섹션 ── -->
     <div class="mb-10">
         <div class="flex items-center gap-2 mb-4">
-            <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
-            <h2 class="text-base font-extrabold text-slate-800">내 주제</h2>
-            <span id="myTopicCountBadge" class="text-xs text-slate-400 font-medium"
+            <div class="w-1 h-5 bg-gray-500 rounded-full"></div>
+            <h2 class="text-base font-extrabold text-gray-800">내 주제</h2>
+            <span id="myTopicCountBadge" class="text-xs text-gray-400 font-medium"
                   th:text="${myTopicCount} + '개'"></span>
         </div>
 
         <!-- empty state -->
         <div id="myTopicsEmpty"
              th:classappend="${myTopicCount > 0} ? ' hidden' : ''"
-             class="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 text-center">
-            <div class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
-                <i class="fa-solid fa-list-check text-slate-400 text-lg"></i>
+             class="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-dashed border-brand-200 text-center">
+            <div class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                <i class="fa-solid fa-list-check text-gray-400 text-lg"></i>
             </div>
-            <p class="text-sm font-semibold text-slate-500 mb-1">설정된 주제가 없어요</p>
-            <p class="text-xs text-slate-400 mb-4">아래 주제를 추가하면 여기에 나타나요</p>
+            <p class="text-sm font-semibold text-gray-500 mb-1">설정된 주제가 없어요</p>
+            <p class="text-xs text-gray-400 mb-4">아래 주제를 추가하면 여기에 나타나요</p>
         </div>
 
         <!-- 내 주제 카드 (카테고리별) -->
         <div id="myTopicsGrid" th:classappend="${myTopicCount == 0} ? ' hidden' : ''">
             <div th:each="group : ${myTopicGroups}"
                  th:data-group="${group.key}"
-                 class="my-category-section bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+                 class="my-category-section bg-white rounded-2xl border border-brand-100 p-4 mb-4">
                 <div class="flex items-center gap-2 mb-4">
-                    <div class="w-1 h-4 bg-indigo-400 rounded-full"></div>
-                    <h3 class="text-sm font-bold text-slate-700" th:text="${group.key}"></h3>
-                    <span class="my-category-count text-xs text-indigo-400 font-medium ml-1"
+                    <div class="w-1 h-4 bg-brand-400 rounded-full"></div>
+                    <h3 class="text-sm font-bold text-brand-700" th:text="${group.key}"></h3>
+                    <span class="my-category-count text-xs text-gray-400 font-medium ml-1"
                           th:text="${#lists.size(group.value)} + '개'"></span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div th:each="topic : ${group.value}"
                              th:with="icon=${topicIcons[topic]}"
                              th:data-topic="${topic.name()}"
-                             class="topic-card relative bg-indigo-50 rounded-2xl border border-indigo-200 p-4 flex flex-col items-center gap-2.5 text-center">
+                             class="topic-card relative bg-gray-50 rounded-2xl border border-brand-200 p-4 flex flex-col items-center gap-2.5 text-center">
                             <button type="button"
                                     th:data-topic="${topic.name()}"
-                                    class="remove-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-300 hover:border-red-300 transition-all"
+                                    class="remove-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center text-gray-300 hover:border-red-300 transition-all"
                                     title="내 주제에서 제거">
                                 <i class="fa-solid fa-xmark text-[9px]"></i>
                             </button>
                             <a th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
                                class="flex flex-col items-center gap-2.5 w-full">
                                 <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
-                                    <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-indigo-500'"></i>
+                                    <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-gray-500'"></i>
                                 </div>
-                                <p class="text-sm font-bold text-slate-800 leading-snug" th:text="${topic.label}"></p>
-                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-500 bg-white px-2 py-0.5 rounded-full">
+                                <p class="text-sm font-bold text-gray-800 leading-snug" th:text="${topic.label}"></p>
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full">
                                     <i class="fa-solid fa-play text-[8px]"></i> 연습하기
                                 </span>
                             </a>
@@ -113,14 +113,14 @@
     <div class="mb-10">
         <div class="flex items-center gap-2 mb-5">
             <div class="w-1 h-5 bg-amber-400 rounded-full"></div>
-            <h2 class="text-base font-extrabold text-slate-800">돌발 주제</h2>
+            <h2 class="text-base font-extrabold text-gray-800">돌발 주제</h2>
             <span class="text-xs text-amber-600 bg-amber-50 font-semibold px-2 py-0.5 rounded-full ml-1">배경설문 외 출제</span>
         </div>
         <div th:each="group : ${surpriseTopicGroups}" class="mb-4">
             <div class="bg-white rounded-2xl border border-amber-100 p-4">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="w-1 h-4 bg-amber-400 rounded-full"></div>
-                    <h3 class="text-sm font-bold text-slate-700" th:text="${group.key}"></h3>
+                    <h3 class="text-sm font-bold text-brand-700" th:text="${group.key}"></h3>
                     <span class="text-xs text-amber-500 font-medium ml-1"
                           th:text="${#lists.size(group.value)} + '개'"></span>
                 </div>
@@ -132,7 +132,7 @@
                         <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
                             <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-amber-500'"></i>
                         </div>
-                        <p class="text-sm font-bold text-slate-700 leading-snug" th:text="${topic.label}"></p>
+                        <p class="text-sm font-bold text-brand-700 leading-snug" th:text="${topic.label}"></p>
                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-white px-2 py-0.5 rounded-full">
                             <i class="fa-solid fa-play text-[8px]"></i> 연습하기
                         </span>
@@ -145,41 +145,41 @@
     <!-- ── 전체 주제 섹션 ── -->
     <div>
         <div class="flex items-center gap-2 mb-5">
-            <div class="w-1 h-5 bg-slate-300 rounded-full"></div>
-            <h2 class="text-base font-extrabold text-slate-800">전체 주제</h2>
-            <span class="text-xs text-slate-400 font-medium">+ 버튼으로 내 주제에 추가</span>
+            <div class="w-1 h-5 bg-brand-300 rounded-full"></div>
+            <h2 class="text-base font-extrabold text-gray-800">전체 주제</h2>
+            <span class="text-xs text-gray-400 font-medium">+ 버튼으로 내 주제에 추가</span>
         </div>
 
         <div th:each="group : ${nonMyTopicGroups}" class="mb-5" th:if="${!group.value.isEmpty()}">
-            <div class="bg-white rounded-2xl border border-slate-100 p-4">
+            <div class="bg-white rounded-2xl border border-brand-100 p-4">
                 <!-- 카테고리 헤더 -->
                 <div class="flex items-center gap-2 mb-4">
-                    <div class="w-1 h-4 bg-indigo-400 rounded-full"></div>
-                    <h3 class="text-sm font-bold text-slate-700" th:text="${group.key}"></h3>
-                    <span class="text-xs text-slate-400 font-medium ml-1"
+                    <div class="w-1 h-4 bg-brand-400 rounded-full"></div>
+                    <h3 class="text-sm font-bold text-brand-700" th:text="${group.key}"></h3>
+                    <span class="text-xs text-gray-400 font-medium ml-1"
                           th:text="${#lists.size(group.value)} + '개'"></span>
                 </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div th:each="topic : ${group.value}"
                      th:with="icon=${topicIcons[topic]}"
                      th:data-topic="${topic.name()}"
-                     class="topic-card relative bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col items-center gap-2.5 text-center">
+                     class="topic-card relative bg-gray-50 rounded-2xl border border-brand-200 p-4 flex flex-col items-center gap-2.5 text-center">
                     <button type="button"
                             th:data-topic="${topic.name()}"
                             th:data-label="${topic.label}"
                             th:data-icon="${icon != null ? icon : 'fa-circle-question'}"
                             th:data-group="${group.key}"
-                            class="toggle-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-300 hover:border-indigo-400 hover:text-indigo-400 transition-all"
+                            class="toggle-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center text-gray-300 hover:border-brand-400 hover:text-gray-400 transition-all"
                             title="내 주제에 추가">
                         <i class="fa-solid fa-plus text-[9px]"></i>
                     </button>
                     <a th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
                        class="flex flex-col items-center gap-2.5 w-full">
-                        <div class="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center">
-                            <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-slate-400'"></i>
+                        <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-gray-400'"></i>
                         </div>
-                        <p class="text-sm font-bold text-slate-700 leading-snug" th:text="${topic.label}"></p>
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
+                        <p class="text-sm font-bold text-brand-700 leading-snug" th:text="${topic.label}"></p>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
                             <i class="fa-solid fa-play text-[8px]"></i> 연습하기
                         </span>
                     </a>
@@ -193,7 +193,7 @@
 </div>
 
 <!-- 토스트 -->
-<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-lg text-white bg-slate-800 whitespace-nowrap"></div>
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -tranbrand-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-lg text-white bg-brand-800 whitespace-nowrap"></div>
 
 <script>
     const difficulty = document.getElementById('difficultyVal').dataset.val;
@@ -213,10 +213,10 @@
         badgeCount.textContent = n + '개';
     }
 
-    function showToast(msg, color = 'bg-slate-800') {
+    function showToast(msg, color = 'bg-brand-800') {
         clearTimeout(toastTimer);
         toast.textContent = msg;
-        toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-lg text-white whitespace-nowrap transition-all ${color}`;
+        toast.className = `fixed bottom-6 left-1/2 -tranbrand-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-lg text-white whitespace-nowrap transition-all ${color}`;
         toastTimer = setTimeout(() => {
             toast.classList.add('hidden');
         }, 2500);
@@ -234,13 +234,13 @@
 
     function buildCategorySection(groupName) {
         const sec = document.createElement('div');
-        sec.className = 'my-category-section bg-white rounded-2xl border border-indigo-100 p-4 mb-4';
+        sec.className = 'my-category-section bg-white rounded-2xl border border-brand-100 p-4 mb-4';
         sec.dataset.group = groupName;
         sec.innerHTML = `
             <div class="flex items-center gap-2 mb-4">
-                <div class="w-1 h-4 bg-indigo-400 rounded-full"></div>
-                <h3 class="text-sm font-bold text-slate-700">${groupName}</h3>
-                <span class="my-category-count text-xs text-indigo-400 font-medium ml-1">0개</span>
+                <div class="w-1 h-4 bg-brand-400 rounded-full"></div>
+                <h3 class="text-sm font-bold text-brand-700">${groupName}</h3>
+                <span class="my-category-count text-xs text-gray-400 font-medium ml-1">0개</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>`;
         return sec;
@@ -254,21 +254,21 @@
 
     function buildMyCard(topic, label, icon) {
         const card = document.createElement('div');
-        card.className = 'topic-card relative bg-indigo-50 rounded-2xl border border-indigo-200 p-4 flex flex-col items-center gap-2.5 text-center';
+        card.className = 'topic-card relative bg-gray-50 rounded-2xl border border-brand-200 p-4 flex flex-col items-center gap-2.5 text-center';
         card.dataset.topic = topic;
         card.innerHTML = `
             <button type="button" data-topic="${topic}"
-                class="remove-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-300 hover:border-red-300 transition-all"
+                class="remove-btn absolute top-2.5 right-2.5 w-6 h-6 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center text-gray-300 hover:border-red-300 transition-all"
                 title="내 주제에서 제거">
                 <i class="fa-solid fa-xmark text-[9px]"></i>
             </button>
             <a href="/practice/combo?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}"
                class="flex flex-col items-center gap-2.5 w-full">
                 <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
-                    <i class="fa-solid ${icon} text-xl text-indigo-500"></i>
+                    <i class="fa-solid ${icon} text-xl text-gray-500"></i>
                 </div>
-                <p class="text-sm font-bold text-slate-800 leading-snug">${label}</p>
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-500 bg-white px-2 py-0.5 rounded-full">
+                <p class="text-sm font-bold text-gray-800 leading-snug">${label}</p>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full">
                     <i class="fa-solid fa-play text-[8px]"></i> 연습하기
                 </span>
             </a>`;
@@ -308,14 +308,14 @@
                 syncGridVisibility();
                 setCount(data.count);
                 // 전체주제 카드 테두리 + 버튼 상태 변경
-                btn.closest('.topic-card').classList.replace('border-slate-200', 'border-indigo-300');
-                btn.classList.remove('border-slate-200', 'text-slate-300');
-                btn.classList.add('border-indigo-400', 'bg-indigo-50', 'text-indigo-500');
+                btn.closest('.topic-card').classList.replace('border-brand-200', 'border-brand-300');
+                btn.classList.remove('border-brand-200', 'text-gray-300');
+                btn.classList.add('border-brand-400', 'bg-gray-50', 'text-gray-500');
                 btn.querySelector('i').className = 'fa-solid fa-check text-[9px]';
                 btn.title = '내 주제에서 제거';
                 btn.removeEventListener('click', handleToggleAdd);
                 btn.addEventListener('click', handleToggleRemoveFromAll);
-                showToast('내 주제에 추가됐어요', 'bg-indigo-600');
+                showToast('내 주제에 추가됐어요', 'bg-brand-600');
             }
         } catch (err) {
             showToast('오류가 발생했어요', 'bg-red-500');
@@ -353,14 +353,14 @@
                 syncGridVisibility();
                 setCount(data.count);
                 // 버튼 원래대로
-                btn.closest('.topic-card').classList.replace('border-indigo-300', 'border-slate-200');
-                btn.classList.remove('border-indigo-400', 'bg-indigo-50', 'text-indigo-500');
-                btn.classList.add('border-slate-200', 'text-slate-300');
+                btn.closest('.topic-card').classList.replace('border-brand-300', 'border-brand-200');
+                btn.classList.remove('border-brand-400', 'bg-gray-50', 'text-gray-500');
+                btn.classList.add('border-brand-200', 'text-gray-300');
                 btn.querySelector('i').className = 'fa-solid fa-plus text-[9px]';
                 btn.title = '내 주제에 추가';
                 btn.removeEventListener('click', handleToggleRemoveFromAll);
                 btn.addEventListener('click', handleToggleAdd);
-                showToast('내 주제에서 제거됐어요', 'bg-slate-700');
+                showToast('내 주제에서 제거됐어요', 'bg-brand-700');
             }
         } catch (err) {
             showToast('오류가 발생했어요', 'bg-red-500');
@@ -401,15 +401,15 @@
                 // 전체주제의 해당 카드 버튼도 되돌리기
                 const allBtn = document.querySelector(`.toggle-btn[data-topic="${topic}"]`);
                 if (allBtn) {
-                    allBtn.closest('.topic-card').classList.replace('border-indigo-100', 'border-slate-100');
-                    allBtn.classList.remove('border-indigo-400', 'bg-indigo-50', 'text-indigo-500');
-                    allBtn.classList.add('border-slate-200', 'text-slate-300');
+                    allBtn.closest('.topic-card').classList.replace('border-brand-100', 'border-brand-100');
+                    allBtn.classList.remove('border-brand-400', 'bg-gray-50', 'text-gray-500');
+                    allBtn.classList.add('border-brand-200', 'text-gray-300');
                     allBtn.querySelector('i').className = 'fa-solid fa-plus text-[9px]';
                     allBtn.title = '내 주제에 추가';
                     allBtn.removeEventListener('click', handleToggleRemoveFromAll);
                     allBtn.addEventListener('click', handleToggleAdd);
                 }
-                showToast('내 주제에서 제거됐어요', 'bg-slate-700');
+                showToast('내 주제에서 제거됐어요', 'bg-brand-700');
             }
         } catch (err) {
             showToast('오류가 발생했어요', 'bg-red-500');

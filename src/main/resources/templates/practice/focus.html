@@ -47,16 +47,16 @@
             <div th:if="${userTopics == null or #lists.isEmpty(userTopics)}"
                  class="bg-white rounded-2xl p-6 text-center text-gray-400 mb-4">
                 <p class="text-sm">설정된 주제가 없어요</p>
-                <a href="/mypage" class="text-xs text-indigo-500 hover:underline mt-1 inline-block">마이페이지에서 주제 설정하기</a>
+                <a href="/mypage" class="text-xs text-gray-500 hover:underline mt-1 inline-block">마이페이지에서 주제 설정하기</a>
             </div>
             <div th:unless="${userTopics == null or #lists.isEmpty(userTopics)}"
                  class="grid grid-cols-2 gap-2 mb-5">
                 <a th:each="topic : ${userTopics}"
                    th:href="@{/practice/combo(topic=${topic.name()},difficulty=${difficulty})}"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
-                    <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-700"
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
+                    <span class="text-sm font-medium text-gray-700 group-hover:text-brand-700"
                           th:text="${topic.label}"></span>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
             </div>
 
@@ -80,29 +80,29 @@
             <p class="text-xs text-gray-400 mb-3">콤보 패턴 선택 · 내 주제 중 랜덤으로 연습</p>
             <div class="space-y-2">
                 <a href="/practice/combo?category=C1"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-5 py-4 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-bold text-indigo-500 bg-indigo-50 rounded-lg px-2 py-0.5">C1</span>
+                            <span class="text-xs font-bold text-gray-500 bg-gray-50 rounded-lg px-2 py-0.5">C1</span>
                             <span class="text-sm font-semibold text-gray-800">기본 콤보</span>
                         </div>
                         <p class="text-xs text-gray-400">현재 묘사 → 루틴 → 최근 경험</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/combo?category=C2"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-5 py-4 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-bold text-indigo-500 bg-indigo-50 rounded-lg px-2 py-0.5">C2</span>
+                            <span class="text-xs font-bold text-gray-500 bg-gray-50 rounded-lg px-2 py-0.5">C2</span>
                             <span class="text-sm font-semibold text-gray-800">경험 심화</span>
                         </div>
                         <p class="text-xs text-gray-400">현재 묘사 → 최근 경험 → 인상적인 경험</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/combo?category=C3"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-5 py-4 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
                             <span class="text-xs font-bold text-orange-500 bg-orange-50 rounded-lg px-2 py-0.5">C3</span>
@@ -110,21 +110,21 @@
                         </div>
                         <p class="text-xs text-gray-400">정보요청 → 문제해결 → 유사경험</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/combo?category=C4"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-5 py-4 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-bold text-indigo-500 bg-indigo-50 rounded-lg px-2 py-0.5">C4</span>
+                            <span class="text-xs font-bold text-gray-500 bg-gray-50 rounded-lg px-2 py-0.5">C4</span>
                             <span class="text-sm font-semibold text-gray-800">질문 포함</span>
                         </div>
                         <p class="text-xs text-gray-400">현재 묘사 → 질문하기</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/combo?category=C5"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-5 py-4 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
                             <span class="text-xs font-bold text-purple-500 bg-purple-50 rounded-lg px-2 py-0.5">C5</span>
@@ -132,7 +132,7 @@
                         </div>
                         <p class="text-xs text-gray-400">비교/대조 → 이슈 설명</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
             </div>
         </div>
@@ -142,84 +142,84 @@
             <p class="text-xs text-gray-400 mb-3">문제 유형 선택 · 내 주제 중 랜덤으로 1문항 연습</p>
             <div class="grid grid-cols-2 gap-2">
                 <a href="/practice/type?type=TYPE_1"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 1</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">현재 상태 묘사</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">현재 상태 묘사</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_2"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 2</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">루틴 / 습관</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">루틴 / 습관</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_3"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 3</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">최근 경험</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">최근 경험</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_4"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 4</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">인상적인 경험</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">인상적인 경험</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_5"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 5</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">롤플레이 질문</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">롤플레이 질문</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_6"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 6</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">정보 요청</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">정보 요청</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_7"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 7</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">문제 해결</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">문제 해결</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_8"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 8</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">유사 경험 설명</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">유사 경험 설명</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_9"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 9</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">비교 / 대조</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">비교 / 대조</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a href="/practice/type?type=TYPE_10"
-                   class="flex items-center justify-between bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-2xl px-4 py-3.5 transition-all group">
+                   class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 10</p>
-                        <p class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">이슈 설명</p>
+                        <p class="text-sm font-medium text-gray-700 group-hover:text-brand-700">이슈 설명</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-indigo-400"></i>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
             </div>
         </div>

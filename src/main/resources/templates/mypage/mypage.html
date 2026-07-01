@@ -39,10 +39,10 @@
             border-radius: 50%; transition: .3s;
         }
         input:checked + .toggle-slider { background: rgb(99 102 241); }
-        input:checked + .toggle-slider:before { transform: translateX(20px); }
+        input:checked + .toggle-slider:before { transform: tranbrandX(20px); }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans flex">
+<body class="bg-gray-50 min-h-screen font-sans flex">
 
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
@@ -50,8 +50,8 @@
 <main class="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full pb-20 md:pb-6">
 
     <!-- 프로필 카드 -->
-    <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-6 flex items-center gap-4">
-        <div class="w-14 h-14 rounded-full overflow-hidden bg-indigo-100 shrink-0">
+    <div class="bg-white rounded-2xl border border-brand-100 p-5 mb-6 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-100 shrink-0">
             <img th:if="${#authentication.principal.attributes['kakao_account'] != null
                           and #authentication.principal.attributes['kakao_account']['profile'] != null
                           and #authentication.principal.attributes['kakao_account']['profile']['profile_image_url'] != null}"
@@ -61,12 +61,12 @@
                               and #authentication.principal.attributes['kakao_account']['profile'] != null
                               and #authentication.principal.attributes['kakao_account']['profile']['profile_image_url'] != null}"
                  class="w-full h-full flex items-center justify-center">
-                <i class="fa-solid fa-user text-indigo-400 text-xl"></i>
+                <i class="fa-solid fa-user text-gray-400 text-xl"></i>
             </div>
         </div>
         <div>
-            <p class="text-base font-bold text-slate-800" th:text="${member.nickname}">사용자</p>
-            <p class="text-xs text-slate-400 mt-0.5">카카오 로그인</p>
+            <p class="text-base font-bold text-gray-800" th:text="${member.nickname}">사용자</p>
+            <p class="text-xs text-gray-400 mt-0.5">카카오 로그인</p>
         </div>
     </div>
 
@@ -77,32 +77,32 @@
     <div class="lg:col-span-2">
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
-            <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
-            <h2 class="text-base font-extrabold text-slate-800">OPIc 설정</h2>
+            <div class="w-1 h-5 bg-gray-500 rounded-full"></div>
+            <h2 class="text-base font-extrabold text-gray-800">OPIc 설정</h2>
         </div>
         <button type="button" id="survey-edit-btn" onclick="toggleSurveyForm()"
-                class="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+                class="flex items-center gap-1.5 text-xs font-semibold text-brand-600 border border-brand-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
             <i class="fa-solid fa-pen text-[10px]"></i>
             편집
         </button>
     </div>
 
     <!-- 현재 설정 요약 -->
-    <div id="survey-summary" class="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 mb-3">
+    <div id="survey-summary" class="bg-white rounded-2xl border border-brand-100 divide-y divide-brand-50 mb-3">
         <div class="flex items-center justify-between px-5 py-3.5">
             <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-house text-indigo-300 text-xs w-4 text-center"></i>
-                <span class="text-sm text-slate-500">거주 형태</span>
+                <i class="fa-solid fa-house text-gray-300 text-xs w-4 text-center"></i>
+                <span class="text-sm text-gray-500">거주 형태</span>
             </div>
-            <span class="text-sm font-semibold text-slate-700"
+            <span class="text-sm font-semibold text-brand-700"
                   th:text="${surveyProfile.residenceType != null ? surveyProfile.residenceType.label : '미설정'}">미설정</span>
         </div>
         <div class="flex items-center justify-between px-5 py-3.5">
             <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-list-check text-indigo-300 text-xs w-4 text-center"></i>
-                <span class="text-sm text-slate-500">연습 주제</span>
+                <i class="fa-solid fa-list-check text-gray-300 text-xs w-4 text-center"></i>
+                <span class="text-sm text-gray-500">연습 주제</span>
             </div>
-            <span class="text-sm font-semibold text-slate-700"
+            <span class="text-sm font-semibold text-brand-700"
                   th:text="${surveyProfile.selectedTopics != null ? #lists.size(surveyProfile.selectedTopics) + '개 선택됨' : '미설정'}">미설정</span>
         </div>
     </div>
@@ -110,14 +110,14 @@
     <form id="survey-form" th:action="@{/mypage/survey}" method="post" class="space-y-3 hidden">
 
         <!-- 거주 형태 -->
-        <div class="bg-white rounded-2xl border border-slate-100 p-5">
+        <div class="bg-white rounded-2xl border border-brand-100 p-5">
             <div class="flex items-center gap-2 mb-4">
-                <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-house text-indigo-500 text-xs"></i>
+                <div class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-house text-gray-500 text-xs"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800">거주 형태</h3>
-                    <p class="text-[11px] text-slate-400">책 세트 수에 영향을 줘요</p>
+                    <h3 class="text-sm font-bold text-gray-800">거주 형태</h3>
+                    <p class="text-[11px] text-gray-400">책 세트 수에 영향을 줘요</p>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -131,30 +131,30 @@
         </div>
 
         <!-- 연습 주제 -->
-        <div class="bg-white rounded-2xl border border-slate-100 p-5">
+        <div class="bg-white rounded-2xl border border-brand-100 p-5">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-list-check text-indigo-500 text-xs"></i>
+                    <div class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-list-check text-gray-500 text-xs"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-800">연습 주제</h3>
-                        <p class="text-[11px] text-slate-400">12개 이상 필수, 예비 1~2개 추천</p>
+                        <h3 class="text-sm font-bold text-gray-800">연습 주제</h3>
+                        <p class="text-[11px] text-gray-400">12개 이상 필수, 예비 1~2개 추천</p>
                     </div>
                 </div>
-                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
+                <span class="text-xs font-bold text-brand-600 bg-gray-50 px-2.5 py-1 rounded-full">
                     <span id="topicCount"
                           th:text="${surveyProfile.selectedTopics != null ? #lists.size(surveyProfile.selectedTopics) : 0}">0</span>개 선택
                 </span>
             </div>
 
             <div th:each="group : ${topicGroups}" class="mb-4 last:mb-0">
-                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2"
+                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2"
                    th:text="${group.key}"></p>
                 <div class="flex flex-wrap gap-1.5">
                     <label th:each="topic : ${group.value}"
                            class="topic-label flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium cursor-pointer border-gray-200 text-gray-600"
-                           th:classappend="${surveyProfile.selectedTopics != null and surveyProfile.selectedTopics.contains(topic)} ? ' !border-indigo-500 !bg-indigo-500 !text-white' : ''">
+                           th:classappend="${surveyProfile.selectedTopics != null and surveyProfile.selectedTopics.contains(topic)} ? ' !border-brand-500 !bg-gray-500 !text-white' : ''">
                         <input type="checkbox" name="selectedTopics" th:value="${topic.name()}"
                                th:checked="${surveyProfile.selectedTopics != null and surveyProfile.selectedTopics.contains(topic)}"
                                class="sr-only">
@@ -170,7 +170,7 @@
         </div>
 
         <button type="submit"
-                class="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition">
+                class="w-full py-3 bg-brand-600 text-white rounded-xl font-semibold text-sm hover:bg-brand-700 transition">
             설정 저장
         </button>
     </form>
@@ -180,16 +180,16 @@
     <!-- 오른쪽: 알림 설정 (lg:col-span-1) -->
     <div class="lg:col-span-1">
     <div class="flex items-center gap-2 mb-3">
-        <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
-        <h2 class="text-base font-extrabold text-slate-800">알림 설정</h2>
+        <div class="w-1 h-5 bg-gray-500 rounded-full"></div>
+        <h2 class="text-base font-extrabold text-gray-800">알림 설정</h2>
     </div>
 
     <form th:action="@{/mypage/settings}" method="post">
-        <div class="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-100">
+        <div class="bg-white rounded-2xl border border-brand-100 divide-y divide-brand-100">
             <div class="flex items-center justify-between px-5 py-4">
                 <div>
-                    <p class="text-sm font-semibold text-slate-700">시험 일정 알림</p>
-                    <p class="text-xs text-slate-400 mt-0.5">시험 일정 및 마감일 알림</p>
+                    <p class="text-sm font-semibold text-brand-700">시험 일정 알림</p>
+                    <p class="text-xs text-gray-400 mt-0.5">시험 일정 및 마감일 알림</p>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" name="examScheduleNotification"
@@ -199,8 +199,8 @@
             </div>
             <div class="flex items-center justify-between px-5 py-4">
                 <div>
-                    <p class="text-sm font-semibold text-slate-700">스터디 게시판 알림</p>
-                    <p class="text-xs text-slate-400 mt-0.5">새 게시글 및 댓글 알림</p>
+                    <p class="text-sm font-semibold text-brand-700">스터디 게시판 알림</p>
+                    <p class="text-xs text-gray-400 mt-0.5">새 게시글 및 댓글 알림</p>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" name="studyBoardNotification"
@@ -210,8 +210,8 @@
             </div>
             <div class="flex items-center justify-between px-5 py-4">
                 <div>
-                    <p class="text-sm font-semibold text-slate-700">복습 알림</p>
-                    <p class="text-xs text-slate-400 mt-0.5">학습 내용 복습 시간 알림</p>
+                    <p class="text-sm font-semibold text-brand-700">복습 알림</p>
+                    <p class="text-xs text-gray-400 mt-0.5">학습 내용 복습 시간 알림</p>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" name="reviewNotification"
@@ -221,7 +221,7 @@
             </div>
         </div>
         <button type="submit"
-                class="w-full mt-3 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-50 transition">
+                class="w-full mt-3 py-3 bg-white border border-brand-200 text-brand-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
             알림 저장
         </button>
     </form>
@@ -243,10 +243,10 @@
         btn.innerHTML = isHidden
             ? '<i class="fa-solid fa-xmark text-[10px]"></i> 닫기'
             : '<i class="fa-solid fa-pen text-[10px]"></i> 편집';
-        btn.classList.toggle('text-indigo-600', !isHidden);
-        btn.classList.toggle('border-indigo-200', !isHidden);
-        btn.classList.toggle('text-slate-500', isHidden);
-        btn.classList.toggle('border-slate-200', isHidden);
+        btn.classList.toggle('text-brand-600', !isHidden);
+        btn.classList.toggle('border-brand-200', !isHidden);
+        btn.classList.toggle('text-gray-500', isHidden);
+        btn.classList.toggle('border-brand-200', isHidden);
     }
 
     document.addEventListener('DOMContentLoaded', function () {

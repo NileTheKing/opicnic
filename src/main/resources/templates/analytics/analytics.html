@@ -12,7 +12,7 @@
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-    <main class="flex-1 p-5 md:p-8 pb-24 md:pb-8 min-w-0">
+    <main class="flex-1 p-5 md:p-8 pb-24 md:pb-8 min-w-0 max-w-2xl mx-auto w-full">
 
         <!-- 헤더 -->
         <div class="mb-7">
@@ -29,13 +29,31 @@
             </div>
             <p class="font-semibold text-gray-600 mb-1">아직 연습 기록이 없어요</p>
             <p class="text-sm text-gray-400 mb-6">첫 연습을 완료하면 분석 결과가 여기에 나타납니다</p>
-            <a href="/" class="inline-block px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+            <a href="/" class="inline-block px-6 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-700 transition-colors">
                 연습 시작하기
             </a>
         </div>
 
         <!-- 데이터 있을 때 -->
         <div th:if="${totalCount > 0}" class="space-y-5">
+
+            <!-- 학습 패턴 분석 -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-base font-bold text-gray-800">학습 패턴 분석</h2>
+                    <a th:if="${coachingAvailable}" href="/analytics/coaching"
+                       class="text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 px-4 py-1.5 rounded-xl transition-colors">
+                        AI 분석 받기
+                    </a>
+                </div>
+                <p th:if="${!coachingAvailable}" class="text-sm text-gray-400">
+                    3문항 이상 연습하면 AI 패턴 분석을 받을 수 있어요.
+                    <span class="font-semibold text-gray-500" th:text="'(현재 ' + ${totalCount} + '문항)'"></span>
+                </p>
+                <p th:if="${coachingAvailable}" class="text-sm text-gray-500">
+                    피드백 패턴과 약한 유형을 AI가 분석해드려요.
+                </p>
+            </div>
 
             <!-- 항목별 평균 점수 -->
             <div class="bg-white rounded-2xl p-6 shadow-sm">
@@ -47,34 +65,34 @@
                     </button>
                 </div>
                 <div id="score-info" class="hidden mb-4 bg-gray-50 rounded-xl px-4 py-3 space-y-2">
-                    <div class="flex gap-3"><span class="text-xs font-semibold text-indigo-600 w-16 shrink-0">핵심전달</span><span class="text-xs text-gray-500">말하고자 하는 핵심 내용을 명확히 전달했는가</span></div>
-                    <div class="flex gap-3"><span class="text-xs font-semibold text-indigo-600 w-16 shrink-0">어휘/묘사</span><span class="text-xs text-gray-500">다양하고 정확한 어휘와 풍부한 묘사 표현을 사용했는가</span></div>
-                    <div class="flex gap-3"><span class="text-xs font-semibold text-indigo-600 w-16 shrink-0">문법</span><span class="text-xs text-gray-500">문장 구조와 시제가 정확한가</span></div>
-                    <div class="flex gap-3"><span class="text-xs font-semibold text-indigo-600 w-16 shrink-0">발화량</span><span class="text-xs text-gray-500">충분한 양의 답변을 유창하게 말했는가</span></div>
-                    <div class="flex gap-3"><span class="text-xs font-semibold text-indigo-600 w-16 shrink-0">내용구성</span><span class="text-xs text-gray-500">답변이 논리적 흐름으로 잘 구성되었는가</span></div>
+                    <div class="flex gap-3"><span class="text-xs font-semibold text-brand-600 w-16 shrink-0">핵심전달</span><span class="text-xs text-gray-500">말하고자 하는 핵심 내용을 명확히 전달했는가</span></div>
+                    <div class="flex gap-3"><span class="text-xs font-semibold text-brand-600 w-16 shrink-0">어휘/묘사</span><span class="text-xs text-gray-500">다양하고 정확한 어휘와 풍부한 묘사 표현을 사용했는가</span></div>
+                    <div class="flex gap-3"><span class="text-xs font-semibold text-brand-600 w-16 shrink-0">문법</span><span class="text-xs text-gray-500">문장 구조와 시제가 정확한가</span></div>
+                    <div class="flex gap-3"><span class="text-xs font-semibold text-brand-600 w-16 shrink-0">발화량</span><span class="text-xs text-gray-500">충분한 양의 답변을 유창하게 말했는가</span></div>
+                    <div class="flex gap-3"><span class="text-xs font-semibold text-brand-600 w-16 shrink-0">내용구성</span><span class="text-xs text-gray-500">답변이 논리적 흐름으로 잘 구성되었는가</span></div>
                 </div>
                 <div class="space-y-5">
                     <div th:each="score : ${scores}" class="flex items-center gap-4">
                         <span class="text-sm w-20 shrink-0"
                               th:text="${score.label()}"
-                              th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'font-bold text-orange-500' : 'text-gray-500 font-medium'">
+                              th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'font-bold text-rose-800' : 'text-gray-500 font-medium'">
                         </span>
                         <div class="flex-1 bg-gray-100 rounded-full h-3">
                             <div class="h-3 rounded-full transition-all"
-                                 th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'bg-orange-400' : 'bg-indigo-500'"
+                                 th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'bg-rose-700' : 'bg-brand-400'"
                                  th:style="'width: ' + ${score.pct()} + '%'">
                             </div>
                         </div>
                         <span class="text-base font-bold w-8 text-right shrink-0"
                               th:text="${score.avg()}"
-                              th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'text-orange-500' : 'text-gray-700'">
+                              th:classappend="${#lists.contains(weakestKeys, score.key())} ? 'text-rose-800' : 'text-gray-700'">
                         </span>
                     </div>
                 </div>
                 <div th:if="${weakestLabel != null and weakestLabel != ''}"
-                     class="mt-5 flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-3">
-                    <i class="fa-solid fa-triangle-exclamation text-orange-400 shrink-0"></i>
-                    <span class="text-sm font-medium text-orange-700">
+                     class="mt-5 flex items-center gap-3 bg-rose-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-800 shrink-0"></i>
+                    <span class="text-sm font-medium text-rose-900">
                         <span th:text="${weakestLabel}"></span>이(가) 가장 낮아요. 집중 연습이 필요해요.
                     </span>
                 </div>
@@ -86,31 +104,38 @@
                     <h2 class="text-base font-bold text-gray-800">유형별 점수</h2>
                     <p class="text-xs text-gray-400 mt-0.5">낮은 순 · 미연습 유형 상단 표시</p>
                 </div>
-                <div class="space-y-4">
-                    <div th:each="stat : ${typeStats}" class="flex items-center gap-3">
-                        <div class="w-36 shrink-0">
-                            <span class="text-sm"
-                                  th:text="${stat.typeLabel()}"
-                                  th:classappend="${stat.count() == 0} ? 'text-gray-300 font-medium' : 'text-gray-600 font-medium'">
-                            </span>
-                        </div>
-                        <div class="flex-1 bg-gray-100 rounded-full h-2.5">
-                            <div class="h-2.5 rounded-full"
-                                 th:classappend="${stat.count() == 0} ? 'bg-gray-200' : 'bg-teal-400'"
-                                 th:style="'width: ' + ${stat.pct()} + '%'">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <a th:each="stat, iterStat : ${typeStats}"
+                       th:href="@{/practice/type(type=${stat.typeKey()})}"
+                       class="border rounded-xl p-3 flex flex-col gap-2 hover:shadow-sm transition-shadow group"
+                       th:classappend="${iterStat.index < 3 and stat.count() > 0} ? 'border-rose-200 bg-rose-50' : (${stat.count() == 0} ? 'border-gray-100 bg-gray-50' : 'border-gray-100')">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold text-gray-300" th:text="${iterStat.index + 1}"></span>
+                                <span class="text-xs font-medium"
+                                      th:text="${stat.typeLabel()}"
+                                      th:classappend="${stat.count() == 0} ? 'text-gray-300' : 'text-gray-600'"></span>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2.5 shrink-0 w-28 justify-end">
                             <span th:if="${stat.count() == 0}"
-                                  class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-md font-medium">미연습</span>
+                                  class="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-medium">미연습</span>
                             <span th:if="${stat.count() > 0}"
-                                  class="text-xs text-gray-400" th:text="${stat.count()} + '회'"></span>
-                            <span th:if="${stat.count() > 0}"
-                                  class="text-sm font-bold text-gray-700 w-6 text-right" th:text="${stat.avgScore()}"></span>
-                            <a th:href="@{/practice/type(type=${stat.typeKey()})}"
-                               class="text-xs text-indigo-500 hover:text-indigo-700 font-semibold shrink-0">연습</a>
+                                  class="text-[10px] text-gray-400" th:text="${stat.count()} + '회'"></span>
                         </div>
-                    </div>
+                        <div class="flex items-end justify-between">
+                            <span class="text-2xl font-black"
+                                  th:text="${stat.count() == 0} ? '-' : ${stat.avgScore()}"
+                                  th:classappend="${stat.count() == 0} ? 'text-gray-200' : (${iterStat.index < 3} ? 'text-rose-800' : 'text-gray-800')"></span>
+                        </div>
+                        <div class="bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full transition-all"
+                                 th:classappend="${iterStat.index < 3 and stat.count() > 0} ? 'bg-rose-700' : 'bg-brand-400'"
+                                 th:style="'width: ' + ${stat.pct()} + '%'"></div>
+                        </div>
+                        <div class="text-[11px] font-semibold text-center py-1 rounded-lg mt-0.5 transition-colors"
+                             th:classappend="${iterStat.index < 3 and stat.count() > 0} ? 'bg-rose-100 text-rose-800 group-hover:bg-rose-700 group-hover:text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-600 group-hover:text-white'">
+                            연습하기
+                        </div>
+                    </a>
                 </div>
             </div>
 
@@ -120,58 +145,46 @@
                     <h2 class="text-base font-bold text-gray-800">콤보별 성적</h2>
                     <p class="text-xs text-gray-400 mt-0.5">낮은 순 · 미연습 콤보 상단 표시</p>
                 </div>
-                <div class="space-y-4">
-                    <div th:each="stat : ${comboStats}" class="flex items-center gap-3">
-                        <div class="w-40 shrink-0">
-                            <span class="text-sm"
-                                  th:text="${stat.label()}"
-                                  th:classappend="${stat.count() == 0} ? 'text-gray-300 font-medium' : 'text-gray-600 font-medium'">
-                            </span>
-                            <p class="text-[10px] mt-0.5"
-                               th:classappend="${stat.count() == 0} ? 'text-gray-200' : 'text-gray-400'"
-                               th:text="${stat.category() == 'C1'} ? '묘사 → 루틴 → 최근 경험' :
-                                         (${stat.category() == 'C2'} ? '묘사 → 경험 → 인상적인 경험' :
-                                         (${stat.category() == 'C3'} ? '정보요청 → 문제해결 → 유사경험' :
-                                         (${stat.category() == 'C4'} ? '묘사 → 질문하기' :
-                                         (${stat.category() == 'C5'} ? '비교/대조 → 이슈 설명' : ''))))">
-                            </p>
-                        </div>
-                        <div class="flex-1 bg-gray-100 rounded-full h-2.5">
-                            <div class="h-2.5 rounded-full"
-                                 th:classappend="${stat.count() == 0} ? 'bg-gray-200' : 'bg-indigo-400'"
-                                 th:style="'width: ' + ${stat.pct()} + '%'">
+                <div class="grid grid-cols-1 gap-2.5">
+                    <a th:each="stat, iterStat : ${comboStats}"
+                       href="/practice/focus"
+                       class="border rounded-xl p-3 flex flex-col gap-2 hover:shadow-sm transition-shadow group"
+                       th:classappend="${iterStat.index < 2 and stat.count() > 0} ? 'border-rose-200 bg-rose-50' : (${stat.count() == 0} ? 'border-gray-100 bg-gray-50' : 'border-gray-100')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold"
+                                   th:text="${stat.label()}"
+                                   th:classappend="${stat.count() == 0} ? 'text-gray-300' : 'text-gray-700'"></p>
+                                <p class="text-[11px] mt-0.5"
+                                   th:classappend="${stat.count() == 0} ? 'text-gray-200' : 'text-gray-400'"
+                                   th:text="${stat.category() == 'C1'} ? '묘사 → 루틴 → 최근 경험' :
+                                             (${stat.category() == 'C2'} ? '묘사 → 경험 → 인상적인 경험' :
+                                             (${stat.category() == 'C3'} ? '정보요청 → 문제해결 → 유사경험' :
+                                             (${stat.category() == 'C4'} ? '묘사 → 질문하기' :
+                                             (${stat.category() == 'C5'} ? '비교/대조 → 이슈 설명' : ''))))">
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 ml-3">
+                                <span th:if="${stat.count() == 0}"
+                                      class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-md font-medium">미연습</span>
+                                <span th:if="${stat.count() > 0}"
+                                      class="text-xs text-gray-400" th:text="${stat.count()} + '회'"></span>
+                                <span class="text-2xl font-black"
+                                      th:text="${stat.count() == 0} ? '-' : ${stat.avgScore()}"
+                                      th:classappend="${stat.count() == 0} ? 'text-gray-200' : (${iterStat.index < 2} ? 'text-rose-800' : 'text-gray-800')"></span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2.5 shrink-0 w-28 justify-end">
-                            <span th:if="${stat.count() == 0}"
-                                  class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-md font-medium">미연습</span>
-                            <span th:if="${stat.count() > 0}"
-                                  class="text-xs text-gray-400" th:text="${stat.count()} + '회'"></span>
-                            <span th:if="${stat.count() > 0}"
-                                  class="text-sm font-bold text-gray-700 w-6 text-right" th:text="${stat.avgScore()}"></span>
-                            <a href="/practice/focus"
-                               class="text-xs text-indigo-500 hover:text-indigo-700 font-semibold shrink-0">연습</a>
+                        <div class="bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full"
+                                 th:classappend="${iterStat.index < 2 and stat.count() > 0} ? 'bg-rose-700' : 'bg-brand-400'"
+                                 th:style="'width: ' + ${stat.pct()} + '%'"></div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 학습 패턴 분석 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-base font-bold text-gray-800">학습 패턴 분석</h2>
-                    <a th:if="${coachingAvailable}" href="/analytics/coaching"
-                       class="text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-1.5 rounded-xl transition-colors">
-                        분석 받기
+                        <div class="text-[11px] font-semibold text-center py-1.5 rounded-lg transition-colors"
+                             th:classappend="${iterStat.index < 2 and stat.count() > 0} ? 'bg-rose-100 text-rose-800 group-hover:bg-rose-700 group-hover:text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-600 group-hover:text-white'">
+                            연습하기
+                        </div>
                     </a>
                 </div>
-                <p th:if="${!coachingAvailable}" class="text-sm text-gray-400">
-                    20문항 이상 연습하면 AI 패턴 분석을 받을 수 있어요.
-                    <span class="font-semibold text-gray-500" th:text="'(현재 ' + ${totalCount} + '문항)'"></span>
-                </p>
-                <p th:if="${coachingAvailable}" class="text-sm text-gray-500">
-                    피드백 패턴과 약한 유형을 AI가 분석해드려요.
-                </p>
             </div>
 
         </div>

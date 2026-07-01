@@ -9,13 +9,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
     <style>
         .flatpickr-calendar { font-family: inherit; border-radius: 1rem; border: 1px solid #e5e7eb; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #4f46e5; border-color: #4f46e5; }
-        .flatpickr-day:hover { background: #eef2ff; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #2e5c86; border-color: #2e5c86; }
+        .flatpickr-day:hover { background: #d8e6f3; }
         .flatpickr-months .flatpickr-month { color: #1f2937; }
         .flatpickr-current-month .cur-month, .flatpickr-current-month input.cur-year { color: #1f2937; font-weight: 700; }
-        .sel-card:has(input:checked) { border-color: rgb(99 102 241) !important; background-color: rgb(99 102 241) !important; color: white !important; }
+        .sel-card:has(input:checked) { border-color: rgb(46 92 134) !important; background-color: rgb(46 92 134) !important; color: white !important; }
         .sel-card { transition: all 150ms ease; }
-        .sel-card:not(:has(input:checked)):hover { border-color: rgb(165 180 252); }
+        .sel-card:not(:has(input:checked)):hover { border-color: rgb(125 172 213); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -35,19 +35,19 @@
         <div th:if="${plan != null}">
 
             <!-- D-day 배너 -->
-            <div class="bg-indigo-600 rounded-2xl p-5 mb-4 text-white">
+            <div class="bg-brand-600 rounded-2xl p-5 mb-4 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-indigo-200 text-xs font-medium mb-0.5" th:text="${schedule.examDate} + ' 시험'"></p>
+                        <p class="text-brand-200 text-xs font-medium mb-0.5" th:text="${schedule.examDate} + ' 시험'"></p>
                         <p class="text-4xl font-black" th:text="'D-' + ${plan.daysLeft()}"></p>
                     </div>
                     <div class="text-right">
-                        <p class="text-indigo-200 text-xs mb-0.5">목표</p>
+                        <p class="text-brand-200 text-xs mb-0.5">목표</p>
                         <p class="text-2xl font-black" th:text="${schedule.targetGrade.label}"></p>
                     </div>
                 </div>
-                <div th:if="${diagnosis.sufficient()}" class="mt-3 pt-3 border-t border-indigo-500 flex items-center justify-between">
-                    <span class="text-indigo-200 text-xs">현재 추정</span>
+                <div th:if="${diagnosis.sufficient()}" class="mt-3 pt-3 border-t border-brand-500 flex items-center justify-between">
+                    <span class="text-brand-200 text-xs">현재 추정</span>
                     <span class="text-white text-sm font-bold" th:text="${diagnosis.estimatedGrade().label}"></span>
                 </div>
             </div>
@@ -61,31 +61,31 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-3">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-layer-group text-indigo-500 text-sm"></i>
+                        <div class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-layer-group text-gray-500 text-sm"></i>
                         </div>
                         <div>
                             <p class="text-sm font-bold text-gray-800">콤보 연습</p>
                             <p class="text-xs text-gray-400">하루 <span th:text="${plan.dailyComboTarget()}"></span>회 목표</p>
                         </div>
                     </div>
-                    <span class="text-lg font-black text-indigo-600" th:text="'주 ' + ${plan.weeklyComboTarget()} + '회'"></span>
+                    <span class="text-lg font-black text-brand-600" th:text="'주 ' + ${plan.weeklyComboTarget()} + '회'"></span>
                 </div>
                 <div th:if="${!plan.weakCombos().isEmpty()}" class="flex flex-col gap-1.5">
-                    <p class="text-[11px] text-indigo-400 mb-0.5">약한 순 추천 · 기록 기반</p>
+                    <p class="text-[11px] text-gray-400 mb-0.5">약한 순 추천 · 기록 기반</p>
                     <th:block th:each="combo, stat : ${plan.weakCombos()}">
                         <a th:if="${stat.index < 2}"
                            th:href="@{/practice/combo(category=${combo.category()})}"
-                           class="flex items-center justify-between bg-indigo-50 rounded-xl px-4 py-3 hover:bg-indigo-100 transition-colors group">
+                           class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors group">
                             <div>
                                 <div class="flex items-center gap-2 mb-0.5">
                                     <span th:if="${combo.count() == 0}"
-                                          class="text-[10px] bg-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
+                                          class="text-[10px] bg-gray-100 text-brand-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
                                     <span th:if="${combo.count() > 0}"
-                                          class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-semibold">약점</span>
-                                    <span class="text-xs text-indigo-800 font-semibold" th:text="${combo.label()}"></span>
+                                          class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-semibold">약점</span>
+                                    <span class="text-xs text-gray-800 font-semibold" th:text="${combo.label()}"></span>
                                 </div>
-                                <p class="text-[10px] text-indigo-400"
+                                <p class="text-[10px] text-gray-400"
                                    th:text="${combo.category() == 'C1'} ? '묘사 → 루틴 → 최근 경험' :
                                              (${combo.category() == 'C2'} ? '묘사 → 경험 → 인상적인 경험' :
                                              (${combo.category() == 'C3'} ? '정보요청 → 문제해결 → 유사경험' :
@@ -94,8 +94,8 @@
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span th:if="${combo.count() > 0}" class="text-xs text-indigo-400" th:text="${combo.avgScore()} + '점'"></span>
-                                <span class="text-xs text-indigo-300 group-hover:text-indigo-500 transition-colors">연습 →</span>
+                                <span th:if="${combo.count() > 0}" class="text-xs text-gray-400" th:text="${combo.avgScore()} + '점'"></span>
+                                <span class="text-xs text-gray-300 group-hover:text-gray-500 transition-colors">연습 →</span>
                             </div>
                         </a>
                     </th:block>
@@ -106,8 +106,8 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-3">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-bullseye text-violet-500 text-sm"></i>
+                        <div class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-bullseye text-gray-500 text-sm"></i>
                         </div>
                         <div>
                             <p class="text-sm font-bold text-gray-800">유형 연습</p>
@@ -116,21 +116,21 @@
                     </div>
                 </div>
                 <div th:if="${!plan.weakTypes().isEmpty()}" class="flex flex-col gap-1.5">
-                    <p class="text-[11px] text-violet-400 mb-0.5">약한 순 추천 · 기록 기반</p>
+                    <p class="text-[11px] text-gray-400 mb-0.5">약한 순 추천 · 기록 기반</p>
                     <th:block th:each="type, stat : ${plan.weakTypes()}">
                         <a th:if="${stat.index < 2}"
                            th:href="@{/practice/type(type=${type.typeKey()})}"
-                           class="flex items-center justify-between bg-violet-50 rounded-xl px-4 py-3 hover:bg-violet-100 transition-colors group">
+                           class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors group">
                             <div class="flex items-center gap-2">
                                 <span th:if="${type.count() == 0}"
-                                      class="text-[10px] bg-violet-200 text-violet-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
+                                      class="text-[10px] bg-gray-100 text-brand-700 px-1.5 py-0.5 rounded font-semibold">미연습</span>
                                 <span th:if="${type.count() > 0}"
-                                      class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-semibold">약점</span>
-                                <span class="text-xs text-violet-800 font-semibold" th:text="${type.typeLabel()}"></span>
+                                      class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-semibold">약점</span>
+                                <span class="text-xs text-gray-800 font-semibold" th:text="${type.typeLabel()}"></span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span th:if="${type.count() > 0}" class="text-xs text-violet-400" th:text="${type.avgScore()} + '점'"></span>
-                                <span class="text-xs text-violet-300 group-hover:text-violet-500 transition-colors">연습 →</span>
+                                <span th:if="${type.count() > 0}" class="text-xs text-gray-400" th:text="${type.avgScore()} + '점'"></span>
+                                <span class="text-xs text-gray-300 group-hover:text-gray-500 transition-colors">연습 →</span>
                             </div>
                         </a>
                     </th:block>
@@ -139,10 +139,10 @@
 
             <!-- 모의고사 카드 -->
             <a href="/practice/mock"
-               class="flex items-center justify-between bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 hover:border-amber-200 hover:bg-amber-50 transition-colors group mb-4">
+               class="flex items-center justify-between bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors group mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-file-pen text-amber-500 text-sm"></i>
+                    <div class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-file-pen text-gray-500 text-sm"></i>
                     </div>
                     <div>
                         <p class="text-sm font-bold text-gray-800">모의고사</p>
@@ -150,7 +150,7 @@
                            th:text="${plan.daysLeft() <= 7} ? '시험 막바지, 지금 추천해요' : '실제 시험과 동일한 구성 · 15문항'"></p>
                     </div>
                 </div>
-                <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-amber-400 transition-colors"></i>
+                <i class="fa-solid fa-chevron-right text-gray-300 text-xs group-hover:text-gray-500 transition-colors"></i>
             </a>
 
             <!-- 시험 일정 수정 토글 -->
@@ -176,14 +176,14 @@
                         <input type="text" id="examDatePicker" name="examDate"
                                th:value="${schedule != null ? schedule.examDate : ''}"
                                placeholder="날짜 선택"
-                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 cursor-pointer"/>
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-400 cursor-pointer"/>
                     </div>
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 mb-1 block">목표 등급</label>
                         <div class="flex rounded-xl overflow-hidden border border-gray-200">
                             <th:block th:each="grade : ${targetGrades}">
                                 <label class="sel-card flex-1 flex items-center justify-center py-2 cursor-pointer border-r border-gray-200 last:border-r-0 bg-white text-gray-500"
-                                       th:classappend="${schedule != null && schedule.targetGrade == grade} ? '!border-indigo-500 !bg-indigo-600 !text-white' : ''">
+                                       th:classappend="${schedule != null && schedule.targetGrade == grade} ? '!border-brand-500 !bg-brand-600 !text-white' : ''">
                                     <input type="radio" name="targetGrade" th:value="${grade.name()}" class="sr-only"
                                            th:checked="${schedule != null && schedule.targetGrade == grade}">
                                     <span class="text-xs font-extrabold" th:text="${grade.label}"></span>
@@ -199,7 +199,7 @@
                     <div class="flex rounded-xl overflow-hidden border border-gray-200">
                         <th:block th:each="opt,s : ${ {30, 60, 90, 120} }">
                             <label class="sel-card flex-1 flex items-center justify-center py-2 cursor-pointer border-r border-gray-200 last:border-r-0 bg-white text-gray-500"
-                                   th:classappend="${schedule != null && schedule.dailyMinutes == opt} ? '!border-indigo-500 !bg-indigo-600 !text-white' : (${schedule == null && opt == 60} ? '!border-indigo-500 !bg-indigo-600 !text-white' : '')">
+                                   th:classappend="${schedule != null && schedule.dailyMinutes == opt} ? '!border-brand-500 !bg-brand-600 !text-white' : (${schedule == null && opt == 60} ? '!border-brand-500 !bg-brand-600 !text-white' : '')">
                                 <input type="radio" name="dailyMinutes" th:value="${opt}" class="sr-only"
                                        th:checked="${schedule != null ? schedule.dailyMinutes == opt : opt == 60}">
                                 <span class="text-xs font-semibold"
@@ -215,7 +215,7 @@
                     <div class="flex rounded-xl overflow-hidden border border-gray-200">
                         <th:block th:each="opt : ${ {3, 5, 7} }">
                             <label class="sel-card flex-1 flex items-center justify-center py-2.5 cursor-pointer border-r border-gray-200 last:border-r-0 bg-white text-gray-500"
-                                   th:classappend="${schedule != null && schedule.studyDaysPerWeek == opt} ? '!border-indigo-500 !bg-indigo-600 !text-white' : (${schedule == null && opt == 5} ? '!border-indigo-500 !bg-indigo-600 !text-white' : '')">
+                                   th:classappend="${schedule != null && schedule.studyDaysPerWeek == opt} ? '!border-brand-500 !bg-brand-600 !text-white' : (${schedule == null && opt == 5} ? '!border-brand-500 !bg-brand-600 !text-white' : '')">
                                 <input type="radio" name="studyDaysPerWeek" th:value="${opt}" class="sr-only"
                                        th:checked="${schedule != null ? schedule.studyDaysPerWeek == opt : opt == 5}">
                                 <span class="text-xs font-semibold" th:text="${opt} + '일'"></span>
@@ -225,7 +225,7 @@
                 </div>
 
                 <button type="submit"
-                        class="w-full bg-indigo-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors"
+                        class="w-full bg-brand-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-brand-700 transition-colors"
                         th:text="${schedule == null ? '등록하기' : '수정하기'}">
                 </button>
             </form>
@@ -247,10 +247,10 @@
 
     function applySelCard(label, selected) {
         if (selected) {
-            label.classList.add('!border-indigo-500', '!bg-indigo-600', '!text-white');
+            label.classList.add('!border-brand-500', '!bg-brand-600', '!text-white');
             label.classList.remove('bg-white', 'text-gray-500');
         } else {
-            label.classList.remove('!border-indigo-500', '!bg-indigo-600', '!text-white');
+            label.classList.remove('!border-brand-500', '!bg-brand-600', '!text-white');
             label.classList.add('bg-white', 'text-gray-500');
         }
     }

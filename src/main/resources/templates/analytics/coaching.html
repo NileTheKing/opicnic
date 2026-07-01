@@ -39,15 +39,15 @@
                     <!-- 메타 -->
                     <div class="flex items-center justify-between text-xs text-gray-400 px-1">
                         <div class="flex items-center gap-1">
-                            <i class="fa-solid fa-robot text-indigo-400"></i>
+                            <i class="fa-solid fa-robot text-gray-400"></i>
                             <span>AI 분석 결과</span>
                         </div>
                         <span th:text="${#temporals.format(latestReport.createdAt, 'M월 d일 HH:mm')} + ' · ' + ${latestReport.basedOnCount} + '문항 기준'"></span>
                     </div>
 
                     <!-- 요약 -->
-                    <div class="bg-indigo-50 rounded-2xl p-4" th:if="${latestReportParsed['summary'] != null}">
-                        <p class="text-sm font-medium text-indigo-800" th:text="${latestReportParsed['summary']}"></p>
+                    <div class="bg-gray-50 rounded-2xl p-4" th:if="${latestReportParsed['summary'] != null}">
+                        <p class="text-sm font-medium text-gray-800" th:text="${latestReportParsed['summary']}"></p>
                     </div>
 
                     <!-- 요소별 코칭 -->
@@ -57,7 +57,7 @@
                         <div class="space-y-3">
                             <div th:each="item : ${latestReportParsed['criteria']}" class="flex gap-3">
                                 <div class="w-16 shrink-0">
-                                    <span class="text-xs font-medium text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5"
+                                    <span class="text-xs font-medium text-brand-600 bg-gray-50 rounded-full px-2 py-0.5"
                                           th:text="${item['name']}"></span>
                                 </div>
                                 <p class="text-sm text-gray-600 leading-relaxed" th:text="${item['advice']}"></p>
@@ -92,7 +92,7 @@
                 <form th:action="@{/analytics/coaching}" method="post">
                     <button type="submit"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-colors"
-                            th:classappend="${latestReport != null} ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'">
+                            th:classappend="${latestReport != null} ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm'">
                         <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
                         <span th:text="${latestReport != null} ? '다시 분석받기' : 'AI 분석 받기'"></span>
                     </button>

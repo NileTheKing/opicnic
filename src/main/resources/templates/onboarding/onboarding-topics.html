@@ -18,14 +18,14 @@
         .topic-label:not(:has(input:checked)):hover {
             border-color: rgb(165 180 252);
             box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10);
-            transform: translateY(-1px);
+            transform: tranbrandY(-1px);
         }
         .tooltip-box {
             pointer-events: none;
             position: absolute;
             bottom: calc(100% + 6px);
             left: 50%;
-            transform: translateX(-50%);
+            transform: tranbrandX(-50%);
             width: 9rem;
             z-index: 30;
             opacity: 0;
@@ -41,21 +41,21 @@
         .tooltip-trigger.tip-open .tooltip-box { opacity: 1; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
 <div class="w-full max-w-2xl">
     <!-- 스텝 인디케이터 -->
     <div class="flex items-center mb-8 px-4">
         <div class="flex flex-col items-center gap-1">
-            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-200 text-indigo-500 text-sm font-bold shrink-0">
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-500 text-sm font-bold shrink-0">
                 <i class="fa-solid fa-check text-xs"></i>
             </div>
-            <span class="text-[10px] text-indigo-400 font-medium whitespace-nowrap">나의 정보</span>
+            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">나의 정보</span>
         </div>
-        <div class="flex-1 h-1 mx-3 bg-indigo-600 rounded-full mb-4"></div>
+        <div class="flex-1 h-1 mx-3 bg-brand-600 rounded-full mb-4"></div>
         <div class="flex flex-col items-center gap-1">
-            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold shrink-0">2</div>
-            <span class="text-[10px] text-indigo-600 font-semibold whitespace-nowrap">주제 선택</span>
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-600 text-white text-sm font-bold shrink-0">2</div>
+            <span class="text-[10px] text-brand-600 font-semibold whitespace-nowrap">주제 선택</span>
         </div>
     </div>
 
@@ -75,7 +75,7 @@
                     </div>
                     <div class="flex items-end gap-3">
                         <button type="button" id="select-all-btn"
-                                class="text-xs font-semibold text-indigo-400 hover:text-indigo-600 underline underline-offset-2 transition mb-1">
+                                class="text-xs font-semibold text-gray-400 hover:text-brand-600 underline underline-offset-2 transition mb-1">
                             전체 선택
                         </button>
                         <div class="text-right">
@@ -85,7 +85,7 @@
                     </div>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-2.5">
-                    <div id="topic-bar" class="h-2.5 bg-indigo-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div id="topic-bar" class="h-2.5 bg-gray-500 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
                 <div id="spare-hint" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
                     <p class="flex items-center gap-1.5 mt-2 text-xs text-gray-400 pl-1">
@@ -98,15 +98,15 @@
             <!-- 범례 -->
             <div class="flex items-center gap-4 mb-6 text-[11px] text-gray-400 bg-gray-50 rounded-xl px-3 py-2">
                 <span class="font-semibold text-gray-500 shrink-0">준비 부담</span>
-                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-indigo-300"></i> 낮음</span>
-                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-indigo-300"></i><i class="fa-solid fa-circle text-[7px] text-indigo-300 ml-0.5"></i> 보통</span>
-                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-indigo-300"></i><i class="fa-solid fa-circle text-[7px] text-indigo-300 ml-0.5"></i><i class="fa-solid fa-circle text-[7px] text-indigo-300 ml-0.5"></i> 높음</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-gray-300"></i> 낮음</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-gray-300"></i><i class="fa-solid fa-circle text-[7px] text-gray-300 ml-0.5"></i> 보통</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[7px] text-gray-300"></i><i class="fa-solid fa-circle text-[7px] text-gray-300 ml-0.5"></i><i class="fa-solid fa-circle text-[7px] text-gray-300 ml-0.5"></i> 높음</span>
             </div>
 
             <!-- 카테고리별 카드 -->
             <div th:each="group : ${topicGroups}" class="mb-7" th:attr="data-group=${group.key}">
                 <div class="flex items-center gap-2 mb-3">
-                    <div class="h-3.5 w-1 bg-indigo-400 rounded-full"></div>
+                    <div class="h-3.5 w-1 bg-brand-400 rounded-full"></div>
                     <h4 class="text-xs font-bold text-gray-600 uppercase tracking-widest" th:text="${group.key}"></h4>
                     <span class="group-progress text-xs font-semibold text-gray-400 ml-auto"></span>
                 </div>
@@ -119,17 +119,17 @@
                         <span class="check-badge hidden absolute top-2.5 right-2.5 w-5 h-5 bg-white/25 rounded-full items-center justify-center">
                             <i class="fa-solid fa-check text-white text-[9px]"></i>
                         </span>
-                        <i th:class="'fa-solid ' + ${icon} + ' text-3xl text-indigo-400 topic-icon mt-0.5'"></i>
+                        <i th:class="'fa-solid ' + ${icon} + ' text-3xl text-gray-400 topic-icon mt-0.5'"></i>
                         <span class="text-xs font-bold leading-tight" th:text="${topic.label}"></span>
                         <!-- 세트 수 도트 -->
                         <div class="tooltip-trigger relative flex gap-1 items-center cursor-pointer" onclick="toggleTip(event, this)">
-                            <i class="fa-solid fa-circle text-[7px] text-indigo-300 set-dot"></i>
-                            <i th:if="${sets >= 2}" class="fa-solid fa-circle text-[7px] text-indigo-300 set-dot"></i>
-                            <i th:if="${sets >= 3}" class="fa-solid fa-circle text-[7px] text-indigo-300 set-dot"></i>
-                            <i th:if="${sets >= 4}" class="fa-solid fa-circle text-[7px] text-indigo-300 set-dot"></i>
+                            <i class="fa-solid fa-circle text-[7px] text-gray-300 set-dot"></i>
+                            <i th:if="${sets >= 2}" class="fa-solid fa-circle text-[7px] text-gray-300 set-dot"></i>
+                            <i th:if="${sets >= 3}" class="fa-solid fa-circle text-[7px] text-gray-300 set-dot"></i>
+                            <i th:if="${sets >= 4}" class="fa-solid fa-circle text-[7px] text-gray-300 set-dot"></i>
                             <div class="tooltip-box">
                                 <span th:text="${sets} + '세트 · 준비 부담 ' + (${sets} == 1 ? '낮음' : (${sets} == 2 ? '보통' : '높음'))"></span>
-                                <div style="position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#111827"></div>
+                                <div style="position:absolute;top:100%;left:50%;transform:tranbrandX(-50%);border:4px solid transparent;border-top-color:#111827"></div>
                             </div>
                         </div>
                     </label>
@@ -175,7 +175,7 @@
         const valid = isFormValid();
         submitBtn.disabled = !valid;
         if (valid) {
-            submitBtn.className = 'flex-1 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98] shadow-lg shadow-indigo-200 cursor-pointer';
+            submitBtn.className = 'flex-1 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] shadow-lg shadow-brand-200 cursor-pointer';
         } else {
             submitBtn.className = 'flex-1 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all bg-gray-100 text-gray-400 cursor-not-allowed';
         }
@@ -185,15 +185,15 @@
         const icon = label.querySelector('.topic-icon');
         const dots = label.querySelectorAll('.set-dot');
         if (checked) {
-            label.classList.add('border-indigo-500', 'bg-indigo-500', 'text-white');
-            label.classList.remove('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
-            if (icon) { icon.classList.remove('text-indigo-400'); icon.classList.add('text-white'); }
-            dots.forEach(d => { d.classList.remove('text-indigo-300'); d.classList.add('text-white'); });
+            label.classList.add('border-brand-500', 'bg-gray-500', 'text-white');
+            label.classList.remove('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-brand-300');
+            if (icon) { icon.classList.remove('text-gray-400'); icon.classList.add('text-white'); }
+            dots.forEach(d => { d.classList.remove('text-gray-300'); d.classList.add('text-white'); });
         } else {
-            label.classList.remove('border-indigo-500', 'bg-indigo-500', 'text-white');
-            label.classList.add('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-indigo-300');
-            if (icon) { icon.classList.remove('text-white'); icon.classList.add('text-indigo-400'); }
-            dots.forEach(d => { d.classList.remove('text-white'); d.classList.add('text-indigo-300'); });
+            label.classList.remove('border-brand-500', 'bg-gray-500', 'text-white');
+            label.classList.add('border-gray-200', 'bg-white', 'text-gray-500', 'hover:border-brand-300');
+            if (icon) { icon.classList.remove('text-white'); icon.classList.add('text-gray-400'); }
+            dots.forEach(d => { d.classList.remove('text-white'); d.classList.add('text-gray-300'); });
         }
     }
 
@@ -211,8 +211,8 @@
             }
         } else {
             countEl.textContent = count;
-            countEl.className = 'text-2xl font-extrabold ' + (count === 0 ? 'text-gray-300' : 'text-indigo-500');
-            barEl.className = 'h-2.5 bg-indigo-500 rounded-full transition-all duration-300';
+            countEl.className = 'text-2xl font-extrabold ' + (count === 0 ? 'text-gray-300' : 'text-gray-500');
+            barEl.className = 'h-2.5 bg-gray-500 rounded-full transition-all duration-300';
             spareEl.classList.add('max-h-0', 'opacity-0');
             spareEl.classList.remove('max-h-20', 'opacity-100');
         }

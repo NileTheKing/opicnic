@@ -23,36 +23,36 @@
     </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen font-sans flex flex-col">
+<body class="bg-gray-50 min-h-screen font-sans flex flex-col">
 
 <!-- 로딩 오버레이 -->
 <div id="loading" class="hidden fixed inset-0 bg-white/90 z-50 flex flex-col items-center justify-center gap-4">
-    <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg class="animate-spin h-10 w-10 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
     </svg>
-    <p class="text-indigo-700 font-semibold">피드백 분석 중입니다. 잠시만 기다려 주세요...</p>
+    <p class="text-brand-700 font-semibold">피드백 분석 중입니다. 잠시만 기다려 주세요...</p>
 </div>
 
 <!-- 상단 진행 바 -->
-<div class="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+<div class="bg-white border-b border-brand-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
     <div class="flex items-center gap-3">
-        <span class="text-sm font-bold text-indigo-600">Opicnic</span>
-        <span class="text-slate-300">|</span>
-        <span id="questionNumber" class="text-sm font-bold text-slate-700">Q1 / 1</span>
+        <span class="text-sm font-bold text-brand-600">Opicnic</span>
+        <span class="text-gray-300">|</span>
+        <span id="questionNumber" class="text-sm font-bold text-brand-700">Q1 / 1</span>
     </div>
-    <div id="topicBadge" class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full"></div>
+    <div id="topicBadge" class="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full"></div>
 </div>
 
 <!-- 진행 도트 -->
 <div id="progressContainer" class="flex justify-center gap-1.5 pt-4 px-4"></div>
 
 <main class="flex-1 flex flex-col items-center justify-center px-4 py-6">
-    <div id="questionContainer" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 w-full max-w-xl">
+    <div id="questionContainer" class="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 sm:p-8 w-full max-w-xl">
 
         <!-- 문제 텍스트 -->
         <div class="mb-6">
-            <p id="questionText" class="text-slate-800 text-base leading-relaxed font-medium">문제 내용</p>
+            <p id="questionText" class="text-gray-800 text-base leading-relaxed font-medium">문제 내용</p>
         </div>
 
         <!-- 인라인 에러 -->
@@ -66,7 +66,7 @@
             <div class="flex items-center gap-6">
                 <!-- 재생 버튼 -->
                 <button id="playButton"
-                        class="w-14 h-14 rounded-full border-2 border-slate-200 bg-white text-slate-400 flex items-center justify-center transition hover:border-indigo-300 hover:text-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        class="w-14 h-14 rounded-full border-2 border-brand-200 bg-white text-gray-400 flex items-center justify-center transition hover:border-brand-300 hover:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
                         disabled>
                     <i class="fa-solid fa-play text-lg"></i>
                 </button>
@@ -81,20 +81,20 @@
 
                 <!-- 정지 버튼 -->
                 <button id="stopButton"
-                        class="hidden w-14 h-14 rounded-full border-2 border-slate-200 bg-white text-slate-500 flex items-center justify-center transition hover:border-red-300 hover:text-red-500">
+                        class="hidden w-14 h-14 rounded-full border-2 border-brand-200 bg-white text-gray-500 flex items-center justify-center transition hover:border-red-300 hover:text-red-500">
                     <i class="fa-solid fa-stop text-lg"></i>
                 </button>
             </div>
 
-            <div id="timerDisplay" class="text-slate-500 text-lg font-mono font-semibold tabular-nums">00:00</div>
-            <p id="recordingStatus" class="text-sm text-slate-400">마이크 버튼을 눌러 녹음을 시작하세요</p>
+            <div id="timerDisplay" class="text-gray-500 text-lg font-mono font-semibold tabular-nums">00:00</div>
+            <p id="recordingStatus" class="text-sm text-gray-400">마이크 버튼을 눌러 녹음을 시작하세요</p>
         </div>
     </div>
 
     <!-- 다음 / 제출 버튼 -->
     <div class="mt-5 flex gap-3 w-full max-w-xl">
         <button id="nextButton"
-                class="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex-1 py-3 bg-brand-600 text-white rounded-2xl font-semibold hover:bg-brand-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled>
             다음 <i class="fa-solid fa-arrow-right text-sm ml-1"></i>
         </button>
@@ -147,7 +147,7 @@
     function initializeApp() {
         questions.forEach((_, index) => {
             const dot = document.createElement('div');
-            dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-200 transition-colors';
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-100 transition-colors';
             dot.dataset.question = index;
             progressContainer.appendChild(dot);
         });
@@ -159,11 +159,11 @@
     function updateProgressIndicators() {
         document.querySelectorAll('[data-question]').forEach((dot, index) => {
             if (index < currentQuestionIndex) {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-400 transition-colors';
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-brand-400 transition-colors';
             } else if (index === currentQuestionIndex) {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-600 scale-125 transition-colors';
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-brand-600 scale-125 transition-colors';
             } else {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-200 transition-colors';
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-100 transition-colors';
             }
         });
     }

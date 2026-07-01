@@ -53,11 +53,11 @@ public class ExamPlanService {
         }
 
         Map<String, Double> avgs = Map.of(
-                "핵심 전달", weightedAvg(results, r -> r.getMainPointScore()),
-                "근거 전개",  weightedAvg(results, r -> r.getContentScore()),
-                "표현력",     weightedAvg(results, r -> r.getVocabularyScore()),
-                "유창성",     weightedAvg(results, r -> r.getFluencyScore()),
-                "정확성",     weightedAvg(results, r -> r.getGrammarScore())
+                "핵심전달", weightedAvg(results, r -> r.getMainPointScore()),
+                "내용전개",  weightedAvg(results, r -> r.getContentScore()),
+                "표현력",     weightedAvg(results, r -> r.getExpressionScore()),
+                "발화량",     weightedAvg(results, r -> r.getFluencyScore()),
+                "정확성",     weightedAvg(results, r -> r.getAccuracyScore())
         );
 
         double overall = avgs.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
@@ -165,8 +165,8 @@ public class ExamPlanService {
 
     private double questionAvg(FeedbackResult r) {
         List<Integer> scores = new ArrayList<>();
-        if (r.getVocabularyScore() != null) scores.add(r.getVocabularyScore());
-        if (r.getGrammarScore() != null) scores.add(r.getGrammarScore());
+        if (r.getExpressionScore() != null) scores.add(r.getExpressionScore());
+        if (r.getAccuracyScore() != null) scores.add(r.getAccuracyScore());
         if (r.getMainPointScore() != null) scores.add(r.getMainPointScore());
         if (r.getFluencyScore() != null) scores.add(r.getFluencyScore());
         if (r.getContentScore() != null) scores.add(r.getContentScore());

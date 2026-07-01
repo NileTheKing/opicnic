@@ -19,18 +19,18 @@
         .sel-card:not(:has(input:checked)):hover { border-color: rgb(165 180 252); box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10); }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
 <div class="w-full max-w-xl">
 
     <!-- ───── 인트로 ───── -->
     <div th:if="${showIntro}">
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 px-8 pt-14 pb-12 text-white text-center mb-5 shadow-xl">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-600 to-fuchsia-500 px-8 pt-14 pb-12 text-white text-center mb-5 shadow-xl">
             <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full"></div>
             <div class="absolute -bottom-8 -left-8 w-36 h-36 bg-white/10 rounded-full"></div>
             <div class="relative">
                 <h2 class="text-4xl font-black leading-tight mb-4">고득점에 유리한<br>설정만 골랐어요</h2>
-                <p class="text-indigo-200 text-sm">2분이면 준비 끝이에요</p>
+                <p class="text-brand-200 text-sm">2분이면 준비 끝이에요</p>
             </div>
         </div>
 
@@ -38,14 +38,14 @@
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">진행 순서</p>
             <div class="flex flex-col gap-5">
                 <div class="flex items-center gap-4">
-                    <div class="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">1</div>
+                    <div class="w-9 h-9 rounded-full bg-brand-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-brand-200">1</div>
                     <div>
                         <p class="text-sm font-bold text-gray-800">내 정보 입력</p>
                         <p class="text-xs text-gray-400 mt-0.5">거주형태 · 목표등급 설정</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">2</div>
+                    <div class="w-9 h-9 rounded-full bg-brand-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow-md shadow-brand-200">2</div>
                     <div>
                         <p class="text-sm font-bold text-gray-800">주제 선택</p>
                         <p class="text-xs text-gray-400 mt-0.5">고득점 추천 주제 중 고르기</p>
@@ -55,7 +55,7 @@
         </div>
 
         <a th:href="@{/onboarding(start=true)}"
-           class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-base hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
+           class="w-full py-4 bg-brand-600 text-white rounded-2xl font-bold text-base hover:bg-brand-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand-200">
             시작하기 <i class="fa-solid fa-arrow-right"></i>
         </a>
         <p class="text-center text-xs text-gray-400 mt-3">2분이면 설정 끝나요</p>
@@ -66,8 +66,8 @@
         <!-- 스텝 인디케이터 -->
         <div class="flex items-center mb-8 px-2">
             <div class="flex flex-col items-center gap-1">
-                <div class="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center shadow-md shadow-indigo-200">1</div>
-                <span class="text-[10px] text-indigo-600 font-semibold">나의 정보</span>
+                <div class="w-9 h-9 rounded-full bg-brand-600 text-white text-sm font-bold flex items-center justify-center shadow-md shadow-brand-200">1</div>
+                <span class="text-[10px] text-brand-600 font-semibold">나의 정보</span>
             </div>
             <div class="flex-1 h-1 mx-3 bg-gray-200 rounded-full mb-4"></div>
             <div class="flex flex-col items-center gap-1">
@@ -82,14 +82,14 @@
             <!-- 거주 형태 -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-3">
                 <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <i class="fa-solid fa-house text-indigo-500 text-xs"></i>
+                    <div class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
+                        <i class="fa-solid fa-house text-gray-500 text-xs"></i>
                     </div>
                     <h3 class="text-base font-bold text-gray-800">거주 형태</h3>
                 </div>
                 <p class="text-xs text-gray-400 mb-4 ml-9">책 개수 = 준비 범위 (많을수록 다양한 문제 유형 출제)</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <label class="sel-card relative flex flex-col items-center gap-3 p-5 border-2 rounded-2xl cursor-pointer !border-indigo-500 !bg-indigo-500 !text-white">
+                    <label class="sel-card relative flex flex-col items-center gap-3 p-5 border-2 rounded-2xl cursor-pointer !border-brand-500 !bg-gray-500 !text-white">
                         <input type="radio" name="residenceType" value="WITH_FAMILY" class="sr-only" checked>
                         <span class="check-badge hidden absolute top-2.5 right-2.5 w-5 h-5 bg-white/20 rounded-full items-center justify-center">
                             <i class="fa-solid fa-check text-white text-[9px]"></i>
@@ -110,12 +110,12 @@
                         <span class="check-badge hidden absolute top-2.5 right-2.5 w-5 h-5 bg-white/20 rounded-full items-center justify-center">
                             <i class="fa-solid fa-check text-white text-[9px]"></i>
                         </span>
-                        <i class="card-icon fa-solid fa-person-shelter text-3xl text-indigo-400"></i>
+                        <i class="card-icon fa-solid fa-person-shelter text-3xl text-gray-400"></i>
                         <div class="text-center">
                             <p class="text-sm font-bold mb-1">혼자</p>
                             <div class="flex gap-0.5 justify-center">
-                                <i class="fa-solid fa-book text-[11px] text-indigo-300"></i>
-                                <i class="fa-solid fa-book text-[11px] text-indigo-300"></i>
+                                <i class="fa-solid fa-book text-[11px] text-gray-300"></i>
+                                <i class="fa-solid fa-book text-[11px] text-gray-300"></i>
                             </div>
                             <p class="card-sub text-[10px] text-gray-400 mt-1">2세트</p>
                         </div>
@@ -126,8 +126,8 @@
             <!-- 목표 등급 -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-3">
                 <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <i class="fa-solid fa-trophy text-indigo-500 text-xs"></i>
+                    <div class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
+                        <i class="fa-solid fa-trophy text-gray-500 text-xs"></i>
                     </div>
                     <h3 class="text-base font-bold text-gray-800">목표 등급</h3>
                 </div>
@@ -135,7 +135,7 @@
                 <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-3">
                     <label th:each="grade : ${targetGrades}"
                            class="sel-card flex-1 flex flex-col items-center py-2.5 cursor-pointer border-r border-gray-200 last:border-r-0 bg-white text-gray-500 transition-none"
-                           th:classappend="${grade.name() == 'IM2'} ? ' !bg-indigo-600 !text-white' : ''">
+                           th:classappend="${grade.name() == 'IM2'} ? ' !bg-brand-600 !text-white' : ''">
                         <input type="radio" name="targetGrade" th:value="${grade.name()}" class="sr-only"
                                th:checked="${grade.name() == 'IM2'}">
                         <span class="text-xs font-extrabold" th:text="${grade.label}"></span>
@@ -147,8 +147,8 @@
             <!-- 연습 난이도 -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
                 <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <i class="fa-solid fa-sliders text-indigo-500 text-xs"></i>
+                    <div class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
+                        <i class="fa-solid fa-sliders text-gray-500 text-xs"></i>
                     </div>
                     <h3 class="text-base font-bold text-gray-800">연습 난이도</h3>
                 </div>
@@ -159,7 +159,7 @@
                         <span class="text-base font-extrabold">3</span>
                         <span class="text-[10px] card-sub text-gray-400">NH · IL</span>
                     </label>
-                    <label class="sel-card flex flex-col items-center gap-0.5 py-3.5 border-2 rounded-xl cursor-pointer !border-indigo-500 !bg-indigo-500 !text-white">
+                    <label class="sel-card flex flex-col items-center gap-0.5 py-3.5 border-2 rounded-xl cursor-pointer !border-brand-500 !bg-gray-500 !text-white">
                         <input type="radio" name="preferredDifficulty" value="LEVEL_4" class="sr-only" checked>
                         <span class="text-base font-extrabold">4</span>
                         <span class="text-[10px] card-sub opacity-80">IM1 · IM2</span>
@@ -181,7 +181,7 @@
             </div>
 
             <button type="submit"
-                    class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-base hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
+                    class="w-full py-4 bg-brand-600 text-white rounded-2xl font-bold text-base hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-200">
                 다음 <i class="fa-solid fa-arrow-right"></i>
             </button>
         </form>
@@ -195,16 +195,16 @@
     function applyCardStyle(label, selected) {
         if (selected) {
             label.classList.remove('border-gray-200', 'bg-white', 'text-gray-500', 'text-gray-600');
-            label.classList.add('!border-indigo-500', '!bg-indigo-500', '!text-white');
+            label.classList.add('!border-brand-500', '!bg-gray-500', '!text-white');
             label.querySelectorAll('.card-sub').forEach(el => { el.classList.remove('text-gray-400'); el.classList.add('opacity-80'); });
-            label.querySelectorAll('.card-icon').forEach(i => { i.classList.remove('text-indigo-400'); });
+            label.querySelectorAll('.card-icon').forEach(i => { i.classList.remove('text-gray-400'); });
             const badge = label.querySelector('.check-badge');
             if (badge) badge.style.display = 'flex';
         } else {
-            label.classList.remove('!border-indigo-500', '!bg-indigo-500', '!text-white', 'border-indigo-500', 'bg-indigo-500', 'text-white');
+            label.classList.remove('!border-brand-500', '!bg-gray-500', '!text-white', 'border-brand-500', 'bg-gray-500', 'text-white');
             label.classList.add('border-gray-200', 'bg-white', 'text-gray-500');
             label.querySelectorAll('.card-sub').forEach(el => { el.classList.remove('opacity-80'); el.classList.add('text-gray-400'); });
-            label.querySelectorAll('.card-icon').forEach(i => { i.classList.add('text-indigo-400'); });
+            label.querySelectorAll('.card-icon').forEach(i => { i.classList.add('text-gray-400'); });
             const badge = label.querySelector('.check-badge');
             if (badge) badge.style.display = 'none';
         }
@@ -248,10 +248,10 @@
 
     function applyGradeStyle(label, selected) {
         if (selected) {
-            label.classList.add('!bg-indigo-600', '!text-white');
+            label.classList.add('!bg-brand-600', '!text-white');
             label.classList.remove('bg-white', 'text-gray-500');
         } else {
-            label.classList.remove('!bg-indigo-600', '!text-white', 'bg-indigo-600', 'text-white');
+            label.classList.remove('!bg-brand-600', '!text-white', 'bg-brand-600', 'text-white');
             label.classList.add('bg-white', 'text-gray-500');
         }
     }
