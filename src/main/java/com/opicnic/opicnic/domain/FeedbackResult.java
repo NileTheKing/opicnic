@@ -38,10 +38,10 @@ public class FeedbackResult {
     private String sttText;
 
     @Column(columnDefinition = "TEXT")
-    private String vocabulary;
+    private String expression;
 
     @Column(columnDefinition = "TEXT")
-    private String grammar;
+    private String accuracy;
 
     @Column(columnDefinition = "TEXT")
     private String mainPoint;
@@ -57,8 +57,8 @@ public class FeedbackResult {
 
     private String overallGrade;
 
-    private Integer vocabularyScore;
-    private Integer grammarScore;
+    private Integer expressionScore;
+    private Integer accuracyScore;
     private Integer mainPointScore;
     private Integer fluencyScore;
     private Integer contentScore;

@@ -83,26 +83,27 @@ public class FeedbackService {
 
                             int fluencyScore = computeFluencyScore(speechText);
                             int mpScore    = score(feedbackMap, "mainPointScore");
-                            int vocScore   = score(feedbackMap, "vocabularyScore");
-                            int grScore    = score(feedbackMap, "grammarScore");
+                            int exScore    = score(feedbackMap, "expressionScore");
+                            int acScore    = score(feedbackMap, "accuracyScore");
                             int ctScore    = score(feedbackMap, "contentScore");
-                            String grade   = computeGrade(mpScore, vocScore, grScore, fluencyScore, ctScore);
+                            String grade   = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
 
                             return FeedbackDTO.builder()
                                     .question(question)
                                     .sttText(speechText)
                                     .mainPoint(str(feedbackMap, "mainPoint"))
                                     .mainPointScore(mpScore)
-                                    .vocabulary(str(feedbackMap, "vocabulary"))
-                                    .vocabularyScore(vocScore)
-                                    .grammar(str(feedbackMap, "grammar"))
-                                    .grammarScore(grScore)
+                                    .expression(str(feedbackMap, "expression"))
+                                    .expressionScore(exScore)
+                                    .accuracy(str(feedbackMap, "accuracy"))
+                                    .accuracyScore(acScore)
                                     .fluency(computeFluencyText(speechText, fluencyScore))
                                     .fluencyScore(fluencyScore)
                                     .content(str(feedbackMap, "content"))
                                     .contentScore(ctScore)
-                                    .overall(computeOverallText(grade, mpScore, vocScore, grScore, fluencyScore, ctScore))
+                                    .overall(computeOverallText(grade, mpScore, exScore, acScore, fluencyScore, ctScore))
                                     .overallGrade(grade)
+                                    .improvements(str(feedbackMap, "improvements"))
                                     .modelAnswer(str(feedbackMap, "modelAnswer"))
                                     .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
                                     .build();
@@ -152,7 +153,7 @@ public class FeedbackService {
                 .sttText(speechText)
                 .overall("응답이 감지되지 않았습니다.")
                 .overallGrade("IL")
-                .mainPointScore(1).vocabularyScore(1).grammarScore(1).fluencyScore(1).contentScore(1)
+                .mainPointScore(1).expressionScore(1).accuracyScore(1).fluencyScore(1).contentScore(1)
                 .improvements("답변을 녹음해주세요.")
                 .build();
     }
@@ -169,7 +170,7 @@ public class FeedbackService {
     }
 
     private static String computeOverallText(String grade, Integer... scores) {
-        String[] labels = {"핵심전달", "어휘/묘사", "문법", "발화량", "내용구성"};
+        String[] labels = {"핵심전달", "표현력", "정확성", "발화량", "내용전개"};
         int minScore = 5;
         String weakest = null;
         for (int i = 0; i < scores.length; i++) {

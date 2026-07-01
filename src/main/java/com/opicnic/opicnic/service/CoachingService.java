@@ -44,9 +44,9 @@ public class CoachingService {
         sb.append("【항목별 평균 점수 (5점 만점)】\n");
         sb.append("메인포인트: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getMainPointScore)).append("\n");
         sb.append("내용 구성: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getContentScore)).append("\n");
-        sb.append("어휘/묘사: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getVocabularyScore)).append("\n");
+        sb.append("표현력: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getExpressionScore)).append("\n");
         sb.append("발화량: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getFluencyScore)).append("\n");
-        sb.append("문법: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getGrammarScore)).append("\n\n");
+        sb.append("정확성: ").append(ExamPlanService.weightedAvg(results, FeedbackResult::getAccuracyScore)).append("\n\n");
 
         sb.append("【유형별 점수 (약한 순, 연습한 유형만)】\n");
         for (var t : types) {
@@ -55,14 +55,10 @@ public class CoachingService {
         }
         sb.append("\n");
 
-        sb.append("【최근 문항별 피드백 (최신 순)】\n");
-        results.stream().limit(RECENT_TEXT_LIMIT).forEach(r -> {
-            sb.append("[").append(r.getQuestionType()).append("]\n");
-            if (r.getMainPoint()   != null) sb.append("  핵심전달: ").append(r.getMainPoint()).append("\n");
-            if (r.getVocabulary()  != null) sb.append("  어휘/묘사: ").append(r.getVocabulary()).append("\n");
-            if (r.getGrammar()     != null) sb.append("  문법: ").append(r.getGrammar()).append("\n");
-            if (r.getContent()     != null) sb.append("  내용구성: ").append(r.getContent()).append("\n");
-        });
+        sb.append("【최근 개선 포인트 패턴】\n");
+        results.stream().limit(RECENT_TEXT_LIMIT)
+                .filter(r -> r.getImprovements() != null && !r.getImprovements().isBlank())
+                .forEach(r -> sb.append("- ").append(r.getImprovements()).append("\n"));
 
         return sb.toString();
     }
