@@ -46,6 +46,7 @@ public class CoachingController {
                 .findTopByMemberIdOrderByCreatedAtDesc(member.getId()).orElse(null);
 
         model.addAttribute("totalCount", totalCount);
+        model.addAttribute("coachingMinCount", coachingMinCount);
         model.addAttribute("canGenerate", totalCount >= coachingMinCount);
         model.addAttribute("latestReport", latestReport);
         model.addAttribute("latestReportParsed", parseReport(latestReport));
@@ -65,7 +66,11 @@ public class CoachingController {
     private Map<String, Object> parseReport(CoachingReport report) {
         if (report == null || report.getContent() == null) return Collections.emptyMap();
         try {
-            return objectMapper.readValue(report.getContent(), new TypeReference<>() {});
+            String content = report.getContent().trim();
+            if (content.startsWith("```")) {
+                content = content.replaceAll("^```[a-zA-Z]*\\s*", "").replaceAll("```\\s*$", "").trim();
+            }
+            return objectMapper.readValue(content, new TypeReference<>() {});
         } catch (Exception e) {
             log.warn("코칭 리포트 JSON 파싱 실패, 원문 사용: {}", e.getMessage());
             return Map.of("summary", report.getContent());

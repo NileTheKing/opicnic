@@ -46,28 +46,44 @@ public class GeminiService {
                     "  금지: 문장 끝에 추상적 격식 표현 붙이기 ('..., which left a lasting impression', '..., which was non-negotiable')\n" +
                     "  OK: 감정/반응 연결 ('..., which made me feel so good', '..., which I really enjoyed'), breathtaking/stunning/amazing 같은 강한 형용사\n" +
                     "\n" +
-                    "mainPoint (메인포인트 명확성 및 구조):\n" +
-                    "  5=첫 문장에 명확한 MP, MP->부가설명->결론 구조 완성\n" +
-                    "  4=MP 명확하나 구조 약간 불완전\n" +
-                    "  3=MP 있으나 불명확하거나 여러 개를 나열\n" +
-                    "  2=MP 파악 어려움, 두서없이 나열\n" +
-                    "  1=MP 없음 또는 주제와 무관\n" +
+                    "mainPoint (메인포인트 — 답변이 하나의 구조로 묶이는가):\n" +
                     "\n" +
-                    "  mainPoint 평가 순서 (반드시 이 순서로):\n" +
-                    "  1. 사용자 응답의 첫 번째 문장을 그대로 찾아라\n" +
-                    "  2. 그 첫 문장에 MP(핵심 주장/입장)가 담겨있는지 판단\n" +
-                    "  3. 피드백에 그 첫 문장을 그대로 인용하고, MP가 담긴 문장으로 바꾸면 어떻게 되는지 보여줄 것\n" +
+                    "  【TYPE_5/TYPE_6/TYPE_7 — 롤플레이 유형】\n" +
+                    "  mainPointScore: 0 고정. mainPoint 텍스트: '롤플레이 유형 — MP 평가 제외'\n" +
                     "\n" +
-                    "  MP 기준:\n" +
-                    "  - 좋은 MP = 입장/주장이 담긴 문장. '~는 내 삶의 핵심이다', '나는 ~를 절대 포기 못한다'\n" +
-                    "  - 나쁜 MP = 사실 설명이나 행동 나열. 'I go to gym', 'My routine is consistent'\n" +
+                    "  【TYPE_1/TYPE_2/TYPE_3/TYPE_4/TYPE_8 — What+Feeling+Why】\n" +
+                    "  MP = 초반 2~3문장 안에 3요소가 모두 나와야 함:\n" +
+                    "    What    : 무엇에 대해 말할 것인지\n" +
+                    "    Feeling : 구체적인 감정/반응. 단순 'I like/love'는 Feeling이 아님. 'I feel so relaxed', 'it makes me so happy' 수준이어야 함.\n" +
+                    "    Why     : 그 감정의 이유. 특징/사실 나열('it has trees', 'it is big')은 Why가 아님. 'because it clears my head', 'it just makes me forget everything' 수준이어야 함.\n" +
                     "\n" +
-                    "  올바른 예:\n" +
-                    "  입력: 'I go to the gym every day. I do weights and cardio.'\n" +
-                    "  출력: '첫 문장이 행동 나열로 시작해 MP가 없음. 예) \\'I go to the gym every day.\\' -> \\'Going to the gym is honestly my favorite part of the day. I just feel so much better after I work out.\\''\n" +
+                    "  5=3요소 초반에 명확, 이후 전개도 MP로 수렴\n" +
+                    "  4=3요소 있으나 하나가 약하거나 순서 어색\n" +
+                    "  3=What만 있고 Feeling/Why가 뒤로 밀리거나 약함\n" +
+                    "  2=What만 있고 Feeling/Why 없음\n" +
+                    "  1=MP 자체 없음, 두서없이 나열\n" +
                     "\n" +
-                    "  금지 예 (이런 개선은 MP가 아님): 'My daily exercise routine is quite consistent.' (입장/주장 없이 설명만)\n" +
-                    "  금지 예 (첫 문장 인용 없음): '루틴을 나열하기보다 핵심 주제를 먼저 말해야 합니다.'\n" +
+                    "  평가 순서 (반드시 이 순서로):\n" +
+                    "  1. 초반 2~3문장에서 What/Feeling/Why를 각각 찾아라\n" +
+                    "  2. 'I like/love' → Feeling 아님. 특징 나열 → Why 아님.\n" +
+                    "  3. 빠진 요소 확인 후 점수 결정. 빠진 요소를 채운 개선 예시 제시 (실제 발화 인용 포함)\n" +
+                    "\n" +
+                    "  예시:\n" +
+                    "  입력: 'I like the park near my house. It has many trees and a pond.'\n" +
+                    "  → What: 공원 ✓ / Feeling: 'I like' → Feeling 아님 ✗ / Why: 'has trees' → 특징 나열, Why 아님 ✗\n" +
+                    "  → score: 2. 피드백: 'I like the park.' → 'The park near my house is honestly my sanctuary — I go there whenever I need to clear my head.'\n" +
+                    "\n" +
+                    "  금지: What만 다른 What으로 교체\n" +
+                    "  예) 'I go to the gym' → 'My daily exercise routine is quite consistent' (Feeling/Why 여전히 없음)\n" +
+                    "\n" +
+                    "  【TYPE_9/TYPE_10 — 방향/프레임 명확성】\n" +
+                    "  MP = 채점자가 초반에 답변 방향을 파악할 수 있는가. 개인 입장 필수 아님.\n" +
+                    "\n" +
+                    "  5=초반에 방향 명확, 이후 전개가 그 방향을 따름\n" +
+                    "  4=방향은 있으나 약간 모호\n" +
+                    "  3=방향이 뒤로 밀림\n" +
+                    "  2=방향 파악 어려움\n" +
+                    "  1=두서없이 나열\n" +
                     "\n" +
                     "expression (표현력 - 어휘 선택 수준 + 문장 복잡도 + 묘사력):\n" +
                     "  5=풍부한 형용사/비유, 복합문/종속절 자연스럽게 활용, 생생한 묘사\n" +
@@ -93,16 +109,16 @@ public class GeminiService {
                     "  3=주제 부합하나 단순한 수준  2=주제와 부분적으로만 관련  1=주제와 무관\n" +
                     "\n" +
                     "【모범답안 유형별 전략】\n" +
-                    "TYPE_1(묘사): MP + 감각적 형용사 + 결론\n" +
-                    "TYPE_2(루틴): MP(루틴의 특징) + 구체적인 습관/순서 + 결론\n" +
-                    "TYPE_3(과거경험): MP + 스토리 전개 + 결론\n" +
-                    "TYPE_4(기억에 남는 경험): MP(왜 기억에 남는지) + 감정 묘사 + 결론\n" +
-                    "TYPE_5(질문하기): 질문 3개, 각각 다른 표현 패턴\n" +
-                    "TYPE_6(정보요청): 상황 설명 + 요청사항 + 공손한 마무리\n" +
-                    "TYPE_7(문제해결): 문제 인식 + 대안 2개 이상 + 양해 표현\n" +
-                    "TYPE_8(비슷한 경험): MP(유사점) + 스토리 + 결론\n" +
-                    "TYPE_9(비교): MP + 두 대상 구체적 대비 + 결론\n" +
-                    "TYPE_10(이슈): MP(나의 입장) + 두 관점 균형 + 결론\n" +
+                    "TYPE_1(묘사): What+Feeling+Why → 감각적 형용사로 묘사 전개 → 마무리\n" +
+                    "TYPE_2(루틴): What+Feeling+Why → when/where/what/frequency/with whom 구체 서술 → 마무리\n" +
+                    "TYPE_3(과거경험): 결말/하이라이트 먼저 → 과거 스토리 전개 → 현재로 귀결\n" +
+                    "TYPE_4(기억에 남는 경험): 왜 기억에 남는지 먼저 → when/where/what/how/why 전개 → 감정 마무리\n" +
+                    "TYPE_5(질문하기): 자연스러운 대화체로 3~4개 질문. 친구에게 묻듯이, 질문마다 다른 표현 패턴.\n" +
+                    "TYPE_6(정보/요청): 상황에 맞는 자연스러운 대화체. 내가 원하는 상황이면 공손한 요청, 상대가 원하는 상황이면 상대 요구에 맞게 응대.\n" +
+                    "TYPE_7(문제해결): 상황 설명(상대/내/제3자 잘못 중 해당) → 대안 2~3개 제시\n" +
+                    "TYPE_8(유사경험): 유사했던 과거 상황 설명 → 어떻게 해결했는지 전개\n" +
+                    "TYPE_9(비교): 비교 프레임/방향 먼저 → 각 대상 전개(과거/현재 or A/B) → 마무리\n" +
+                    "TYPE_10(사회이슈): 이슈 제시 → 내 생각/진술 전개 → 마무리\n" +
                     "\n" +
                     "improvements: 이 답변의 가장 특징적인 약점을 행동 패턴 1줄로.\n" +
                     "  형식: [패턴 한국어 관찰]. 예) 'actual quote' -> 'improved version'\n" +
@@ -113,8 +129,9 @@ public class GeminiService {
                     "\n" +
                     "【최종 체크 - JSON 출력 전 반드시 확인】\n" +
                     "- improvements: 사용자 실제 발화에서 문장을 그대로 인용. 플레이스홀더 절대 금지.\n" +
-                    "- mainPoint 개선 표현: 반드시 입장/주장이 담긴 문장. 단순 설명 금지.\n" +
-                    "- mainPoint 인용: 사용자 응답의 첫 번째 문장을 반드시 그대로 인용.\n" +
+                    "- mainPoint(TYPE_1~4/8): 빠진 요소(What/Feeling/Why)가 뭔지 짚고, 실제 발화 인용 포함한 개선 예시 제시.\n" +
+                    "- mainPoint(TYPE_5~7): score=0, 텍스트='롤플레이 유형 — MP 평가 제외'.\n" +
+                    "- mainPoint(TYPE_9~10): 방향/프레임 명확성 기준으로만 평가. Feeling/Why 없어도 됨.\n" +
                     "- accuracy: 오류 없으면 칭찬. 문장 복잡도/어휘 언급 금지.\n" +
                     "- fluencyScore: 반드시 0.\n" +
                     "\n" +
@@ -173,40 +190,92 @@ public class GeminiService {
         }
     }
 
-    // 코칭 리포트는 피드백과 달리 자유 텍스트 반환. 책임이 다르지만 ChatModel 공유 목적으로 같은 클래스에 둠.
+    // Call 1: 피드백 텍스트에서 반복 패턴을 추출 (창작 없이 카운팅+인용만)
+    public String extractCoachingPatterns(String feedbackTexts) {
+        if (!aiEnabled) {
+            return "{\"patterns\":[{\"element\":\"mainPoint\",\"pattern\":\"첫 문장 행동 나열\",\"count\":3,\"total\":5,\"examples\":[\"I go to the gym\"]}]}";
+        }
+
+        Message systemMessage = new SystemMessage(
+                "당신은 데이터 분석가입니다. 아래 OPIc 연습 피드백 텍스트들에서 반복되는 문제 패턴을 추출하세요.\n\n" +
+                "규칙:\n" +
+                "- 피드백 텍스트에 실제로 있는 내용만 추출. 없는 패턴 추가 금지.\n" +
+                "- 각 element(mainPoint/content/expression/accuracy)별로 반복되는 약점/문제 패턴만 찾아라.\n" +
+                "- 패턴이 없으면 patterns 배열을 비워라.\n" +
+                "- accuracy: 실제 오류가 발생한 문항만 카운트하라. count는 오류 있는 문항 수, total은 전체 문항 수.\n" +
+                "JSON만 반환:\n" +
+                "{\"patterns\":[{\"element\":\"mainPoint\",\"pattern\":\"패턴 설명\",\"count\":3,\"total\":10}]}"
+        );
+        Message userMessage = new UserMessage(feedbackTexts);
+
+        Prompt prompt = new Prompt(List.of(systemMessage, userMessage),
+                OpenAiChatOptions.builder()
+                        .temperature(0.0)
+                        .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                        .build());
+
+        try {
+            ChatResponse response = chatModel.call(prompt);
+            return ((AssistantMessage) response.getResult().getOutput()).getText();
+        } catch (Exception e) {
+            log.error("패턴 추출 LLM 호출 오류: {}", e.getMessage(), e);
+            throw new RuntimeException("LLM API 호출 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    // Call 2: 추출된 패턴 기반 코칭 작성
     // 코칭 관련 로직이 복잡해지면 CoachingLlmService로 분리 고려.
-    public String getCoachingReport(String statsPrompt) {
+    public String getCoachingReport(String statsPrompt, String targetGrade) {
         if (!aiEnabled) {
             return "【MOCK 코칭 리포트】\n핵심 전달이 가장 약합니다. 답변 시작 시 메인포인트를 먼저 말하는 연습을 해보세요.";
         }
 
         Message systemMessage = new SystemMessage(
-                "당신은 OPIc 시험 전문 코치입니다. 유저의 연습 통계를 분석해 한국어로 코칭 리포트를 작성하세요.\n\n" +
+                "당신은 OPIc " + targetGrade + " 달성 전문 코치입니다. 유저의 연습 데이터를 보고 한국어로 깊이 있는 코칭 리포트를 작성하세요.\n\n" +
                 "【OPIc 도메인 지식】\n" +
-                "- MP(메인포인트): 첫 문장에 핵심을 던지는 것. 모든 유형의 핵심.\n" +
-                "- TYPE_1(묘사): MP + 감각적 형용사. TYPE_2(루틴): MP + Before→But now 비교.\n" +
-                "- TYPE_3/4/8(경험): MP + 스토리. TYPE_5~7(롤플레이): 질문/요청/문제해결.\n" +
-                "- TYPE_9(비교): MP + 과거→현재. TYPE_10(이슈): MP + A관점 + B관점.\n" +
-                "- 고득점(IH/AL)은 MP 명확성 + 형용사 다양성 + 유형별 전략 완성도가 핵심.\n\n" +
-                "【규칙】\n" +
-                "- '다양한 어휘를 써보세요' 같은 generic 조언 금지\n" +
-                "- 데이터에서 보이는 패턴을 구체적으로 짚을 것\n\n" +
+                "- MP(메인포인트): What+Feeling+Why 3요소가 초반에 나와야 함. 답변 전체가 하나의 구조로 묶이는가가 핵심.\n" +
+                "- TYPE_1(묘사): What+Feeling+Why → 감각적 형용사 전개\n" +
+                "- TYPE_2(루틴): What+Feeling+Why → when/where/what/frequency/with whom 서술\n" +
+                "- TYPE_3(과거경험): 결말/하이라이트 먼저 → 과거 스토리 → 현재로 귀결\n" +
+                "- TYPE_4(기억에 남는 경험): 왜 기억에 남는지 먼저 → when/where/what/how/why 전개\n" +
+                "- TYPE_5~7(롤플레이): 자연스러운 대화/연기력이 핵심. MP 채점 제외.\n" +
+                "- TYPE_8(유사경험): 유사 상황 → 해결 과정\n" +
+                "- TYPE_9(비교): 비교 프레임 먼저 → 각 대상 전개(과거/현재 or A/B) → 마무리\n" +
+                "- TYPE_10(사회이슈): 이슈 제시 → 내 생각/진술 → 마무리\n\n" +
+                "【작성 원칙】\n" +
+                "분석 순서 (반드시 이 순서로):\n" +
+                "  1. 제공된 각 문항 피드백 텍스트(메인포인트/표현력/정확성/개선패턴)에서 반복되는 키워드/패턴을 찾아라\n" +
+                "  2. 해당 패턴이 몇 문항 중 몇 개에서 나타나는지 세어라\n" +
+                "  3. 그 빈도와 실제 피드백 내용을 근거로 조언을 작성하라\n\n" +
+                "근거 원칙:\n" +
+                "- criteria는 【추출된 반복 패턴】에 있는 element만 포함. 패턴 없는 element(발화량 포함)는 criteria에 넣지 마라.\n" +
+                "- analysis는 추출된 패턴의 count/total 기반으로만 서술. 없는 내용 추가 금지.\n" +
+                "- advice 영어 예시는 반드시 【개선 표현 예시】에서 가져와라. 직접 만들지 마라.\n" +
+                "- generic 조언 절대 금지 ('다양한 어휘를 써보세요', '더 구체적으로 하세요' 등)\n\n" +
+                "기타:\n" +
+                "- 잘된 점도 1가지 언급해서 동기 유지\n" +
+                "- 이번 주 집중 과제를 구체적 행동으로 제시\n\n" +
                 "【출력 형식 — 반드시 아래 JSON만 반환】\n" +
                 "{\n" +
-                "  \"summary\": \"전체 학습 패턴 한줄 요약\",\n" +
+                "  \"summary\": \"전체 패턴 2문장 요약 (수치 포함)\",\n" +
+                "  \"strength\": \"잘하고 있는 점 1가지 (구체적)\",\n" +
                 "  \"criteria\": [\n" +
-                "    {\"name\": \"메인포인트\", \"advice\": \"구체적 개선 조언\"}\n" +
+                "    {\"name\": \"메인포인트\", \"analysis\": \"데이터에서 보이는 패턴 설명\", \"advice\": \"구체적 개선법 + 영어 예시\"}\n" +
                 "  ],\n" +
                 "  \"types\": [\n" +
-                "    {\"typeKey\": \"TYPE_3\", \"label\": \"과거 경험\", \"advice\": \"유형 전략 기반 조언\"}\n" +
-                "  ]\n" +
+                "    {\"label\": \"사회 이슈\", \"pattern\": \"이 유형에서 반복되는 문제\", \"strategy\": \"유형 전략 + 예시\"}\n" +
+                "  ],\n" +
+                "  \"this_week\": \"유형별 점수 중 가장 낮은 유형 기준. 예: TYPE_9 비교 유형 3회 연습 — 비교 프레임 먼저 말하는 연습\"\n" +
                 "}\n" +
-                "criteria는 점수가 낮거나 패턴이 보이는 항목만. types는 약한 top 3만."
+                "criteria는 추출된 패턴 있는 항목만, 낮은 점수 순 최대 4개. types는 약한 top 3. this_week은 유형별 점수 가장 낮은 유형 기준."
         );
         Message userMessage = new UserMessage(statsPrompt);
 
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage),
-                OpenAiChatOptions.builder().temperature(0.4).build());
+                OpenAiChatOptions.builder()
+                        .temperature(0.4)
+                        .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                        .build());
 
         try {
             ChatResponse response = chatModel.call(prompt);

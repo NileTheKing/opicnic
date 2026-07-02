@@ -3,8 +3,10 @@ package com.opicnic.opicnic.service;
 import com.opicnic.opicnic.domain.CoachingReport;
 import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.Member;
+import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.repository.CoachingReportRepository;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -22,12 +24,19 @@ public class CoachingService {
     private final FeedbackResultRepository feedbackResultRepository;
     private final CoachingReportRepository coachingReportRepository;
     private final ExamPlanService examPlanService;
+    private final SurveyProfileRepository surveyProfileRepository;
 
     public CoachingReport generate(Member member) {
         List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(
                 member.getId(), PageRequest.of(0, RECENT_RESULTS_LIMIT));
-        String prompt = buildPrompt(results);
-        String content = geminiService.getCoachingReport(prompt);
+        String targetGrade = surveyProfileRepository.findByMemberId(member.getId())
+                .map(SurveyProfile::getTargetGrade)
+                .map(g -> g.label)
+                .orElse("IH");
+        String feedbackTexts = buildFeedbackTexts(results);
+        String patterns = geminiService.extractCoachingPatterns(feedbackTexts);
+        String prompt = buildPrompt(results, patterns);
+        String content = geminiService.getCoachingReport(prompt, targetGrade);
         return coachingReportRepository.save(CoachingReport.builder()
                 .member(member)
                 .content(content)
@@ -35,7 +44,32 @@ public class CoachingService {
                 .build());
     }
 
-    private String buildPrompt(List<FeedbackResult> results) {
+    // Call 1 입력: 피드백 텍스트만 (LLM이 패턴을 추출)
+    private String buildFeedbackTexts(List<FeedbackResult> results) {
+        StringBuilder sb = new StringBuilder();
+        List<FeedbackResult> recent = results.stream().limit(RECENT_TEXT_LIMIT).toList();
+        for (int i = 0; i < recent.size(); i++) {
+            FeedbackResult r = recent.get(i);
+            sb.append("Q").append(i + 1);
+            if (r.getQuestionType() != null) sb.append(" [").append(r.getQuestionType()).append("]");
+            if (r.getSurveyTopicName() != null) sb.append(" · ").append(r.getSurveyTopicName());
+            sb.append("\n");
+            if (r.getMainPoint() != null && !r.getMainPoint().isBlank())
+                sb.append("  mainPoint: ").append(r.getMainPoint()).append("\n");
+            if (r.getContent() != null && !r.getContent().isBlank())
+                sb.append("  content: ").append(r.getContent()).append("\n");
+            if (r.getExpression() != null && !r.getExpression().isBlank())
+                sb.append("  expression: ").append(r.getExpression()).append("\n");
+            if (r.getAccuracy() != null && !r.getAccuracy().isBlank())
+                sb.append("  accuracy: ").append(r.getAccuracy()).append("\n");
+            if (r.getImprovements() != null && !r.getImprovements().isBlank())
+                sb.append("  improvements: ").append(r.getImprovements()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    // Call 2 입력: 점수 집계 + Call 1이 추출한 패턴
+    private String buildPrompt(List<FeedbackResult> results, String extractedPatterns) {
         List<ExamPlanService.TypeStat> types = examPlanService.buildWeakTypes(results);
 
         StringBuilder sb = new StringBuilder();
@@ -55,10 +89,14 @@ public class CoachingService {
         }
         sb.append("\n");
 
-        sb.append("【최근 개선 포인트 패턴】\n");
-        results.stream().limit(RECENT_TEXT_LIMIT)
-                .filter(r -> r.getImprovements() != null && !r.getImprovements().isBlank())
-                .forEach(r -> sb.append("- ").append(r.getImprovements()).append("\n"));
+        sb.append("【추출된 반복 패턴 (피드백 분석 결과)】\n");
+        sb.append(extractedPatterns).append("\n\n");
+
+        sb.append("【개선 표현 예시 (advice 영어 예시 참조용)】\n");
+        results.stream().limit(RECENT_TEXT_LIMIT).forEach(r -> {
+            if (r.getImprovements() != null && !r.getImprovements().isBlank())
+                sb.append(r.getImprovements()).append("\n");
+        });
 
         return sb.toString();
     }
