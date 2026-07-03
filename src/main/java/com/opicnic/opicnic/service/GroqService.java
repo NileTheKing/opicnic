@@ -23,7 +23,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GeminiService {
+public class GroqService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;

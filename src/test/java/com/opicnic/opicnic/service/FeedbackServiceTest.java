@@ -27,7 +27,7 @@ class FeedbackServiceTest {
     @Mock
     private STTService sttService;
     @Mock
-    private GeminiService geminiService;
+    private GroqService groqService;
 
     private FeedbackService feedbackService;
 
@@ -36,14 +36,14 @@ class FeedbackServiceTest {
 
     @BeforeEach
     void setUp() {
-        feedbackService = new FeedbackService(comboPracticeService, sttService, geminiService);
+        feedbackService = new FeedbackService(comboPracticeService, sttService, groqService);
     }
 
     @Test
     @DisplayName("LLM 응답의 score 필드가 FeedbackDTO에 올바르게 매핑되어야 한다")
     void scoreFieldsMappedToDto() throws Exception {
         when(sttService.sendStreamToStt(any(InputStream.class), any())).thenReturn("I like hiking.");
-        when(geminiService.getOpicFeedback(any(), any())).thenReturn(Map.ofEntries(
+        when(groqService.getOpicFeedback(any(), any())).thenReturn(Map.ofEntries(
                 Map.entry("vocabulary", "어휘가 적절합니다."),
                 Map.entry("vocabularyScore", 4),
                 Map.entry("grammar", "문법이 정확합니다."),
@@ -78,7 +78,7 @@ class FeedbackServiceTest {
     @DisplayName("LLM 응답에 score 필드가 없으면 null로 처리해야 한다")
     void missingScoreFieldsResultInNull() throws Exception {
         when(sttService.sendStreamToStt(any(InputStream.class), any())).thenReturn("Some text.");
-        when(geminiService.getOpicFeedback(any(), any())).thenReturn(Map.of(
+        when(groqService.getOpicFeedback(any(), any())).thenReturn(Map.of(
                 "vocabulary", "OK",
                 "grammar", "OK",
                 "mainPoint", "OK",

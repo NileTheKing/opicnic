@@ -24,7 +24,7 @@ public class FeedbackService {
 
     private final ComboPracticeService comboPracticeService;
     private final STTService sttService;
-    private final GeminiService geminiService;
+    private final GroqService groqService;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
         return comboPracticeService.getComboQuestions(topic, difficulty);
@@ -74,7 +74,7 @@ public class FeedbackService {
                                 subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
                                 return noResponseDto(question, speechText);
                             }
-                            var feedbackMap = geminiService.getOpicFeedback(speechText, question);
+                            var feedbackMap = groqService.getOpicFeedback(speechText, question);
 
                             long subtaskMs = System.currentTimeMillis() - subtaskStart;
                             subtaskDurations.add(subtaskMs);

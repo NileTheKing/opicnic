@@ -20,7 +20,7 @@ public class CoachingService {
     private static final int RECENT_RESULTS_LIMIT = 30;
     private static final int RECENT_TEXT_LIMIT = 10;
 
-    private final GeminiService geminiService;
+    private final GroqService groqService;
     private final FeedbackResultRepository feedbackResultRepository;
     private final CoachingReportRepository coachingReportRepository;
     private final ExamPlanService examPlanService;
@@ -34,9 +34,9 @@ public class CoachingService {
                 .map(g -> g.label)
                 .orElse("IH");
         String feedbackTexts = buildFeedbackTexts(results);
-        String patterns = geminiService.extractCoachingPatterns(feedbackTexts);
+        String patterns = groqService.extractCoachingPatterns(feedbackTexts);
         String prompt = buildPrompt(results, patterns);
-        String content = geminiService.getCoachingReport(prompt, targetGrade);
+        String content = groqService.getCoachingReport(prompt, targetGrade);
         return coachingReportRepository.save(CoachingReport.builder()
                 .member(member)
                 .content(content)

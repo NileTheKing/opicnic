@@ -15,15 +15,15 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class GeminiServiceTest {
+class GroqServiceTest {
 
-    private GeminiService geminiService;
+    private GroqService groqService;
 
     @BeforeEach
     void setUp() {
-        geminiService = new GeminiService(mock(ChatModel.class), new ObjectMapper());
-        ReflectionTestUtils.setField(geminiService, "aiEnabled", false);
-        ReflectionTestUtils.setField(geminiService, "mockDelayMs", 0L);
+        groqService = new GroqService(mock(ChatModel.class), new ObjectMapper());
+        ReflectionTestUtils.setField(groqService, "aiEnabled", false);
+        ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
     }
 
     @Test
@@ -31,7 +31,7 @@ class GeminiServiceTest {
     void mockMode_returnsScoreFieldsAsInteger() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = geminiService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
 
         assertThat(result.get("vocabularyScore")).isInstanceOf(Integer.class);
         assertThat(result.get("grammarScore")).isInstanceOf(Integer.class);
@@ -45,7 +45,7 @@ class GeminiServiceTest {
     void mockMode_scoresAreInRange() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = geminiService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
 
         for (String key : new String[]{"vocabularyScore", "grammarScore", "mainPointScore", "fluencyScore", "contentScore"}) {
             int score = (Integer) result.get(key);
@@ -58,7 +58,7 @@ class GeminiServiceTest {
     void mockMode_returnsOverallGrade() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = geminiService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
 
         assertThat(result.get("overallGrade")).isNotNull();
         assertThat(result.get("overallGrade").toString()).isNotBlank();
@@ -69,7 +69,7 @@ class GeminiServiceTest {
     void mockMode_returnsAllTextFields() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = geminiService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
 
         for (String key : new String[]{"vocabulary", "grammar", "mainPoint", "fluency", "content", "overall", "improvements"}) {
             assertThat(result.get(key)).as("필드 %s 누락", key).isNotNull();
