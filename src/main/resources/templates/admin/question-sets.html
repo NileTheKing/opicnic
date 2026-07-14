@@ -36,14 +36,25 @@
             <td th:text="${#lists.size(set.combos)}">5</td>
             <td>
                 <a th:href="@{/admin/question-sets/{id}/edit(id=${set.id})}" class="btn btn-secondary btn-sm">수정</a>
-                <form th:action="@{/admin/question-sets/{id}/delete(id=${set.id})}" method="post" style="display:inline;" onsubmit="return confirm('정말로 이 질문 세트를 보관하시겠습니까?');">
-                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                </form>
+                <button type="button" class="btn btn-danger btn-sm" th:attr="data-id=${set.id}" onclick="deleteQuestionSet(this)">삭제</button>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
+
+<script>
+    function deleteQuestionSet(button) {
+        if (!confirm('정말로 이 질문 세트를 보관하시겠습니까?')) return;
+        const id = button.getAttribute('data-id');
+        fetch('/api/admin/question-sets/' + id, { method: 'DELETE' })
+            .then(res => {
+                if (!res.ok) throw new Error('삭제 실패: ' + res.status);
+                location.reload();
+            })
+            .catch(err => alert(err.message));
+    }
+</script>
 
 </body>
 </html>
