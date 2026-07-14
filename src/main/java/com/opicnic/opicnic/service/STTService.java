@@ -25,11 +25,14 @@ public class STTService {
     private final boolean enabled;
     private final long mockDelayMs;
 
-    public STTService(@Value("${spring.ai.stt.api-key}") String apiKey,
+    public STTService(RestClient.Builder restClientBuilder,
+                      @Value("${spring.ai.stt.api-key}") String apiKey,
                       @Value("${spring.ai.stt.enabled:true}") boolean enabled,
                       @Value("${STT_MOCK_DELAY_MS:0}") long mockDelayMs,
                       ObjectMapper objectMapper) {
-        this.restClient = RestClient.builder()
+        // restClientBuilder는 Spring Boot가 spring.http.client.* 타임아웃 설정을 적용해 관리하는 빈이다.
+        // RestClient.builder()를 직접 호출하면 이 전역 타임아웃을 상속받지 못한다.
+        this.restClient = restClientBuilder
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
         this.enabled = enabled;

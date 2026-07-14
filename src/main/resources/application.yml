@@ -6,6 +6,10 @@ spring:
       enabled: true
   application:
     name: opicnic
+  http:
+    client:
+      connect-timeout: 5s # Groq(STT/LLM) 등 외부 API 공통 연결 타임아웃
+      read-timeout: 60s # 응답 대기 상한 — 무한 대기로 스레드가 걸려있는 것을 방지
 
   thymeleaf:
     prefix: classpath:/templates/
