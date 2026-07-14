@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.enums.Region;
-import com.opicnic.opicnic.domain.enums.StudyType;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.dto.EnumResponse;
@@ -19,13 +18,6 @@ public class EnumController {
     public List<EnumResponse> getRegions() {
         return Arrays.stream(Region.values())
                 .map(region -> new EnumResponse(region.name(), region.getLabel()))
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/study-types")
-    public List<EnumResponse> getStudyTypes() {
-        return Arrays.stream(StudyType.values())
-                .map(type -> new EnumResponse(type.name(), type.getLabel()))
                 .collect(Collectors.toList());
     }
 
