@@ -236,12 +236,12 @@
         if (recordedAudioBlob) recordings[currentQuestionIndex] = recordedAudioBlob;
         if (!hasAllRecordings()) { showError('모든 문제를 녹음해주세요.'); return; }
         const indexes = questions.map((_, i) => i);
-        await submitRecordings('/api/practice-attempts/answers', indexes);
+        await submitRecordings(`/api/practice-attempts/${encodeURIComponent(attemptId)}/answers`, indexes);
     }
 
     async function retryFailedRecordings() {
         if (failedIndexes.length === 0) return;
-        await submitRecordings('/api/practice-attempts/answers/retry', failedIndexes);
+        await submitRecordings(`/api/practice-attempts/${encodeURIComponent(attemptId)}/answers/retry`, failedIndexes);
     }
 
     async function submitRecordings(endpoint, indexes) {
@@ -256,7 +256,6 @@
                 if (!blob) throw new Error(`Q${index + 1} 녹음 파일이 없습니다.`);
                 formData.append('files', new File([blob], `file_${index + 1}.webm`, { type: 'audio/webm' }));
             });
-            formData.append('attemptId', attemptId);
             formData.append('questionIndexes', JSON.stringify(indexes));
 
             const response = await fetch(endpoint, { method: 'POST', body: formData });
@@ -284,7 +283,7 @@
     }
 
     async function finalizeFeedback() {
-        const response = await fetch(`/api/practice-attempts/answers/finalize?attemptId=${encodeURIComponent(attemptId)}`, { method: 'POST' });
+        const response = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/finalize`, { method: 'POST' });
         if (!response.ok) throw new Error('피드백 결과 확정에 실패했습니다.');
         const data = await response.json();
         submissionComplete = true;

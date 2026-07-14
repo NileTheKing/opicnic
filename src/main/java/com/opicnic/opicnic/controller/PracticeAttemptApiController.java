@@ -1,16 +1,25 @@
 package com.opicnic.opicnic.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.FeedbackResult;
+import com.opicnic.opicnic.domain.FeedbackTag;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
+import com.opicnic.opicnic.dto.ErrorResponse;
 import com.opicnic.opicnic.dto.FeedbackDTO;
+import com.opicnic.opicnic.dto.FeedbackTagDto;
+import com.opicnic.opicnic.dto.FinalizeResponseDto;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.dto.SubmissionResponseDto;
+import com.opicnic.opicnic.dto.SubmissionResultItemDto;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
+import com.opicnic.opicnic.repository.FeedbackTagRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +30,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,22 +49,25 @@ public class PracticeAttemptApiController {
     private final FeedbackService feedbackService;
     private final MemberRepository memberRepository;
     private final FeedbackResultRepository feedbackResultRepository;
+    private final FeedbackTagRepository feedbackTagRepository;
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/answers")
-    public ResponseEntity<?> submitAnswers(HttpServletRequest request,
-                                           @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return processSubmission(request, oAuth2User);
+    @PostMapping("/{attemptId}/answers")
+    public ResponseEntity<?> submitAnswers(@PathVariable String attemptId,
+                                           HttpServletRequest request,
+                                           @AuthenticationPrincipal OAuth2User oAuth2User) throws IOException, ServletException {
+        return processSubmission(attemptId, request, oAuth2User);
     }
 
-    @PostMapping("/answers/retry")
-    public ResponseEntity<?> retryAnswers(HttpServletRequest request,
-                                          @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return processSubmission(request, oAuth2User);
+    @PostMapping("/{attemptId}/answers/retry")
+    public ResponseEntity<?> retryAnswers(@PathVariable String attemptId,
+                                          HttpServletRequest request,
+                                          @AuthenticationPrincipal OAuth2User oAuth2User) throws IOException, ServletException {
+        return processSubmission(attemptId, request, oAuth2User);
     }
 
-    @PostMapping("/answers/finalize")
-    public ResponseEntity<?> finalize(@RequestParam String attemptId,
+    @PostMapping("/{attemptId}/finalize")
+    public ResponseEntity<?> finalize(@PathVariable String attemptId,
                                       HttpSession session,
                                       @AuthenticationPrincipal OAuth2User oAuth2User) {
         PracticeAttempt attempt = attemptService.requireValidAttempt(attemptId);
@@ -64,7 +77,7 @@ public class PracticeAttemptApiController {
         int questionCount = attempt.questionIds().size();
         Map<Integer, FeedbackDTO> results = getAttemptResults(session, attemptId);
         if (results.size() != questionCount) {
-            return ResponseEntity.badRequest().body("아직 모든 문항의 피드백이 완료되지 않았습니다.");
+            throw new IllegalArgumentException("아직 모든 문항의 피드백이 완료되지 않았습니다.");
         }
 
         List<FeedbackDTO> feedbackResults = results.entrySet().stream()
@@ -77,79 +90,60 @@ public class PracticeAttemptApiController {
         removeAttemptResults(session, attemptId);
         session.setAttribute(SESSION_FEEDBACK_RESULTS, feedbackResults);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("resultUrl", "/practice/feedback/result");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new FinalizeResponseDto("/practice/feedback/result"));
     }
 
-    private ResponseEntity<?> processSubmission(HttpServletRequest request, OAuth2User oAuth2User) {
-        try {
-            String attemptId = request.getParameter("attemptId");
-            if (attemptId == null || attemptId.isBlank()) {
-                throw new IllegalArgumentException("attemptId는 필수입니다.");
-            }
-            String questionIndexesParam = request.getParameter("questionIndexes");
-            if (questionIndexesParam == null || questionIndexesParam.isBlank()) {
-                throw new IllegalArgumentException("questionIndexes는 필수입니다.");
-            }
-            List<Integer> questionIndexes = objectMapper.readValue(
-                    questionIndexesParam, new TypeReference<>() {});
-            if (questionIndexes.isEmpty()) {
-                throw new IllegalArgumentException("questionIndexes가 비어 있습니다.");
-            }
-
-            PracticeAttempt attempt = attemptService.requireValidAttempt(attemptId);
-            ResponseEntity<?> forbidden = rejectIfNotOwner(attempt, oAuth2User);
-            if (forbidden != null) return forbidden;
-            List<QuestionDto> questions = attemptService.restoreQuestionsForIndexes(attemptId, questionIndexes);
-
-            List<InputStream> streams = new ArrayList<>();
-            for (var part : request.getParts()) {
-                if ("files".equals(part.getName())) streams.add(part.getInputStream());
-            }
-
-            if (streams.size() != questions.size()) {
-                return ResponseEntity.badRequest().body("파일 수와 문제 수가 일치하지 않습니다.");
-            }
-
-            List<FeedbackDTO> submittedFeedbackResults = feedbackService.getComboFeedbackStreaming(streams, questions);
-
-            Map<Integer, FeedbackDTO> attemptResults = getAttemptResults(request.getSession(), attemptId);
-            List<Integer> failedIndexes = new ArrayList<>();
-            for (int i = 0; i < submittedFeedbackResults.size(); i++) {
-                FeedbackDTO fb = submittedFeedbackResults.get(i);
-                int originalIndex = questionIndexes.get(i);
-                if (fb.isFailed()) {
-                    failedIndexes.add(originalIndex);
-                } else {
-                    attemptResults.put(originalIndex, fb);
-                }
-            }
-            saveAttemptResults(request.getSession(), attemptId, attemptResults);
-
-            List<Map<String, Object>> results = new ArrayList<>();
-            for (int i = 0; i < submittedFeedbackResults.size(); i++) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("questionIndex", questionIndexes.get(i));
-                item.put("feedback", submittedFeedbackResults.get(i));
-                results.add(item);
-            }
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("results", results);
-            response.put("failedIndexes", failedIndexes);
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalStateException e) {
-            log.warn("유효하지 않은 attempt: {}", e.getMessage());
-            return ResponseEntity.status(410).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("잘못된 제출 요청: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            log.error("제출 처리 중 오류: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("처리 중 오류가 발생했습니다.");
+    // 예외는 여기서 잡지 않고 ApiExceptionHandler(전역 @RestControllerAdvice)로 흘려보낸다.
+    private ResponseEntity<?> processSubmission(String attemptId, HttpServletRequest request, OAuth2User oAuth2User) throws IOException, ServletException {
+        String questionIndexesParam = request.getParameter("questionIndexes");
+        if (questionIndexesParam == null || questionIndexesParam.isBlank()) {
+            throw new IllegalArgumentException("questionIndexes는 필수입니다.");
         }
+        List<Integer> questionIndexes;
+        try {
+            questionIndexes = objectMapper.readValue(questionIndexesParam, new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("questionIndexes 형식이 올바르지 않습니다.");
+        }
+        if (questionIndexes.isEmpty()) {
+            throw new IllegalArgumentException("questionIndexes가 비어 있습니다.");
+        }
+
+        PracticeAttempt attempt = attemptService.requireValidAttempt(attemptId);
+        ResponseEntity<?> forbidden = rejectIfNotOwner(attempt, oAuth2User);
+        if (forbidden != null) return forbidden;
+        List<QuestionDto> questions = attemptService.restoreQuestionsForIndexes(attemptId, questionIndexes);
+
+        List<InputStream> streams = new ArrayList<>();
+        for (var part : request.getParts()) {
+            if ("files".equals(part.getName())) streams.add(part.getInputStream());
+        }
+
+        if (streams.size() != questions.size()) {
+            throw new IllegalArgumentException("파일 수와 문제 수가 일치하지 않습니다.");
+        }
+
+        List<FeedbackDTO> submittedFeedbackResults = feedbackService.getComboFeedbackStreaming(streams, questions);
+
+        Map<Integer, FeedbackDTO> attemptResults = getAttemptResults(request.getSession(), attemptId);
+        List<Integer> failedIndexes = new ArrayList<>();
+        for (int i = 0; i < submittedFeedbackResults.size(); i++) {
+            FeedbackDTO fb = submittedFeedbackResults.get(i);
+            int originalIndex = questionIndexes.get(i);
+            if (fb.isFailed()) {
+                failedIndexes.add(originalIndex);
+            } else {
+                attemptResults.put(originalIndex, fb);
+            }
+        }
+        saveAttemptResults(request.getSession(), attemptId, attemptResults);
+
+        List<SubmissionResultItemDto> results = new ArrayList<>();
+        for (int i = 0; i < submittedFeedbackResults.size(); i++) {
+            results.add(new SubmissionResultItemDto(questionIndexes.get(i), submittedFeedbackResults.get(i)));
+        }
+
+        return ResponseEntity.ok(new SubmissionResponseDto(results, failedIndexes));
     }
 
     @SuppressWarnings("unchecked")
@@ -180,12 +174,12 @@ public class PracticeAttemptApiController {
         }
 
         if (oAuth2User == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("로그인이 필요합니다."));
         }
 
         Long memberId = findMemberId(oAuth2User);
         if (!attempt.memberId().equals(memberId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("해당 연습 세션에 접근할 수 없습니다.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("해당 연습 세션에 접근할 수 없습니다."));
         }
         return null;
     }
@@ -206,8 +200,8 @@ public class PracticeAttemptApiController {
         Member member = memberRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
         if (member == null) return;
 
-        List<FeedbackResult> toSave = feedbackResults.stream()
-                .filter(fb -> !fb.isFailed())
+        List<FeedbackDTO> validFeedback = feedbackResults.stream().filter(fb -> !fb.isFailed()).toList();
+        List<FeedbackResult> toSave = validFeedback.stream()
                 .map(fb -> FeedbackResult.builder()
                         .member(member)
                         .questionId(fb.getQuestion().getId())
@@ -219,14 +213,22 @@ public class PracticeAttemptApiController {
                         .sttText(fb.getSttText())
                         .expression(fb.getExpression())
                         .expressionScore(fb.getExpressionScore())
+                        .expressionQuote(fb.getExpressionQuote())
+                        .expressionFix(fb.getExpressionFix())
                         .accuracy(fb.getAccuracy())
                         .accuracyScore(fb.getAccuracyScore())
+                        .accuracyQuote(fb.getAccuracyQuote())
+                        .accuracyFix(fb.getAccuracyFix())
                         .mainPoint(fb.getMainPoint())
                         .mainPointScore(fb.getMainPointScore())
+                        .mainPointQuote(fb.getMainPointQuote())
+                        .mainPointFix(fb.getMainPointFix())
                         .fluency(fb.getFluency())
                         .fluencyScore(fb.getFluencyScore())
                         .content(fb.getContent())
                         .contentScore(fb.getContentScore())
+                        .contentQuote(fb.getContentQuote())
+                        .contentFix(fb.getContentFix())
                         .overall(fb.getOverall())
                         .overallGrade(fb.getOverallGrade())
                         .improvements(fb.getImprovements())
@@ -235,7 +237,23 @@ public class PracticeAttemptApiController {
                         .build())
                 .toList();
 
-        feedbackResultRepository.saveAll(toSave);
-        log.info("[DB 저장] 피드백 {}건 (member: {}, combo: {})", toSave.size(), member.getId(), attempt.comboCategory());
+        List<FeedbackResult> saved = feedbackResultRepository.saveAll(toSave);
+
+        List<FeedbackTag> tagsToSave = new ArrayList<>();
+        for (int i = 0; i < saved.size(); i++) {
+            List<FeedbackTagDto> tags = validFeedback.get(i).getTags();
+            if (tags == null) continue;
+            for (var t : tags) {
+                tagsToSave.add(FeedbackTag.builder()
+                        .feedbackResult(saved.get(i))
+                        .category(t.category())
+                        .tag(t.tag())
+                        .build());
+            }
+        }
+        feedbackTagRepository.saveAll(tagsToSave);
+
+        log.info("[DB 저장] 피드백 {}건, 태그 {}건 (member: {}, combo: {})",
+                saved.size(), tagsToSave.size(), member.getId(), attempt.comboCategory());
     }
 }
