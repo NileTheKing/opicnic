@@ -6,7 +6,7 @@
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_Llama--3.3--70b-412991?style=flat-square)](https://groq.com)
+[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_Llama--4--Scout-412991?style=flat-square)](https://groq.com)
 [![Deploy](https://img.shields.io/badge/opicnic.xyz-live-22c55e?style=flat-square)](https://opicnic.xyz)
 
 [**라이브 데모 →**](https://opicnic.xyz)
@@ -47,13 +47,17 @@
       ↓
   attemptId 검증 (서버가 문제 원본 보관, 클라이언트 조작 차단)
       ↓
-  N개 질문 ── VirtualThread #1 ──→ Groq STT ──→ Groq LLM ──→ 피드백
-             ── VirtualThread #2 ──→ Groq STT ──→ Groq LLM ──→ 피드백  (동시)
-             ── VirtualThread #3 ──→ Groq STT ──→ Groq LLM ──→ 피드백
+  N개 질문 ── VirtualThread #1 ──→ Groq STT ──→ Groq LLM(채점) ──→ Groq LLM(태깅) ──→ 피드백
+             ── VirtualThread #2 ──→ Groq STT ──→ Groq LLM(채점) ──→ Groq LLM(태깅) ──→ 피드백  (동시)
+             ── VirtualThread #3 ──→ Groq STT ──→ Groq LLM(채점) ──→ Groq LLM(태깅) ──→ 피드백
       ↓
-  항목별 피드백 리포트 (어휘·문법·유창성·내용·메인포인트·종합)
+  항목별 피드백 리포트 (표현력·정확성·유창성·내용·메인포인트·종합) + FeedbackTag 저장
       ↓
   FeedbackResult DB 저장 (questionType, comboCategory, surveyTopicName 포함)
+      ↓
+  (별도 요청) CoachingService가 최근 태그를 요소별·유형별로 집계
+      ↓
+  Groq LLM이 집계된 요약만 문장으로 서술 → 코칭 리포트
 ```
 
 ---
@@ -78,8 +82,9 @@ graph TB
         Cache["QuestionSet Cache\n(ConcurrentHashMap)"]
         SC["StructuredTaskScope\n병렬 처리"]
         STT["Groq Whisper\n(STT)"]
-        LLM["Groq Llama-3.3-70b\n(LLM)"]
-        DB["FeedbackResult\n저장"]
+        LLM["Groq Llama-4-Scout\n(채점 + 태깅)"]
+        DB["FeedbackResult\n+ FeedbackTag 저장"]
+        Coach["CoachingService\n태그 집계 (요소별·유형별)"]
     end
 
     MySQL[("MySQL 8.0")]
@@ -89,87 +94,19 @@ graph TB
     Cache -.->|문제 복원| Attempt
     Attempt --> SC
     SC -->|VirtualThread × N| STT --> LLM --> DB --> MySQL
+    MySQL -.->|최근 N건| Coach -->|집계 요약만 전달| LLM
 ```
 
 ---
 
 ## 엔지니어링 하이라이트
 
-### 1. 디스크 I/O 병목 제거 — p95 1,130ms → 238ms
-
-톰캣은 멀티파트 파일이 기본 임계치(10KB)를 초과하면 디스크에 임시 파일을 씁니다. 음성 파일은 항상 이 임계치를 초과하므로 모든 요청에서 **디스크 I/O Wait**가 발생했습니다.
-
-JFR 프로파일링으로 `jdk.ObjectAllocationSample`에서 대규모 byte[] 복사와 톰캣 디스크 쓰기 이벤트를 확인. `file-size-threshold: 2MB` 설정 하나로 InputStream을 메모리에서 STT API로 직접 릴레이하는 구조로 전환했습니다.
-
-<details>
-<summary>병목 분석 과정</summary>
-
-| 단계 | 가설 | 실험 | 결과 |
-|------|------|------|------|
-| 1 | DB 커넥션 부족 | 커넥션 풀 10 → 50 | 지표 변화 없음. 기각 |
-| 2 | 파일 I/O | 1MB → 1KB 음성으로 교체 | p95 132ms로 급감. 확정 |
-| 3 | 물리적 증거 | JFR 프로파일링 | 디스크 쓰기 이벤트 포착 |
-
-</details>
-
----
-
-### 2. Java 21 Structured Concurrency — 실측 3.3배
-
-OPIc 콤보는 2~3개 질문으로 구성되며, 각 질문마다 STT → LLM을 직렬 처리하면 응답 시간이 문항 수에 비례해 증가합니다.
-
-`StructuredTaskScope.ShutdownOnFailure`로 N개 Virtual Thread를 동시에 시작. STT + LLM이 모두 외부 API 대기(I/O bound)이므로 가상 스레드가 대기 시간을 겹쳐서 처리합니다.
-
-```
-[Subtask-0] VirtualThread#85 ─────────────────── 2,111ms (순차)
-[Subtask-1] VirtualThread#86 ──────── 1,282ms
-[Subtask-2] VirtualThread#87 ───────────── 1,484ms
-                                         ↑
-                               병렬: 1,474ms (가장 느린 subtask에 수렴)
-```
-
-| | 순차 | 병렬 |
-|---|---|---|
-| 문제 0 | 2,111ms | ↘ |
-| 문제 1 | 1,282ms | 1,474ms |
-| 문제 2 | 1,484ms | ↗ |
-| **합계** | **4,877ms** | **1,474ms** |
-
-`CompletableFuture` 대신 Structured Concurrency를 선택한 이유: 실패 시 나머지 작업 취소와 예외 집계를 언어 수준에서 보장받기 위해서입니다. 하나의 subtask가 실패해도 나머지 결과는 보존하고 실패 문항만 `failedIndexes`로 반환합니다.
-
----
-
-### 3. PracticeAttempt — 클라이언트 신뢰 없는 세션 설계
-
-클라이언트가 제출 시 문제 내용을 함께 보내면 조작이 가능합니다.
-
-문제풀이 시작 시 `attemptId`를 생성하고 `questionIds`를 서버(Caffeine)에 저장합니다. 제출 시 서버가 `attemptId`로 직접 DB에서 문제를 복원해 클라이언트 조작을 원천 차단합니다.
-
-음성 재시도 시에도 서버는 음성 원본을 보관하지 않습니다. 클라이언트가 보관 중인 녹음 Blob으로 실패 문항만 재전송합니다. (모의고사 15문항 기준 서버 힙 보관 vs 클라이언트 재전송 트레이드오프에서 후자 선택)
-
-```
-PracticeAttemptStore (interface)
-└── CaffeinePracticeAttemptStore  ← 현재
-    (future: RedisPracticeAttemptStore)
-```
-
----
-
-### 4. OPIc 콤보 패턴 C1~C5 도메인 모델링
-
-OPIc 공식 출제 구조(콤보 I~V)를 `ComboPattern` record로 모델링. C3 판별이 최우선인 이유: 콤보 III는 `TYPE_6,7,4`와 `TYPE_6,7,8` 두 종류가 존재해 TYPE_4 포함 여부만으로는 C2와 구분 불가능합니다.
-
-```java
-public String category() {
-    if (questionTypes.contains(TYPE_6) || questionTypes.contains(TYPE_7)) return "C3"; // 우선
-    if (questionTypes.contains(TYPE_9) || questionTypes.contains(TYPE_10)) return "C5";
-    if (questionTypes.contains(TYPE_5)) return "C4";
-    if (questionTypes.contains(TYPE_4)) return "C2";
-    return "C1";
-}
-```
-
-피드백 저장 시 `comboPatternKey`, `comboCategory`, `questionType`, `surveyTopicName`을 함께 저장해 학습 이력 분석 기반을 마련했습니다.
+- **디스크 I/O 병목 제거**: JFR 프로파일링으로 톰캣 멀티파트 임시파일 쓰기를 원인으로 특정, InputStream 직접 릴레이로 전환 — p95 **1,130ms → 238ms** (79%↓)
+- **Java 21 Structured Concurrency 병렬 처리**: `StructuredTaskScope.ShutdownOnFailure`로 콤보 내 N개 질문의 STT+LLM 동시 처리, 실패 문항만 `failedIndexes`로 분리 반환 — **4,877ms → 1,474ms** (3.3배)
+- **PracticeAttempt 세션 설계**: `attemptId` 기반 서버 측 문제 원본 보관으로 클라이언트 조작 차단, 실패 문항만 재전송하는 재시도 구조로 전체 재녹음 회피
+- **OPIc 콤보 패턴 도메인 모델링**: 공식 콤보 I~V를 `ComboPattern` record로 모델링, TYPE_6/7 포함 여부로 C3를 C2보다 먼저 판별하는 우선순위 로직
+- **코칭 리포트 태그 기반 재설계**: LLM이 카운팅과 의미 클러스터링을 동시에 수행하며 생기던 자기모순 리포트를, 답변 단위 태깅(LLM)과 다답변 집계·문턱값 필터링(코드)으로 역할 분리 — 패턴추출 호출 1,254토큰 소멸, 리포트 작성 1,726→539~1,300토큰. 같은 재시도 루프에 Groq 429 분리 백오프 + 명시적 타임아웃 포함
+- **커넥션 풀 고갈 진단**: 캐싱 후에도 지연이 안 줄자 Grafana/HikariCP `acquire` 지표로 캐싱 가설을 기각하고, SQL 없는 요청에서도 커넥션을 선점하던 `@Transactional(readOnly=true)` 프록시를 특정·제거 — start p95 **16.69s → 20ms** (Mock 기준)
 
 ---
 
@@ -179,7 +116,7 @@ public String category() {
 |---|---|
 | **Language / Runtime** | Java 21, Virtual Threads |
 | **Framework** | Spring Boot 3.4, Spring AI, Spring Security OAuth2 |
-| **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70b (LLM) |
+| **AI / STT** | Groq Whisper (STT), Groq Llama-4-Scout-17B (LLM) |
 | **Database** | MySQL 8.0, Spring Data JPA |
 | **Cache** | Caffeine (세션), ConcurrentHashMap (QuestionSet) |
 | **Rate Limiting** | Bucket4j (사용자별 10회/시간) |
