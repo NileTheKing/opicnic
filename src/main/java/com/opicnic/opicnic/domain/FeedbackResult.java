@@ -47,10 +47,34 @@ public class FeedbackResult {
     private String mainPoint;
 
     @Column(columnDefinition = "TEXT")
+    private String mainPointQuote;
+
+    @Column(columnDefinition = "TEXT")
+    private String mainPointFix;
+
+    @Column(columnDefinition = "TEXT")
+    private String expressionQuote;
+
+    @Column(columnDefinition = "TEXT")
+    private String expressionFix;
+
+    @Column(columnDefinition = "TEXT")
+    private String accuracyQuote;
+
+    @Column(columnDefinition = "TEXT")
+    private String accuracyFix;
+
+    @Column(columnDefinition = "TEXT")
     private String fluency;
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(columnDefinition = "TEXT")
+    private String contentQuote;
+
+    @Column(columnDefinition = "TEXT")
+    private String contentFix;
 
     @Column(columnDefinition = "TEXT")
     private String overall;

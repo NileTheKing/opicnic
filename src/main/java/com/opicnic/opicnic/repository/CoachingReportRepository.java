@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface CoachingReportRepository extends JpaRepository<CoachingReport, Long> {
     Optional<CoachingReport> findTopByMemberIdOrderByCreatedAtDesc(Long memberId);
     List<CoachingReport> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+    Optional<CoachingReport> findByIdAndMemberId(Long id, Long memberId);
 }

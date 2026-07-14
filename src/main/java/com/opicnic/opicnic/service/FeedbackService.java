@@ -1,11 +1,15 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
+import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.dto.QuestionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -14,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -25,6 +30,7 @@ public class FeedbackService {
     private final ComboPracticeService comboPracticeService;
     private final STTService sttService;
     private final GroqService groqService;
+    private final ObjectMapper objectMapper;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
         return comboPracticeService.getComboQuestions(topic, difficulty);
@@ -44,7 +50,7 @@ public class FeedbackService {
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             List<StructuredTaskScope.Subtask<FeedbackDTO>> subtasks = new ArrayList<>();
 
-            List<Long> subtaskDurations = new java.util.concurrent.CopyOnWriteArrayList<>();
+            List<Long> subtaskDurations = new CopyOnWriteArrayList<>();
 
             for (int i = 0; i < inputStreams.size(); i++) {
                 final int idx = i;
@@ -58,13 +64,18 @@ public class FeedbackService {
                     byte[] audioBuffer = is.readAllBytes();
                     int maxAttempts = 3;
                     Exception lastException = null;
+                    boolean lastWasRateLimited = false;
 
                     for (int attempt = 0; attempt < maxAttempts; attempt++) {
                         try {
                             if (attempt > 0) {
-                                long delay = (1000L << (attempt - 1))
-                                        + ThreadLocalRandom.current().nextLong(300);
-                                log.warn("[Subtask-{}] 재시도 {}/{}, {}ms 대기", idx, attempt, maxAttempts - 1, delay);
+                                // 429(rate limit)는 일반 일시 오류보다 훨씬 더 기다려야 재시도가 의미 있다 —
+                                // 같은 짧은 백오프로 밀어붙이면 다음 시도도 또 429를 받을 뿐이다.
+                                long delay = lastWasRateLimited
+                                        ? (3000L << (attempt - 1)) + ThreadLocalRandom.current().nextLong(1000)
+                                        : (1000L << (attempt - 1)) + ThreadLocalRandom.current().nextLong(300);
+                                log.warn("[Subtask-{}] 재시도 {}/{}, {}ms 대기{}", idx, attempt, maxAttempts - 1, delay,
+                                        lastWasRateLimited ? " (rate limit 감지, 대기 연장)" : "");
                                 Thread.sleep(delay);
                             }
 
@@ -75,6 +86,16 @@ public class FeedbackService {
                                 return noResponseDto(question, speechText);
                             }
                             var feedbackMap = groqService.getOpicFeedback(speechText, question);
+
+                            String mainPointDiag = str(feedbackMap, "mainPoint");
+                            String expressionDiag = str(feedbackMap, "expression");
+                            String accuracyDiag = str(feedbackMap, "accuracy");
+                            String contentDiag = str(feedbackMap, "content");
+
+                            String tagsJson = groqService.extractFeedbackTags(
+                                    question.getQuestionType().name(),
+                                    mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
+                            List<FeedbackTagDto> tags = parseTags(tagsJson);
 
                             long subtaskMs = System.currentTimeMillis() - subtaskStart;
                             subtaskDurations.add(subtaskMs);
@@ -88,29 +109,50 @@ public class FeedbackService {
                             int ctScore    = score(feedbackMap, "contentScore");
                             String grade   = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
 
+                            String mainPointQuote = str(feedbackMap, "mainPointQuote");
+                            String mainPointFix = str(feedbackMap, "mainPointFix");
+                            String expressionQuote = str(feedbackMap, "expressionQuote");
+                            String expressionFix = str(feedbackMap, "expressionFix");
+                            String accuracyQuote = str(feedbackMap, "accuracyQuote");
+                            String accuracyFix = str(feedbackMap, "accuracyFix");
+                            String contentQuote = str(feedbackMap, "contentQuote");
+                            String contentFix = str(feedbackMap, "contentFix");
+
                             return FeedbackDTO.builder()
                                     .question(question)
                                     .sttText(speechText)
-                                    .mainPoint(str(feedbackMap, "mainPoint"))
+                                    .mainPoint(reassemble(mainPointDiag, mainPointQuote, mainPointFix))
                                     .mainPointScore(mpScore)
-                                    .expression(str(feedbackMap, "expression"))
+                                    .mainPointQuote(mainPointQuote)
+                                    .mainPointFix(mainPointFix)
+                                    .expression(reassemble(expressionDiag, expressionQuote, expressionFix))
                                     .expressionScore(exScore)
-                                    .accuracy(str(feedbackMap, "accuracy"))
+                                    .expressionQuote(expressionQuote)
+                                    .expressionFix(expressionFix)
+                                    .accuracy(reassemble(accuracyDiag, accuracyQuote, accuracyFix))
                                     .accuracyScore(acScore)
+                                    .accuracyQuote(accuracyQuote)
+                                    .accuracyFix(accuracyFix)
                                     .fluency(computeFluencyText(speechText, fluencyScore))
                                     .fluencyScore(fluencyScore)
-                                    .content(str(feedbackMap, "content"))
+                                    .content(reassemble(contentDiag, contentQuote, contentFix))
                                     .contentScore(ctScore)
+                                    .contentQuote(contentQuote)
+                                    .contentFix(contentFix)
                                     .overall(computeOverallText(grade, mpScore, exScore, acScore, fluencyScore, ctScore))
                                     .overallGrade(grade)
-                                    .improvements(str(feedbackMap, "improvements"))
+                                    .improvements(reassemble(str(feedbackMap, "improvements"),
+                                            str(feedbackMap, "improvementsQuote"), str(feedbackMap, "improvementsFix")))
                                     .modelAnswer(str(feedbackMap, "modelAnswer"))
                                     .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
+                                    .tags(tags)
                                     .build();
 
                         } catch (Exception e) {
                             lastException = e;
-                            log.warn("[Subtask-{}] 시도 {}/{} 실패: {}", idx, attempt + 1, maxAttempts, e.getMessage());
+                            lastWasRateLimited = isRateLimited(e);
+                            log.warn("[Subtask-{}] 시도 {}/{} 실패{}: {}", idx, attempt + 1, maxAttempts,
+                                    lastWasRateLimited ? " (429 rate limit)" : "", e.getMessage());
                         }
                     }
 
@@ -145,6 +187,19 @@ public class FeedbackService {
             log.error("병렬 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("피드백 분석 중 오류가 발생했습니다.", e);
         }
+    }
+
+    // STT/LLM 콜은 각각 다른 예외 스택(RestClient 직접 호출 vs Spring AI ChatModel 경유)으로 실패할 수 있어
+    // 원인 체인을 끝까지 훑어 429(HttpClientErrorException.TooManyRequests)가 섞여 있는지 확인한다.
+    private static boolean isRateLimited(Throwable e) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause instanceof HttpClientErrorException httpEx && httpEx.getStatusCode().value() == 429) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     private static FeedbackDTO noResponseDto(QuestionDto question, String speechText) {
@@ -207,6 +262,42 @@ public class FeedbackService {
         if (avg >= 2.6) return "IM2";
         if (avg >= 2.0) return "IM1";
         return "IL";
+    }
+
+    // LLM이 진단/quote/fix를 분리해 반환해도, 화면(feedback.html)은 기존 "진단 + 예) ..." 한 덩어리 텍스트를 그대로 기대하므로 저장 직전에 재조합
+    private static String reassemble(String diagnosis, String quote, String fix) {
+        String base = diagnosis == null ? "" : diagnosis;
+        if (quote != null && !quote.isBlank() && fix != null && !fix.isBlank()) {
+            return base + "\n예) '" + quote + "' -> '" + fix + "'";
+        }
+        return base;
+    }
+
+    // 태깅 콜의 중첩 스키마({"mainPoint":[],"expression":{"vocab":[],"sentence":[],"imagery":[]},"accuracy":[],"content":[]})를
+    // FeedbackTag row로 저장하기 쉽게 (category, tag) 평탄화
+    private List<FeedbackTagDto> parseTags(String tagsJson) {
+        try {
+            JsonNode root = objectMapper.readTree(tagsJson);
+            List<FeedbackTagDto> result = new ArrayList<>();
+            addTags(result, "mainPoint", root.get("mainPoint"));
+            JsonNode expression = root.get("expression");
+            if (expression != null) {
+                addTags(result, "vocab", expression.get("vocab"));
+                addTags(result, "sentence", expression.get("sentence"));
+                addTags(result, "imagery", expression.get("imagery"));
+            }
+            addTags(result, "accuracy", root.get("accuracy"));
+            addTags(result, "content", root.get("content"));
+            return result;
+        } catch (Exception e) {
+            log.warn("태그 파싱 실패, 빈 목록 반환: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    private static void addTags(List<FeedbackTagDto> result, String category, JsonNode arr) {
+        if (arr == null || !arr.isArray()) return;
+        for (JsonNode n : arr) result.add(new FeedbackTagDto(category, n.asText()));
     }
 
     private static String str(Map<String, Object> map, String key) {

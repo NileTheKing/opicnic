@@ -34,69 +34,8 @@
             <div th:if="${canGenerate}">
 
                 <!-- 최신 리포트 -->
-                <div th:if="${latestReport != null}" class="space-y-3 mb-4">
-
-                    <!-- 메타 -->
-                    <div class="flex items-center justify-between text-xs text-gray-400 px-1">
-                        <div class="flex items-center gap-1">
-                            <i class="fa-solid fa-robot text-gray-400"></i>
-                            <span>AI 분석 결과</span>
-                        </div>
-                        <span th:text="${#temporals.format(latestReport.createdAt, 'M월 d일 HH:mm')} + ' · ' + ${latestReport.basedOnCount} + '문항 기준'"></span>
-                    </div>
-
-                    <!-- 요약 -->
-                    <div class="bg-gray-50 rounded-2xl p-4 space-y-2" th:if="${latestReportParsed['summary'] != null}">
-                        <p class="text-sm font-medium text-gray-800" th:text="${latestReportParsed['summary']}"></p>
-                        <div th:if="${latestReportParsed['strength'] != null}"
-                             class="flex items-start gap-2 pt-1">
-                            <i class="fa-solid fa-circle-check text-brand-500 text-xs mt-0.5 shrink-0"></i>
-                            <p class="text-sm text-brand-700" th:text="${latestReportParsed['strength']}"></p>
-                        </div>
-                    </div>
-
-                    <!-- 요소별 코칭 -->
-                    <div th:if="${latestReportParsed['criteria'] != null and !#lists.isEmpty(latestReportParsed['criteria'])}"
-                         class="bg-white rounded-2xl p-4 shadow-sm">
-                        <h2 class="text-xs font-semibold text-gray-500 mb-3">요소별 분석</h2>
-                        <div class="space-y-4">
-                            <div th:each="item : ${latestReportParsed['criteria']}" class="space-y-1.5">
-                                <span class="shrink-0 whitespace-nowrap text-xs font-semibold text-brand-600 bg-brand-50 rounded-full px-2.5 py-0.5"
-                                      th:text="${item['name']}"></span>
-                                <p th:if="${item['analysis'] != null}" class="text-xs text-gray-400 leading-relaxed pl-1" th:text="${item['analysis']}"></p>
-                                <p class="text-sm text-gray-700 leading-relaxed pl-1" th:text="${item['advice']}"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 유형별 코칭 -->
-                    <div th:if="${latestReportParsed['types'] != null and !#lists.isEmpty(latestReportParsed['types'])}"
-                         class="bg-white rounded-2xl p-4 shadow-sm">
-                        <h2 class="text-xs font-semibold text-gray-500 mb-3">약한 유형 집중 분석</h2>
-                        <div class="space-y-4">
-                            <div th:each="item : ${latestReportParsed['types']}" class="space-y-1.5">
-                                <span class="text-xs font-semibold text-rose-800 bg-rose-50 rounded-full px-2.5 py-0.5"
-                                      th:text="${item['label']}"></span>
-                                <p th:if="${item['pattern'] != null}" class="text-xs text-gray-400 leading-relaxed pl-1" th:text="${item['pattern']}"></p>
-                                <p class="text-sm text-gray-700 leading-relaxed pl-1" th:text="${item['strategy'] != null} ? ${item['strategy']} : ${item['advice']}"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 이번 주 과제 -->
-                    <div th:if="${latestReportParsed['this_week'] != null}"
-                         class="bg-brand-600 rounded-2xl p-4">
-                        <h2 class="text-xs font-semibold text-brand-200 mb-1.5">이번 주 집중 과제</h2>
-                        <p class="text-sm font-medium text-white leading-relaxed" th:text="${latestReportParsed['this_week']}"></p>
-                    </div>
-
-                    <!-- JSON 파싱 실패 fallback -->
-                    <div th:if="${latestReportParsed['criteria'] == null and latestReportParsed['summary'] == null}"
-                         class="bg-white rounded-2xl p-5 shadow-sm">
-                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line"
-                           th:text="${latestReport.content}"></p>
-                    </div>
-                </div>
+                <div th:if="${latestReport != null}"
+                     th:replace="~{analytics/coaching-report-card :: card(${latestReportParsed}, ${latestReport}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${avgScore}, ${targetThreshold})}"></div>
 
                 <!-- 생성/재생성 버튼 -->
                 <form th:action="@{/analytics/coaching}" method="post">
@@ -108,27 +47,21 @@
                     </button>
                 </form>
 
-                <!-- 이전 리포트 이력 -->
+                <!-- 이전 리포트 이력: 가벼운 목록 -> 클릭 시 상세 페이지로 이동 -->
                 <div th:if="${#lists.size(reports) > 1}" class="mt-6">
                     <h2 class="text-sm font-semibold text-gray-500 mb-3">이전 분석 기록</h2>
-                    <div class="space-y-2">
-                        <div th:each="report, stat : ${reports}"
-                             th:if="${stat.index > 0}"
-                             class="bg-white rounded-2xl shadow-sm overflow-hidden">
-                            <button th:onclick="|this.nextElementSibling.classList.toggle('hidden')|"
-                                    class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                                <span class="text-xs font-medium text-gray-600"
-                                      th:text="${#temporals.format(report.createdAt, 'yyyy.M.d HH:mm')}"></span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-gray-400" th:text="${report.basedOnCount} + '문항 기준'"></span>
-                                    <i class="fa-solid fa-chevron-down text-xs text-gray-300"></i>
-                                </div>
-                            </button>
-                            <div class="hidden px-4 pb-4">
-                                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"
-                                   th:text="${report.content}"></p>
+                    <div class="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                        <a th:each="report, stat : ${reports}"
+                           th:if="${stat.index > 0}"
+                           th:href="@{/analytics/coaching/{id}(id=${report.id})}"
+                           class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+                            <span class="text-xs font-medium text-gray-600"
+                                  th:text="${#temporals.format(report.createdAt, 'yyyy.M.d HH:mm')}"></span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400" th:text="${report.basedOnCount} + '문항 기준'"></span>
+                                <i class="fa-solid fa-chevron-right text-xs text-gray-300"></i>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
 

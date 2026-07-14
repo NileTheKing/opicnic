@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -49,10 +50,30 @@ public class CoachingController {
         model.addAttribute("coachingMinCount", coachingMinCount);
         model.addAttribute("canGenerate", totalCount >= coachingMinCount);
         model.addAttribute("latestReport", latestReport);
+        model.addAttribute("gradeLabels", List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"));
+        model.addAttribute("currentGradeLabel", "IM3");
+        model.addAttribute("targetGradeLabel", "IH");
+        model.addAttribute("avgScore", "3.3");
+        model.addAttribute("targetThreshold", "3.8");
         model.addAttribute("latestReportParsed", parseReport(latestReport));
         model.addAttribute("reports",
                 coachingReportRepository.findByMemberIdOrderByCreatedAtDesc(member.getId()));
         return "analytics/coaching";
+    }
+
+    @GetMapping("/{id}")
+    public String coachingDetail(@PathVariable Long id, @AuthenticationPrincipal OAuth2User oAuth2User, Model model) {
+        Member member = resolveMember(oAuth2User);
+        CoachingReport report = coachingReportRepository.findByIdAndMemberId(id, member.getId()).orElseThrow();
+
+        model.addAttribute("report", report);
+        model.addAttribute("gradeLabels", List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"));
+        model.addAttribute("currentGradeLabel", "IM3");
+        model.addAttribute("targetGradeLabel", "IH");
+        model.addAttribute("avgScore", "3.3");
+        model.addAttribute("targetThreshold", "3.8");
+        model.addAttribute("reportParsed", parseReport(report));
+        return "analytics/coaching-detail";
     }
 
     @PostMapping

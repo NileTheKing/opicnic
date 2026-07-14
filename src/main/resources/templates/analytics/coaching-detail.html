@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지난 분석 기록 - Opicnic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <main class="flex-1 p-5 md:p-8 pb-24 md:pb-8 min-w-0">
+        <div class="max-w-xl mx-auto">
+
+            <!-- 헤더 -->
+            <div class="flex items-center gap-3 mb-6">
+                <a href="/analytics/coaching" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                </a>
+                <h1 class="text-xl font-bold text-gray-900">지난 분석 기록</h1>
+            </div>
+
+            <div th:replace="~{analytics/coaching-report-card :: card(${reportParsed}, ${report}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${avgScore}, ${targetThreshold})}"></div>
+
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
