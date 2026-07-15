@@ -1,7 +1,7 @@
 
 # AGENTS.md
 
-Behavioral guidelines and project context for coding agents working on OPicnic.
+Behavioral guidelines for coding agents working on this repo. Project-specific context lives elsewhere on purpose — see below.
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
@@ -61,51 +61,26 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Documentation Checkpoint
+
+**작업을 끝냈다고 선언하기 전에, 아래 중 해당하는 걸 갱신했는지 확인한다.** 문서 계층(`docs/README.md` 참고)이 있어도 갱신을 깜빡하면 금방 다시 썩는다.
+
+- 기능을 완료/삭제/큰 변경했다 → `docs/CHANGELOG.md`에 한 줄 추가
+- 진행 중이던 작업의 상태가 바뀌었다 → `docs/backlog.md`의 Done/Next 갱신
+- OPIc 도메인 규칙 자체가 바뀌었다 (드묾) → `DOMAIN.md` 갱신
+- 컨트롤러/서비스가 추가·삭제·역할 변경됐다 → `PROJECT.md`의 코드베이스 지도 갱신
+- 배포/인프라 구조가 바뀌었다 → `docs/deployment.md` 갱신
+- 코드에 남긴 "왜 이렇게 했는지" 주석이 지금 변경으로 더 이상 안 맞다 → 주석도 같이 고침 (코드랑 따로 노는 주석이 제일 위험함)
+
+애매하면 사용자에게 "이거 문서화 갱신 대상인가?"라고 물어본다 — 매번 자동으로 판단하지 않는다.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
-## OPicnic Current Project Context
+## Before touching code
 
-### Current OPIc Domain Model
+- OPIc 시험 도메인 규칙(문제 유형, 콤보 카테고리, 배경설문 정책, 모의고사 구성) → **`DOMAIN.md`**
+- 코드베이스 지도(컨트롤러/서비스/엔티티 역할, 아키텍처 배경, 제약사항, 빌드 상태) → **`PROJECT.md`**
 
-- `QuestionSet` is the topic-specific question bank.
-- Each `QuestionSet` contains `Question` rows for `TYPE_1` through `TYPE_10`.
-- `ComboPattern` is a runtime exam pattern, not a persistent DB concept.
-- `MockExamService` creates a 15-question mock exam: 1 self-introduction + 5 combo slots.
-- The mock exam uses 3 selected-topic combos and 2 surprise-topic combos.
-- Surprise combo slots are randomized among the 5 combo slots.
-- Surprise topics use a dedicated pool of 23 topics (5 groups) defined in `TopicCatalog.surpriseTopics()`. These are completely separate from the 22 background-survey topics and have their own QuestionSets in DB (DataInitializer V1/V2/V3).
-
-### Important Current Classes
-
-- `ComboPracticeService`: creates one short practice combo from `topic + difficulty`.
-- `OpicComboPatternProvider`: provides difficulty-specific combo patterns.
-- `QuestionAssemblyService`: converts `QuestionSet + ComboPattern` into `QuestionDto` list.
-- `MockExamService`: creates full mock exam questions.
-- `HomeController`: routes `/practice/random`, `/practice/surprise`, `/practice/mock`.
-- `TopicsController`: renders `/practice/topics`.
-
-### Important Constraints
-
-- Do not treat persisted `Combo` as the source of truth for OPIc exam generation.
-- Do not hardcode topic counts such as `22` or `23`.
-- Do not reintroduce difficulty selection into the topic exploration page. Difficulty comes from onboarding/profile.
-- Keep `docs/local/` ignored. It is for local development notes.
-
-### Architecture Notes
-
-**PracticeAttempt / attemptId 설계 배경**
-
-`PracticeAttemptService.createAttempt()`는 서버가 문제를 조립한 뒤 `attemptId → questionIds[]`를 Caffeine 캐시(2시간 TTL)에 저장한다. 클라이언트는 `attemptId`만 받고, 제출 시 오디오 blob + attemptId만 전송한다.
-
-**주목적: 제출-재시도-finalize 3단계 멀티스텝 플로우 지원.**
-실패 문항만 재제출할 때 서버가 원본 questionIds를 복원해야 retry 매핑이 가능하기 때문이다.
-부수효과로 클라이언트가 question content나 ID를 조작할 수 없게 된다.
-
-캐시(인메모리)를 쓰는 이유: 연습 완료 전의 임시 상태라 DB 영구 저장이 불필요하고, 서버 재시작 시 만료돼도 무해하다.
-
-### Verification Notes
-
-- `./gradlew compileJava` currently passes.
-- `./gradlew test` currently fails because `QuestionSetAdminIntegrationTest` requires Docker (Testcontainers). Docker not running = test fails. Code itself is correct.
+둘 다 이 파일만큼 자주 읽어야 한다 — 여기 안 둔 이유는 프로젝트마다 안 바뀌는 이 파일(1~5번 규칙)과, OPicnic에만 해당하는 내용을 분리해두기 위해서다.

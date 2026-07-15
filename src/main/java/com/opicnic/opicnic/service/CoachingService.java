@@ -24,6 +24,11 @@ import java.util.*;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.stream.Collectors;
 
+// 태그 기반 코칭 아키텍처: GroqService.extractFeedbackTags가 답변 단위로 태그를 매기고(LLM 판단),
+// 여러 답변에 걸친 집계·문턱값 필터링은 전부 이 클래스가 코드로 한다. LLM은 최종 집계 결과를
+// 문장으로 서술하는 역할만 맡는다("판단은 LLM, 집계는 코드"). 자유텍스트를 LLM에게 통째로 주고
+// "반복 패턴 요약해줘"라고 시켰던 이전 방식은 카운팅과 의미 클러스터링을 동시에 요구해
+// 자기모순 리포트를 냈다.
 @Slf4j
 @Service
 @RequiredArgsConstructor

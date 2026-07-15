@@ -37,24 +37,23 @@ GET /practice/mock
 -> question.html 렌더링
 
 답변 제출:
-POST /api/practice-attempts/answers
+POST /api/practice-attempts/{attemptId}/answers
 
 실패 문항 재제출:
-POST /api/practice-attempts/answers/retry
+POST /api/practice-attempts/{attemptId}/answers/retry
 
 결과 확정:
-POST /api/practice-attempts/answers/finalize
+POST /api/practice-attempts/{attemptId}/finalize
 
 결과 화면:
 GET /practice/feedback/result
 ```
 
-현재 구조는 `시작/결과 화면 = Thymeleaf`, `제출/재시도/finalize = API`인 중간 단계다.
+현재 구조는 `시작/결과 화면 = Thymeleaf`, `제출/재시도/finalize = API`인 중간 단계다. attemptId는 URL 경로로 승격, 응답은 타입 있는 DTO(`SubmissionResponseDto` 등)로 정리 완료 — 2026-07-14.
 
 ### Next
 
 - `restoreQuestionsForIndexes` 캐싱 — 500 VU 부하테스트에서 발견된 병목. 매 제출마다 DB 조회 → ConcurrentHashMap 캐싱으로 해소 예정
-- API 응답 DTO 정리
 - `HttpServletRequest#getParameter`, `getParts` 직접 파싱 제거
 - 결과 누적용 session 제거 여부 결정
 - `resultId` 기반 결과 조회 구조 검토
@@ -221,19 +220,7 @@ ORDER BY AVG(grammarScore) ASC;
 OPIc에서 유형(묘사/경험/롤플레이 등)에 익숙해지면 주제가 바뀌어도 답변 패턴 재활용 가능.
 현재 연습은 주제 기준이고 유형을 선택할 수 없다.
 
-### OPIc 문제 유형 정의
-| 코드 | 유형명 | 핵심 스킬 |
-|---|---|---|
-| TYPE_1 | 유형 1 · 현재 상태 묘사 | 현재시제, 장소/물건/사람 묘사 |
-| TYPE_2 | 유형 2 · 루틴/습관 | 현재시제, 빈도 부사, 일상 서술 |
-| TYPE_3 | 유형 3 · 최근/최초 경험 | 과거시제, 시간순 서술 (최근 경험 + 처음 해본 경험 둘 다 포함) |
-| TYPE_4 | 유형 4 · 기억에 남는 경험 | 과거시제, 감정 표현, 이유 설명 |
-| TYPE_5 | 롤플레이 · 도입 | 상황 설정, 정중한 요청 |
-| TYPE_6 | 롤플레이 · 전화/질문 | 3~4개 질문 구성 |
-| TYPE_7 | 롤플레이 · 문제 해결 | 대안 2~3개 제시 |
-| TYPE_8 | 롤플레이 · 비슷한 경험 | 과거시제, 롤플레이와 연결 |
-| TYPE_9 | 유형 9 · 과거·현재 비교 | 시제 전환, 비교 표현 |
-| TYPE_10 | 유형 10 · 사회 이슈 | 논리적 전개, 의견 표현 |
+문제 유형 정의는 `DOMAIN.md` 참고.
 
 ### 계획
 - 특정 유형의 문제만 뽑아 연습하는 엔드포인트

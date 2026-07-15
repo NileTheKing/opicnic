@@ -1,20 +1,15 @@
-# opicnic Development Documentation
+# OPicnic Development Documentation
 
-이 디렉토리는 **opicnic** 프로젝트의 기획 의도, 기술적 의사결정, 그리고 향후 로드맵을 기록하는 공간입니다.
+이 디렉토리는 "얼마나 자주 바뀌는가" 기준으로 문서를 나눈다. 새 문서를 추가할 때도 이 기준으로 위치를 정할 것.
 
-## 📑 문서 목차
+| 파일 | 계층 | 갱신 규칙 |
+|---|---|---|
+| [`CHANGELOG.md`](CHANGELOG.md) | 완료 이력 | 기능 완료 시에만 추가. 과거 항목은 안 고침 |
+| [`backlog.md`](backlog.md) | 활성 작업 | 진행 상황 바뀔 때마다 갱신 |
+| [`deployment.md`](deployment.md) | 현재 인프라 | 배포 구조 바뀔 때만 갱신 |
+| [`question-text-progress.md`](question-text-progress.md) | 진행 중 체크리스트 | 작업 끝나면 삭제 검토 |
+| [`hold.md`](hold.md) | 보류 (기각 + 미구현 비전) | **현재 상태 아님.** 실제로 뭘 만들었는지는 CHANGELOG 참고 |
+| `local/` | 개인 저널 (gitignore) | 절대 "진실"로 취급 안 함. 과거 결론이 나중에 반박될 수 있음 |
+| `performance/` | 성능 조사 원본 (2026-04) | `local/`과 같은 성격이나 gitignore 이전에 커밋된 raw 증거. 결론은 README.md 엔지니어링 하이라이트로 이미 승격됨 |
 
-### 1. [Product (기획)](product/ideas.md)
-- 프로젝트 비전 및 차별점 (스낵형 학습, 1:1 AI 튜터)
-- 오픽 도메인 지식 (콤보 시스템, 출제 알고리즘)
-- 서비스 아이디어 (Voice Cloning, 개인화된 피드백)
-
-### 2. [Tech (기술)](tech/architecture.md)
-- 시스템 아키텍처 (Spring Boot 3.4 + Java 21 Virtual Threads)
-- AI 통합 전략 (Gemini 2.0 Flash-Lite + MCP Server)
-- 데이터 인프라 (Kafka + Elasticsearch 로그 파이프라인)
-
-### 3. [Roadmap (미래)](roadmap/milestones.md)
-- 단계별 고도화 계획
-- 멀티모달 확장 (Native Audio Input)
-- 발음 평가 및 억양 코칭 시스템
+루트의 `AGENTS.md`(협업 규약) + `DOMAIN.md`(OPIc 도메인 법칙) + `PROJECT.md`(코드베이스 지도)는 위 표와 별개로 매 세션 항상 읽어야 하는 최상위 문서 — 여기 두지 않는다.
