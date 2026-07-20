@@ -1,4 +1,4 @@
-# OPicnic Development Documentation
+# OPICnic Development Documentation
 
 이 디렉토리는 "얼마나 자주 바뀌는가" 기준으로 문서를 나눈다. 새 문서를 추가할 때도 이 기준으로 위치를 정할 것.
 

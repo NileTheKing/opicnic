@@ -2,7 +2,7 @@
 
 # Opicnic
 
-**OPIc AI 피드백 서비스** — 음성 답변을 제출하면 LLM이 항목별 피드백 리포트를 생성합니다
+**OPIc 전용 AI 피드백 서비스** — OPIc은 ACTFL 채점 기준을 따르는 시험이라 범용 영어 첨삭으로는 안 맞습니다. OPICnic은 실제 시험 콤보 규칙으로 문제를 내고, OPIc 전용 루브릭으로 채점해 문항별 개별 피드백과, 여러 답변에 걸친 반복 습관을 잡아내는 코칭 리포트를 제공합니다.
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -11,7 +11,41 @@
 
 [**라이브 데모 →**](https://opicnic.xyz)
 
+<!--
+  히어로 GIF: 녹음 → 제출 → 피드백 확인까지 실제 사용 흐름 (10~15초 분량 권장, 1MB 안팎으로 압축)
+  파일을 docs/screenshots/hero-demo.gif로 넣으면 아래 이미지가 바로 뜸.
+-->
+<img src="docs/screenshots/hero-demo.gif" alt="OPICnic 데모: 녹음부터 피드백까지" width="720">
+
 </div>
+
+---
+
+## 주요 화면
+
+<!-- 각 셀에 docs/screenshots/ 아래 해당 파일명으로 스크린샷 넣으면 됨 -->
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/screenshots/onboarding.png" alt="온보딩 — 배경설문">
+<br><sub>온보딩 — 배경설문</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/screenshots/practice.png" alt="연습 — 문제 풀이/녹음">
+<br><sub>연습 — 문제 풀이 · 녹음</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<img src="docs/screenshots/feedback.png" alt="개별 피드백 리포트">
+<br><sub>개별 피드백 리포트</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/screenshots/coaching.png" alt="코칭 리포트">
+<br><sub>코칭 리포트</sub>
+</td>
+</tr>
+</table>
 
 ---
 
@@ -137,8 +171,9 @@ graph TB
 ## 실행
 
 ```bash
+cp .env.example .env          # DB_USERNAME/DB_PASSWORD/GRAFANA_PASSWORD/GROQ_API_KEY 채우기
 docker-compose up -d          # MySQL
-export GROQ_API_KEY=...
+set -a && source .env && set +a
 ./gradlew bootRun
 ```
 
