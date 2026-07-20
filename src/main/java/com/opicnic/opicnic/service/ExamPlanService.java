@@ -192,7 +192,7 @@ public class ExamPlanService {
         return "충분한 시간이 있어요. 반복 연습으로 실력을 쌓으세요.";
     }
 
-    private String typeLabel(QuestionType type) {
+    public String typeLabel(QuestionType type) {
         return switch (type) {
             case TYPE_1 -> "현재 상태 묘사";
             case TYPE_2 -> "루틴/습관";

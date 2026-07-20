@@ -160,10 +160,13 @@ ORDER BY AVG(grammarScore) ASC;
 - 학습분석 UI 개선 (2컬럼 레이아웃, 동점 복수 강조, 미연습 유형 전체 표시, 타입 레이블 병기) — 2026-06-12
 - 스터디 게시판 비활성화 (`@Profile("dev")` 3개 컨트롤러 + 사이드바 링크 제거) — 2026-06-12
 
+### Done (추가)
+
+- 유형별 연습 모드 (`/practice/type?type=TYPE_N`, `PracticeTypeController`) — 문서에 "미구현"으로 잘못 남아있었으나 실제로는 이미 구현·동작 확인함, 문서만 뒤늦게 반영 (2026-07-15)
+
 ### Next
 
-- [ ] 유형별 연습 모드 (`/practice/type?type=TYPE_N`, 홈 카드 섹션 + 학습분석 "연습" 버튼)
-- [ ] 복습 추천 로직 (마지막 연습일 + 점수 기반 간격 조정)
+(없음 — 아래 "유형별 연습 모드" 섹션도 참고, 완료됨)
 
 ---
 
@@ -173,11 +176,50 @@ ORDER BY AVG(grammarScore) ASC;
 
 - 학습분석 탭: 항목별 평균 점수, 주제별 현황, 문제 유형별 점수 — 2026-06-12
 - UI 개선: 2컬럼 레이아웃, 동점 복수 강조(weakestKeys), 미연습 유형 전체 표시, 레이블 병기 — 2026-06-12
+- 유형별 연습 엔드포인트(`/practice/type`) → 학습분석/오늘 할 일 "연습" 버튼 연결 확인 (2026-07-15)
+
+---
+
+## 학습관리 재설계 — A(현황판)/B(오늘 할 일)/C(설정) 재배치
+
+### 배경
+
+기존에 "학습관리"를 4번째 화면(축)으로 만들려다, 약점 노출이 시험일정/학습분석/코칭에 이미 3중으로 흩어져 있어 보류됨. 기능 출처가 아니라 정보 종류로 재배치하는 방향으로 재설계 — 상세 설계 결정은 커밋 히스토리의 계획 문서 참고.
+
+### Done
+
+- `TodayController` (`GET /today`, `POST /today/task-done`) 신규 — B(오늘 할 일) 화면 — 2026-07-15
+- `FeedbackResult.attemptId` 컬럼 추가 + `saveFeedbackResults()`에서 채움 → `COUNT(DISTINCT attemptId)`로 오늘 완료 콤보 개수 정확히 집계(답변 개수 아님)
+- `CoachingReport.thisWeekTaskDone` 필드 추가 — 이번 주 과제 자기신고 체크박스, 새 리포트 생성 시 기본 false로 자동 리셋
+- 회피 감지 2단계: D-day 구간별 임계값(D-4=2일/D-7=3일/D-14=5일/그 이상=7일 캡)로 방치된 유형 감지 → 그 중 약점 유형(상위 3)이면 우선순위 높게 표시
+- `CoachingService.parseReport()` — `CoachingController`의 private 메서드를 public으로 승격, 코칭 리포트 JSON 파싱 로직 중복 제거
+- `CoachingService.buildTeaser()` — 홈/`/analytics`/`/today` 공통 코칭 티저 문구 생성(리포트 있음/조건 충족/미충족 3가지 상태)
+- 홈(`/`)에 B 요약 위젯 + 코칭 티저 위젯 2개 추가 (기존 보조카드 grid 아래, 새 nav 탭은 추가 안 함)
+- `/analytics`(A)에 코칭 티저 카드 추가
 
 ### Next
 
-- [ ] 유형별 연습 엔드포인트 구현 후 학습분석 → "연습" 버튼 연결
-- [ ] 복습 추천 로직 (마지막 연습일 + 점수 기반)
+- [ ] `/today` 회피 감지에 "얼마나 오래 미연습했는지"뿐 아니라 완전 미연습 유형도 포함할지 결정 (현재는 최소 1회 연습한 유형만 대상)
+
+---
+
+## 개별 연습 기록 조회 (History)
+
+### 배경
+
+과거에 제출한 개별 답변 피드백을 다시 볼 방법이 앱에 없었음 — `PracticeFeedbackController`는 세션 데이터에만 의존해서 제출 직후 결과 화면을 벗어나면 DB엔 남아있어도 다시 못 봄. "기록" 탭(`/analytics`, A)도 집계 통계만 있었지 개별 기록은 없었음.
+
+### Done
+
+- `HistoryController` (`GET /analytics/history` 목록, `GET /analytics/history/{id}` 상세) 신규 — 2026-07-15
+- `FeedbackResultRepository.findByIdAndMemberId` 추가 (소유권 체크, `CoachingReportRepository`와 동일 패턴)
+- `ExamPlanService.typeLabel()` public으로 승격해 유형 라벨 재사용
+- `/analytics`(A)에 최근 기록 미리보기(5개) + "전체 보기" 링크 추가
+- 홈(`/`)에 5번째 카드 "최근 기록" 추가
+
+### Next
+
+- [ ] 페이지네이션 (지금은 최근 20개만, UI 없음)
 
 ---
 
@@ -214,6 +256,8 @@ ORDER BY AVG(grammarScore) ASC;
 ---
 
 ## 유형별 연습 모드 (Type-Based Practice)
+
+**구현 완료** (`PracticeTypeController`, `/practice/type?type=TYPE_N`) — 아래는 당시 계획 기록.
 
 ### 배경
 

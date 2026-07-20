@@ -204,6 +204,7 @@ public class PracticeAttemptApiController {
         List<FeedbackResult> toSave = validFeedback.stream()
                 .map(fb -> FeedbackResult.builder()
                         .member(member)
+                        .attemptId(attempt.attemptId())
                         .questionId(fb.getQuestion().getId())
                         .questionType(fb.getQuestion().getQuestionType())
                         .surveyTopicName(fb.getQuestion().getSurveyTopicName())

@@ -23,6 +23,8 @@ public class FeedbackResult {
 
     private Long questionId;
 
+    private String attemptId;
+
     @Enumerated(EnumType.STRING)
     private com.opicnic.opicnic.domain.enums.QuestionType questionType;
 

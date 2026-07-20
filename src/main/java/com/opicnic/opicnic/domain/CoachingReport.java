@@ -26,6 +26,9 @@ public class CoachingReport {
 
     private int basedOnCount;
 
+    @Setter
+    private boolean thisWeekTaskDone;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

@@ -59,12 +59,13 @@ HomeController (/practice/mock)
 | `MyPageController` | `/mypage` | View | 설정, 배경설문 수정, 관심 주제 토글 |
 | `TopicsController` | `/practice/topics` | View | 주제 탐색 화면 |
 | `PracticeComboController` | `/practice/combo` | View | 주제/카테고리 기반 콤보 연습 시작 |
-| `PracticeTypeController` | `/practice/type` | View | 유형별 연습 (구상 단계, `docs/hold.md` 참고) |
+| `PracticeTypeController` | `/practice/type` | View | 유형별 연습 (`?type=TYPE_N`, 주제는 랜덤·유형 고정, 구현 완료) |
 | `PracticeFocusController` | `/practice/focus` | View | 집중 연습 모드 (구상 단계) |
 | `PracticeFeedbackController` | `/practice/feedback/result` | View | 연습 결과 화면 |
 | `PracticeAttemptApiController` | `/api/practice-attempts` | **REST API** | 답변 제출/재시도/확정 (`/{attemptId}/answers`, `/{attemptId}/answers/retry`, `/{attemptId}/finalize`) |
 | `ExamController` | `/exam` | View | 시험 준비 계획 (학습 스케줄) |
-| `AnalyticsController` | `/analytics` | View | 학습분석 탭 |
+| `AnalyticsController` | `/analytics` | View | 학습분석 탭 (현황판, A) |
+| `TodayController` | `/today` | View | 오늘 할 일 (B) — 콤보 진행률, 이번주 과제 자기신고, 회피 감지. 홈 위젯을 통해서만 진입(별도 nav 탭 없음) |
 | `CoachingController` | `/analytics/coaching` | View | 코칭 리포트 목록/상세/생성 |
 | `AdminController` | `/admin` | View | 질문 세트 관리 화면(뷰만, CRUD는 아래 API) |
 | `AdminQuestionSetApiController` | `/api/admin/question-sets` | **REST API** | 질문 세트 생성/수정/삭제. `/api/admin/**`은 인증 필요(`SecurityConfig`에서 `/api/**` permitAll 예외 처리됨) |
@@ -83,7 +84,7 @@ HomeController (/practice/mock)
 | `FeedbackService` | 답변 제출 처리 — STT/LLM 병렬 호출(`StructuredTaskScope`), 429 분리 백오프, 재시도 로직 |
 | `GroqService` | Groq API 호출 — `getOpicFeedback`(채점), `extractFeedbackTags`(태깅), `getCoachingReport`(코칭 리포트 문장화) |
 | `STTService` | Groq Whisper STT 호출 |
-| `CoachingService` | 저장된 `FeedbackTag`를 요소별·유형별로 집계해 코칭 리포트 생성 (태그 아키텍처 — 클래스 상단 주석 참고) |
+| `CoachingService` | 저장된 `FeedbackTag`를 요소별·유형별로 집계해 코칭 리포트 생성 (태그 아키텍처 — 클래스 상단 주석 참고). `parseReport()`/`buildTeaser()`로 리포트 JSON 파싱과 홈·A·B 공통 코칭 티저 문구도 제공 |
 | `ExamPlanService` | 학습 이력 기반 시험 준비 계획/약점 유형 진단 |
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
@@ -96,9 +97,9 @@ HomeController (/practice/mock)
 | `Combo` | 영속 콤보 엔티티 — **주의: 이건 OPIc 출제의 source of truth가 아님.** 런타임 `ComboPattern`이 진짜 출제 로직 (`DOMAIN.md` 참고) |
 | `Member` | 사용자 |
 | `SurveyProfile` | 배경설문 응답 (거주형태, 관심 주제 등) |
-| `FeedbackResult` | 답변 하나의 채점 결과 (표현력/정확성/메인포인트/유창성/내용 + quote/fix) |
+| `FeedbackResult` | 답변 하나의 채점 결과 (표현력/정확성/메인포인트/유창성/내용 + quote/fix). `attemptId`로 콤보 단위 그룹핑 가능(`/today` 오늘 진행률 집계에 사용) |
 | `FeedbackTag` | `FeedbackResult`에 붙는 태그 (코칭 리포트 집계용) |
-| `CoachingReport` | 생성된 코칭 리포트 |
+| `CoachingReport` | 생성된 코칭 리포트. `thisWeekTaskDone`으로 `/today`의 이번주 과제 자기신고 체크 상태 저장(새 리포트 생성 시 기본 false로 리셋) |
 | `ExamSchedule` | 시험 준비 학습 스케줄 |
 | `NotificationSetting` | 알림 설정 |
 

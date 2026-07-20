@@ -1,7 +1,5 @@
 package com.opicnic.opicnic.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.CoachingReport;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.repository.CoachingReportRepository;
@@ -20,9 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/analytics/coaching")
@@ -34,7 +30,6 @@ public class CoachingController {
     private final FeedbackResultRepository feedbackResultRepository;
     private final CoachingReportRepository coachingReportRepository;
     private final CoachingService coachingService;
-    private final ObjectMapper objectMapper;
 
     @Value("${opicnic.coaching.min-count:3}")
     private int coachingMinCount;
@@ -55,7 +50,7 @@ public class CoachingController {
         model.addAttribute("targetGradeLabel", "IH");
         model.addAttribute("avgScore", "3.3");
         model.addAttribute("targetThreshold", "3.8");
-        model.addAttribute("latestReportParsed", parseReport(latestReport));
+        model.addAttribute("latestReportParsed", coachingService.parseReport(latestReport));
         model.addAttribute("reports",
                 coachingReportRepository.findByMemberIdOrderByCreatedAtDesc(member.getId()));
         return "analytics/coaching";
@@ -72,7 +67,7 @@ public class CoachingController {
         model.addAttribute("targetGradeLabel", "IH");
         model.addAttribute("avgScore", "3.3");
         model.addAttribute("targetThreshold", "3.8");
-        model.addAttribute("reportParsed", parseReport(report));
+        model.addAttribute("reportParsed", coachingService.parseReport(report));
         return "analytics/coaching-detail";
     }
 
@@ -82,20 +77,6 @@ public class CoachingController {
         if (!canGenerate(member)) return "redirect:/analytics/coaching";
         coachingService.generate(member);
         return "redirect:/analytics/coaching";
-    }
-
-    private Map<String, Object> parseReport(CoachingReport report) {
-        if (report == null || report.getContent() == null) return Collections.emptyMap();
-        try {
-            String content = report.getContent().trim();
-            if (content.startsWith("```")) {
-                content = content.replaceAll("^```[a-zA-Z]*\\s*", "").replaceAll("```\\s*$", "").trim();
-            }
-            return objectMapper.readValue(content, new TypeReference<>() {});
-        } catch (Exception e) {
-            log.warn("코칭 리포트 JSON 파싱 실패, 원문 사용: {}", e.getMessage());
-            return Map.of("summary", report.getContent());
-        }
     }
 
     private boolean canGenerate(Member member) {

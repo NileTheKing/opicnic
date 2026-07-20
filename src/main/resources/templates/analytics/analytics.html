@@ -22,6 +22,39 @@
             </p>
         </div>
 
+        <!-- 코칭 티저 카드 -->
+        <a th:if="${coachingTeaser != null}" href="/analytics/coaching"
+           class="mb-5 flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:border-gray-200 transition-colors">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-robot text-gray-500 text-sm"></i>
+                </div>
+                <p class="text-sm text-gray-700 truncate" th:text="${coachingTeaser.message()}"></p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-300 text-xs shrink-0"></i>
+        </a>
+
+        <!-- 최근 기록 미리보기 -->
+        <div th:if="${recentHistory != null and !recentHistory.isEmpty()}" class="mb-5">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-semibold text-gray-500">최근 기록</p>
+                <a href="/analytics/history" class="text-xs text-gray-400 hover:text-gray-600 transition-colors">전체 보기 →</a>
+            </div>
+            <div class="flex flex-col gap-2">
+                <a th:each="r : ${recentHistory}"
+                   th:href="@{/analytics/history/{id}(id=${r.id})}"
+                   class="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100 hover:border-gray-200 transition-colors">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span th:if="${r.overallGrade != null}" th:text="${r.overallGrade}"
+                              class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0"></span>
+                        <span class="text-sm text-gray-700 truncate"
+                              th:text="${r.surveyTopicName != null ? r.surveyTopicName : typeLabels.typeLabel(r.questionType)}"></span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-300 text-xs shrink-0"></i>
+                </a>
+            </div>
+        </div>
+
         <!-- 빈 상태 -->
         <div th:if="${totalCount == 0}" class="bg-white rounded-2xl p-12 text-center">
             <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">

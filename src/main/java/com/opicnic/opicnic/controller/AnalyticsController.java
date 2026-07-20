@@ -1,8 +1,10 @@
 package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.FeedbackResult;
+import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.service.CoachingService;
 import com.opicnic.opicnic.service.ExamPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +24,7 @@ public class AnalyticsController {
     private final FeedbackResultRepository feedbackResultRepository;
     private final MemberRepository memberRepository;
     private final ExamPlanService examPlanService;
+    private final CoachingService coachingService;
 
     @Value("${opicnic.coaching.min-count:3}")
     private int coachingMinCount;
@@ -40,10 +43,11 @@ public class AnalyticsController {
     @GetMapping("/analytics")
     public String analytics(@AuthenticationPrincipal OAuth2User user, Model model) {
         String provider = user.getAttributes().get("provider").toString();
-        var member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
+        Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
 
         List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
         model.addAttribute("totalCount", results.size());
+        model.addAttribute("coachingTeaser", coachingService.buildTeaser(member));
 
         if (results.isEmpty()) {
             return "analytics/analytics";
@@ -66,6 +70,8 @@ public class AnalyticsController {
         model.addAttribute("typeStats", examPlanService.buildWeakTypes(results));
         model.addAttribute("comboStats", examPlanService.buildWeakCombos(results));
         model.addAttribute("coachingAvailable", results.size() >= coachingMinCount);
+        model.addAttribute("recentHistory", results.subList(0, Math.min(5, results.size())));
+        model.addAttribute("typeLabels", examPlanService);
 
         return "analytics/analytics";
     }

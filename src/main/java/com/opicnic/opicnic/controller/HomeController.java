@@ -1,14 +1,19 @@
 package com.opicnic.opicnic.controller;
 
+import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
 import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.repository.ExamScheduleRepository;
+import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.CoachingService;
+import com.opicnic.opicnic.service.ExamPlanService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.TopicCatalog;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
@@ -20,7 +25,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 @Controller
@@ -35,6 +42,10 @@ public class HomeController {
     private final TopicCatalog topicCatalog;
     private final PracticeAttemptService practiceAttemptService;
     private final Random random;
+    private final FeedbackResultRepository feedbackResultRepository;
+    private final ExamScheduleRepository examScheduleRepository;
+    private final ExamPlanService examPlanService;
+    private final CoachingService coachingService;
 
     @GetMapping("/")
     public String home(@AuthenticationPrincipal OAuth2User user, Model model) {
@@ -48,9 +59,36 @@ public class HomeController {
                             .toList();
                     model.addAttribute("selectedTopics", practiceTopics);
                 });
+                model.addAttribute("coachingTeaser", coachingService.buildTeaser(member));
+                model.addAttribute("hasHistory", feedbackResultRepository.countByMemberId(member.getId()) > 0);
+                addTodaySummary(member, model);
             });
         }
         return "home";
+    }
+
+    // B(오늘 할 일) 요약 위젯 — 일정이 있을 때만 노출, 실제 계산은 /today와 동일하게 ExamPlanService.buildPlan() 재사용
+    private void addTodaySummary(Member member, Model model) {
+        model.addAttribute("hasSchedule", false);
+        examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId()).ifPresent(schedule -> {
+            List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
+            ExamPlanService.DiagnosisResult diagnosis = examPlanService.diagnose(results);
+            int dailyMinutes = schedule.getDailyMinutes() != null ? schedule.getDailyMinutes() : 60;
+            int studyDaysPerWeek = schedule.getStudyDaysPerWeek() != null ? schedule.getStudyDaysPerWeek() : 5;
+            ExamPlanService.StudyPlan plan = examPlanService.buildPlan(
+                    diagnosis, schedule.getTargetGrade(), schedule.getExamDate(),
+                    dailyMinutes, studyDaysPerWeek, results);
+
+            List<FeedbackResult> todayResults = feedbackResultRepository
+                    .findByMemberIdAndCreatedAtAfter(member.getId(), LocalDate.now().atStartOfDay());
+            long todayComboDone = todayResults.stream()
+                    .map(FeedbackResult::getAttemptId).filter(Objects::nonNull).distinct().count();
+
+            model.addAttribute("hasSchedule", true);
+            model.addAttribute("daysLeft", plan.daysLeft());
+            model.addAttribute("todayComboDone", todayComboDone);
+            model.addAttribute("todayComboTarget", plan.dailyComboTarget());
+        });
     }
 
     // 선택 주제 중 랜덤 콤보

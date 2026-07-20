@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -15,6 +16,7 @@ import com.opicnic.opicnic.repository.FeedbackTagRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -106,6 +108,11 @@ public class CoachingService {
     private final ExamPlanService examPlanService;
     private final SurveyProfileRepository surveyProfileRepository;
     private final ObjectMapper objectMapper;
+
+    @Value("${opicnic.coaching.min-count:3}")
+    private int coachingMinCount;
+
+    public record CoachingTeaser(String message, boolean hasReport, Long latestReportId) {}
 
     private record Candidate(Long resultId, String quote, String fix) {}
     private record ExampleItem(String before, String after, String why) {}
@@ -394,5 +401,39 @@ public class CoachingService {
             }
         }
         return types;
+    }
+
+    // CoachingController/AnalyticsController/HomeController/TodayController가 공통으로 쓰는
+    // 리포트 JSON 파싱. content는 CoachingReport.content(LLM+후처리 결과 JSON 문자열).
+    public Map<String, Object> parseReport(CoachingReport report) {
+        if (report == null || report.getContent() == null) return Collections.emptyMap();
+        try {
+            String content = report.getContent().trim();
+            if (content.startsWith("```")) {
+                content = content.replaceAll("^```[a-zA-Z]*\\s*", "").replaceAll("```\\s*$", "").trim();
+            }
+            return objectMapper.readValue(content, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.warn("코칭 리포트 JSON 파싱 실패, 원문 사용: {}", e.getMessage());
+            return Map.of("summary", report.getContent());
+        }
+    }
+
+    // A(/analytics)/홈/오늘 할 일에 노출하는 코칭 티저 카드 문구. 링크는 항상 /analytics/coaching.
+    public CoachingTeaser buildTeaser(Member member) {
+        CoachingReport latest = coachingReportRepository
+                .findTopByMemberIdOrderByCreatedAtDesc(member.getId()).orElse(null);
+        if (latest != null) {
+            Map<String, Object> parsed = parseReport(latest);
+            String summary = String.valueOf(parsed.getOrDefault("summary", ""));
+            String excerpt = summary.length() > 40 ? summary.substring(0, 40) + "..." : summary;
+            return new CoachingTeaser("최근 코칭: " + excerpt, true, latest.getId());
+        }
+
+        long totalCount = feedbackResultRepository.countByMemberId(member.getId());
+        if (totalCount < coachingMinCount) {
+            return new CoachingTeaser((coachingMinCount - totalCount) + "회 더 연습하면 코칭 받을 수 있어요", false, null);
+        }
+        return new CoachingTeaser("코칭 리포트 받아보기", false, null);
     }
 }
