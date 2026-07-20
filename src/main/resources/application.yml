@@ -18,8 +18,9 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/opicnic
-    username: root
-    password: admin
+    username: ${DB_USERNAME}
+    # .env의 DB_PASSWORD를 셸에 로드하고 실행할 것: set -a && source .env && set +a && ./gradlew bootRun
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 50 # DB 병목 가설 검증 중 10에서 50으로 확장했으나, 최종 병목은 파일 I/O로 판단

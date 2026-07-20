@@ -3,10 +3,10 @@ services:
     image: mysql:8.0
     container_name: opicnic_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: opicnic
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306" # 로컬 전용 — 0.0.0.0 바인딩은 랜섬웨어 스캔 봇에 노출된다 (2026-07-15 실제 피해 확인)
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -22,11 +22,11 @@ services:
       dockerfile: Dockerfile
     container_name: opicnic_app
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://opicnic_mysql:3306/opicnic?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_AI_STT_BASE_URL=http://opicnic_stt:8000
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
@@ -45,7 +45,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     networks:
       - opicnic_network
 
@@ -53,9 +53,9 @@ services:
     image: grafana/grafana:latest
     container_name: opicnic_grafana
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     networks:
       - opicnic_network
 
