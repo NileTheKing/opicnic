@@ -1,4 +1,4 @@
-# Opicnic 성능 최적화 수사 일지 (Investigation Log)
+# OPIcnic 성능 최적화 수사 일지 (Investigation Log)
 
 본 문서는 성능 최적화 과정에서 발생한 이슈와 가설 검증, 최종 해결 과정을 기록한 실무 일지임.
 

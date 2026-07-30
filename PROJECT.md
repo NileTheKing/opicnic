@@ -1,6 +1,6 @@
 # PROJECT.md
 
-OPICnic 코드베이스 지도. 컨트롤러/서비스를 처음부터 grep하지 않고 어디에 뭐가 있는지 바로 찾기 위한 문서. 코드가 바뀌면 이 파일도 같이 고친다(`AGENTS.md`의 Documentation Checkpoint 참고). OPIc 시험 규칙 자체는 `DOMAIN.md`, 협업 규약은 `AGENTS.md` 참고.
+OPIcnic 코드베이스 지도. 컨트롤러/서비스를 처음부터 grep하지 않고 어디에 뭐가 있는지 바로 찾기 위한 문서. 코드가 바뀌면 이 파일도 같이 고친다(`AGENTS.md`의 Documentation Checkpoint 참고). OPIc 시험 규칙 자체는 `DOMAIN.md`, 협업 규약은 `AGENTS.md` 참고.
 
 아래 표는 룩업용이고, 요청이 실제로 어떻게 흘러가는지는 "핵심 흐름"을 먼저 볼 것. (README.md의 요청흐름 다이어그램은 포폴용으로 일부러 추상화돼있어서 클래스명이 없다 — 여기가 구현 레벨 버전.)
 

@@ -1,8 +1,8 @@
 <div align="center">
 
-# Opicnic
+# OPIcnic
 
-**OPIc 전용 AI 피드백 서비스** — OPIc은 ACTFL 채점 기준을 따르는 시험이라 범용 영어 첨삭으로는 안 맞습니다. OPICnic은 실제 시험 콤보 규칙으로 문제를 내고, OPIc 전용 루브릭으로 채점해 문항별 개별 피드백과, 여러 답변에 걸친 반복 습관을 잡아내는 코칭 리포트를 제공합니다.
+**OPIc 전용 AI 피드백 서비스** — OPIc은 ACTFL 채점 기준을 따르는 시험이라 범용 영어 첨삭으로는 안 맞습니다. OPIcnic은 실제 시험 콤보 규칙으로 문제를 내고, OPIc 전용 루브릭으로 채점해 문항별 개별 피드백과, 여러 답변에 걸친 반복 습관을 잡아내는 코칭 리포트를 제공합니다.
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -15,9 +15,17 @@
   히어로 GIF: 녹음 → 제출 → 피드백 확인까지 실제 사용 흐름 (10~15초 분량 권장, 1MB 안팎으로 압축)
   파일을 docs/screenshots/hero-demo.gif로 넣으면 아래 이미지가 바로 뜸.
 -->
-<img src="docs/screenshots/hero-demo.gif" alt="OPICnic 데모: 녹음부터 피드백까지" width="720">
+<img src="docs/screenshots/hero-demo.gif" alt="OPIcnic 데모: 녹음부터 피드백까지" width="720">
 
 </div>
+
+---
+
+## 프로젝트 개요
+
+OPIc은 정해진 콤보 규칙대로 문제 세트가 구성되고 ACTFL 루브릭으로 채점되는 시험입니다. 그런데 수험생이 실제로 힘들어하는 지점은 채점 자체보다 "무엇을, 어떤 순서로 공부해야 하는지"를 매번 스스로 판단하는 과정입니다 — 내 실력에 맞는 주제인지, 오늘은 뭘 풀어야 하는지, 어떤 유형을 자꾸 피하고 있는지를 계속 혼자 분석해야 합니다.
+
+OPIcnic은 이 판단을 대신 떠맡습니다. 온보딩에서 받은 배경설문으로 난이도·주제 범위를 정하고, 실제 시험처럼 문항이 정해진 조합(콤보) 규칙에 따라 묶여 나오도록 문제를 출제합니다. 접속할 때마다 오늘 풀어야 할 콤보와 이번 주 과제를 알려주고, 특정 유형을 얼마나 회피하고 있는지도 자동으로 감지합니다. 답변마다 OPIc 전용 루브릭으로 즉시 피드백을 주고, 누적된 답변에서 반복되는 취약 유형은 코칭 리포트로 짚어주며, 시험일까지 남은 기간을 기준으로 학습 계획을 역산합니다. 수험생은 "무엇을 공부할지" 고민하는 대신, 앱이 매번 짜준 경로를 따라가기만 하면 됩니다.
 
 ---
 
@@ -66,8 +74,8 @@
 <sub>콤보 병렬 처리 (실음성 측정)<br>12,886ms → 4,719ms</sub>
 </td>
 <td align="center">
-<strong>16.69s → 20ms</strong><br>
-<sub>커넥션풀 경쟁 해소 (Mock, 500VU)<br>readOnly 프록시 제거</sub>
+<strong>20.5s → 3.73s</strong><br>
+<sub>커넥션 경합 해소 (Mock, 500VU)<br>인메모리 캐시 적용</sub>
 </td>
 </tr>
 </table>
@@ -124,7 +132,7 @@ graph TB
 
 ---
 
-## 엔지니어링 하이라이트
+## 주요 문제 해결
 
 - **디스크 I/O 병목 제거**: DB pool 확장·VT pinning 가설을 1KB 격리 실험과 JFR로 기각/특정한 뒤 톰캣 멀티파트 임시파일 쓰기가 원인임을 확인, InputStream 직접 릴레이로 전환 — RPS 96→652(+580%), Avg Latency 1,100ms→249ms(77%↓)
 
@@ -145,11 +153,11 @@ graph TB
   ```
 
   </details>
-- **Java 21 Structured Concurrency 병렬 처리**: `StructuredTaskScope.ShutdownOnFailure`로 콤보 내 N개 질문의 STT+LLM 동시 처리, 실패 문항만 `failedIndexes`로 분리 반환 — 실제 음성(1분20초, 3문항) 기준 **12,886ms → 4,719ms** (2.7배)
-- **PracticeAttempt 세션 설계**: `attemptId` 기반 서버 측 문제 원본 보관으로 클라이언트 조작 차단, 실패 문항만 재전송하는 재시도 구조로 전체 재녹음 회피
-- **OPIc 콤보 패턴 도메인 모델링**: 공식 콤보 I~V를 `ComboPattern` record로 모델링, TYPE_6/7 포함 여부로 C3를 C2보다 먼저 판별하는 우선순위 로직
-- **코칭 리포트 태그 기반 재설계**: LLM이 카운팅과 의미 클러스터링을 동시에 수행하며 생기던 자기모순 리포트를, 답변 단위 태깅(LLM)과 다답변 집계·문턱값 필터링(코드)으로 역할 분리 — 패턴추출 호출 1,254토큰 소멸, 리포트 작성 1,726→539~1,300토큰. 같은 재시도 루프에 Groq 429 분리 백오프 + 명시적 타임아웃 포함
-- **커넥션 풀 고갈 진단**: 캐싱 후에도 지연이 안 줄자 Grafana/HikariCP `acquire` 지표로 캐싱 가설을 기각하고, SQL 없는 요청에서도 커넥션을 선점하던 `@Transactional(readOnly=true)` 프록시를 특정·제거 — start p95 **16.69s → 20ms** (Mock 기준)
+- **외부 API 장애 대응**: 외부 STT/LLM 일시 장애로 인한 녹음 유실을, 서버 지수 백오프 3회 재시도 + 실패 문항만 재전송하는 구조로 방지 (문제 본문은 서버가 통제해 재전송 시에도 LLM 입력을 신뢰)
+- **커넥션 경합 해소**: 재시도/재전송 구조 도입 이후, 답변 채점마다 대상 문항을 DB에서 다시 조회하는 경로가 500 VU 부하에서 커넥션 경합을 일으켜, 인메모리 캐시를 적용해 제출 p95 20.5s → 3.73s 개선
+- **Java 21 Structured Concurrency 병렬 처리**: OPIc 콤보 2~3문항을 순차 채점 시 STT·LLM 외부 대기가 문항 수만큼 누적되어, `StructuredTaskScope`로 문항 간 병렬화(실패 시 나머지 취소)해 순차 예상 12,886ms → 병렬 실측 4,719ms 단축 (2.7배)
+- **코칭 리포트 역할 분리**: 코칭 리포트가 "오류가 거의 없는데 시제·어휘가 적절하지 않다"처럼 앞뒤 안 맞는 진단을 내는 문제가 발생. '패턴 카운팅'을 LLM에 통째로 맡긴 게 비결정론적 클러스터링이었기 때문임을 확인하고, 답변 단위 판단(LLM)과 집계·문턱값·그룹핑(결정론적 코드)으로 역할 분리해 해결
+- **개인화 추천**: 시험일·학습 이력 기반 일일 연습 목표 역산, 약점·회피 유형 자동 감지로 연습 대상 추천
 
 ---
 
