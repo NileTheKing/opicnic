@@ -20,3 +20,4 @@
 - Admin 질문세트 CRUD, PracticeAttempt 엔드포인트를 REST 원칙에 맞게 정비 (리소스 경로, 공통 에러 응답, 검증) (2026-07)
 - 유형별 연습 모드(`/practice/type`)가 이미 구현·동작 중이었다는 게 뒤늦게 확인됨 — `docs/hold.md`/`docs/backlog.md`에 "미구현"으로 잘못 남아있던 걸 정정 (2026-07-15)
 - 학습관리 재설계: `/today`(오늘 할 일) 신규 화면 — 오늘 콤보 진행률(attemptId 기반 정확 집계), 이번 주 과제 자기신고 체크박스, D-day 연동 회피 감지. 홈/학습분석에 코칭 티저 위젯 추가 (2026-07-15)
+- Groq에서 내려간 `llama-4-scout-17b-16e-instruct`(404) → `llama-3.3-70b-versatile`로 교체. 태깅 콜(`extractFeedbackTags`)은 채점보다 가벼운 닫힌 분류 작업이라 `llama-3.1-8b-instant`로 분리해 무거운 모델의 일일 토큰 한도를 아낌 (2026-07-31)

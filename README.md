@@ -6,7 +6,7 @@
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_Llama--3.3--70B-412991?style=flat-square)](https://groq.com)
+[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_LLM-412991?style=flat-square)](https://groq.com)
 [![Deploy](https://img.shields.io/badge/opicnic.xyz-live-22c55e?style=flat-square)](https://opicnic.xyz)
 
 [**라이브 데모 →**](https://opicnic.xyz)
@@ -126,7 +126,7 @@ graph LR
         Cache["QuestionSet Cache\n(ConcurrentHashMap)"]
         SC["StructuredTaskScope\n병렬 처리"]
         STT["Groq Whisper\n(STT)"]
-        LLM["Groq Llama-3.3-70B\n(채점 + 태깅)"]
+        LLM["Groq Llama-3.3-70B (채점)\n+ Llama-3.1-8B (태깅)"]
         DB["FeedbackResult\n+ FeedbackTag 저장"]
         Coach["CoachingService\n태그 집계 (요소별·유형별)"]
         CoachLLM["Groq Llama-3.3-70B\n(코칭 리포트 작성)"]
@@ -191,7 +191,7 @@ graph LR
 |---|---|
 | **Language / Runtime** | Java 21, Virtual Threads |
 | **Framework** | Spring Boot 3.4, Spring AI, Spring Security OAuth2 |
-| **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70B-Versatile (채점/태깅) |
+| **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70B-Versatile (채점/코칭 작성), Groq Llama-3.1-8B-Instant (태깅) |
 | **Database** | MySQL 8.0, Spring Data JPA |
 | **Cache** | Caffeine (세션), ConcurrentHashMap (QuestionSet) |
 | **Rate Limiting** | Bucket4j (사용자별 10회/시간) |
