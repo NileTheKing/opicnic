@@ -139,7 +139,8 @@ public class CoachingService {
 
         Map<String, Double> elementScores = new LinkedHashMap<>();
         for (String element : elementSections.byElement().keySet()) {
-            elementScores.put(element, ExamPlanService.weightedAvg(results, ELEMENT_SCORE_GETTER.get(element)));
+            double avg = ExamPlanService.weightedAvg(results, ELEMENT_SCORE_GETTER.get(element));
+            elementScores.put(element, Math.round(avg * 10.0) / 10.0);
         }
 
         String summary = "총 연습 문항 수: " + results.size() + "개\n\n"

@@ -199,6 +199,7 @@ public class GroqService {
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
                 .temperature(0.0)
+                .maxTokens(3000)
                 .build();
 
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), options);
@@ -250,10 +251,15 @@ public class GroqService {
                 "mainPoint: " + mainPoint + "\nexpression: " + expression + "\naccuracy: " + accuracy + "\ncontent: " + content
         );
 
+        // 태깅은 이미 정리된 진단 텍스트를 정해진 태그 목록 중에서 고르는 닫힌 분류 작업이라
+        // 채점/코칭 작성(자유 생성)보다 훨씬 가벼움 — 더 저렴하고 TPD 여유 있는 모델로 분리해
+        // 무거운 생성 작업의 일일 토큰 한도를 아낀다.
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage),
                 OpenAiChatOptions.builder()
+                        .model("llama-3.1-8b-instant")
                         .temperature(0.0)
                         .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                        .maxTokens(1500)
                         .build());
 
         ChatResponse response = chatModel.call(prompt);
@@ -276,7 +282,8 @@ public class GroqService {
                 "  1. 입력에서 【요소명】으로 시작하는 헤더가 몇 개인지 세어라 (숫자만 기억, 내용을 옮겨적지 마라).\n" +
                 "  2. 【유형: ...】으로 시작하는 헤더가 몇 개인지 세어라 (숫자만).\n" +
                 "  3. 1번 개수만큼 criteria를, 2번 개수만큼 types를 작성해라. 각 항목의 analysis/advice/pattern은 그 섹션의 태그/카운트를 근거로 삼되, **반드시 새로 지은 자연스러운 한국어 문장이어야 한다 — 원본의 'TAG_NAME: n/m건' 형식을 그대로 옮겨적는 것은 절대 금지. 영어 인용문(quote/fix, 'actual quote' -> 'improved version' 같은 것)도 절대 넣지 마라 — 그건 화면에서 별도 카드로 이미 보여주고 있어서 여기 또 넣으면 중복이다.**\n" +
-                "  4. 최종 출력 직전에 criteria 개수가 1번 개수와, types 개수가 2번 개수와 정확히 같은지 다시 확인해라. 다르면 빠진 걸 추가해라.\n\n" +
+                "  4. 최종 출력 직전에 criteria 개수가 1번 개수와, types 개수가 2번 개수와 정확히 같은지 다시 확인해라. 다르면 빠진 걸 추가해라.\n" +
+                "  5. 최종 출력 직전에 summary/strength/analysis/advice/pattern 텍스트 전체를 다시 훑어서, WHY_MISSING·VOCAB_BASIC처럼 대문자와 밑줄로 된 태그 코드가 그대로 남아있는지 확인해라. 남아있으면 그 문장을 자연스러운 한국어로 다시 써서 교체해라.\n\n" +
                 "규칙:\n" +
                 "- criteria는 입력에 등장한 【요소명】 섹션당 정확히 1개씩만 만들어라. 섹션이 2개면 criteria도 2개, 섹션이 없으면 criteria도 없다. 입력에 없는 섹션(예: 【정확성】 헤더가 안 보이면)은 criteria에 절대 추가하지 마라 — 좋다는 말도, 빈 advice도 넣지 말고 그냥 통째로 빼라.\n" +
                 "- criteria의 name은 섹션 헤더에 있는 요소명을 정확히 그대로 써라 (예: '메인포인트', '표현력', '정확성', '내용 구성') — 절대 다른 표현으로 바꾸거나 풀어쓰지 마라.\n" +
@@ -305,6 +312,7 @@ public class GroqService {
                 OpenAiChatOptions.builder()
                         .temperature(0.2)
                         .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                        .maxTokens(3000)
                         .build());
 
         ChatResponse response = chatModel.call(prompt);
