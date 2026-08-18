@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
     <title>OPIcnic - 말하기 연습</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -161,6 +163,8 @@
     const inlineError       = document.getElementById('inlineError');
     const inlineErrorText   = document.getElementById('inlineErrorText');
 
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
     let currentQuestionIndex = 0;
     let mediaRecorder, audioChunks = [], audioPlayer;
     let isRecording = false, startTime, timerInterval;
@@ -258,7 +262,7 @@
             });
             formData.append('questionIndexes', JSON.stringify(indexes));
 
-            const response = await fetch(endpoint, { method: 'POST', body: formData });
+            const response = await fetch(endpoint, { method: 'POST', headers: { [csrfHeader]: csrfToken }, body: formData });
             if (!response.ok) throw new Error('피드백 요청에 실패했습니다.');
 
             const data = await response.json();
@@ -283,7 +287,7 @@
     }
 
     async function finalizeFeedback() {
-        const response = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/finalize`, { method: 'POST' });
+        const response = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/finalize`, { method: 'POST', headers: { [csrfHeader]: csrfToken } });
         if (!response.ok) throw new Error('피드백 결과 확정에 실패했습니다.');
         const data = await response.json();
         submissionComplete = true;

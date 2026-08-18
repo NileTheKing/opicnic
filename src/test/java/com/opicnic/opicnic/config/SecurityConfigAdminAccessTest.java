@@ -100,4 +100,24 @@ class SecurityConfigAdminAccessTest {
                         .content("{\"name\":\"test\",\"topic\":\"JOGGING\"}"))
                 .andExpect(status().isForbidden());
     }
+
+    // SEC-06 회귀 테스트: CSRF가 전역 비활성화돼있던 것을 다시 켰다. 권한은 맞아도(ADMIN)
+    // CSRF 토큰이 없으면 요청 자체가 거부돼야 한다 — 권한 체크(SEC-01)와는 별개 관문.
+    @Test
+    void postWithoutCsrfTokenIsRejectedEvenWithCorrectAuthority() throws Exception {
+        OAuth2User principal = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("ADMIN")),
+                Map.of("id", "admin-test-id", "provider", "kakao", "providerId", "admin-test-id"),
+                "id"
+        );
+        var token = new org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken(
+                principal, principal.getAuthorities(), "kakao");
+
+        mockMvc.perform(post("/api/admin/question-sets")
+                        .with(authentication(token))
+                        // 일부러 csrf() 안 붙임
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"test\",\"topic\":\"JOGGING\"}"))
+                .andExpect(status().isForbidden());
+    }
 }

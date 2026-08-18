@@ -63,7 +63,8 @@ services:
     image: grafana/grafana:latest
     container_name: opicnic_grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      # SEC-05: 기본값(admin) fallback 제거 — 값이 없거나 비어있으면 compose가 즉시 실패한다.
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD가 .env에 설정되어야 합니다}
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:

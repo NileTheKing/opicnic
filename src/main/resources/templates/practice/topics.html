@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
     <title>주제 탐색 - OPIcnic</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -196,6 +198,8 @@
 <div id="toast" class="hidden fixed bottom-6 left-1/2 -tranbrand-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-lg text-white bg-brand-800 whitespace-nowrap"></div>
 
 <script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
     const difficulty = document.getElementById('difficultyVal').dataset.val;
     const heroCount = document.getElementById('myTopicCountHero');
     const badgeCount = document.getElementById('myTopicCountBadge');
@@ -298,7 +302,7 @@
         try {
             const res = await fetch('/mypage/topics/toggle', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', [csrfHeader]: csrfToken},
                 body: 'topic=' + encodeURIComponent(topic)
             });
             const data = await res.json();
@@ -338,7 +342,7 @@
         try {
             const res = await fetch('/mypage/topics/toggle', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', [csrfHeader]: csrfToken},
                 body: 'topic=' + encodeURIComponent(topic)
             });
             const data = await res.json();
@@ -383,7 +387,7 @@
         try {
             const res = await fetch('/mypage/topics/toggle', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', [csrfHeader]: csrfToken},
                 body: 'topic=' + encodeURIComponent(topic)
             });
             const data = await res.json();

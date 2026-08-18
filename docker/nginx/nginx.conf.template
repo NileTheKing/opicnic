@@ -4,6 +4,13 @@ server {
 
     client_max_body_size 150M;
 
+    # SEC-07: actuator(헬스체크/메트릭)는 외부에 열 필요 없다 — 내부 Prometheus는
+    # 이 nginx를 거치지 않고 Docker network로 opicnic_app:8080에 직접 scrape한다.
+    location /actuator/ {
+        deny all;
+        return 404;
+    }
+
     location / {
         proxy_pass http://opicnic_app:8080;
         proxy_set_header Host $host;

@@ -46,8 +46,10 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/")     // 로그아웃 후 이동할 URL
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-                )
-                .csrf(csrf -> csrf.disable());
+                );
+                // SEC-06: 세션 기반 OAuth2 로그인을 쓰면서 CSRF를 전역 비활성화하고 있었다.
+                // Thymeleaf th:action 폼은 자동으로 토큰이 실리고, JS fetch() 호출부는 각 템플릿에
+                // <meta name="_csrf">를 추가해 헤더로 직접 실어 보내도록 수정했다 — 기본 CSRF 설정 유지.
 
         return http.build();
     }

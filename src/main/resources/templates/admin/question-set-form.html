@@ -3,6 +3,8 @@
 <head>
     <title>새 질문 세트 추가</title>
     <!-- 필요한 CSS 등 공통 헤더 여기에 포함 -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
 </head>
 <body>
 <div th:replace="~{fragments/header :: header}"></div>
@@ -46,9 +48,11 @@
             topic: document.getElementById('topic').value
         });
         const url = id ? '/api/admin/question-sets/' + id : '/api/admin/question-sets';
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
         fetch(url, {
             method: id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
             body: body
         })
             .then(res => {

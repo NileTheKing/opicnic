@@ -3,6 +3,8 @@
 <head>
     <title>질문 세트 관리</title>
     <!-- 필요한 CSS 등 공통 헤더 여기에 포함 -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
 </head>
 <body>
 <div th:replace="~{fragments/header :: header}"></div>
@@ -45,7 +47,9 @@
     function deleteQuestionSet(button) {
         if (!confirm('정말로 이 질문 세트를 보관하시겠습니까?')) return;
         const id = button.getAttribute('data-id');
-        fetch('/api/admin/question-sets/' + id, { method: 'DELETE' })
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+        fetch('/api/admin/question-sets/' + id, { method: 'DELETE', headers: { [csrfHeader]: csrfToken } })
             .then(res => {
                 if (!res.ok) throw new Error('삭제 실패: ' + res.status);
                 location.reload();

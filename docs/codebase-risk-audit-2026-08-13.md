@@ -5,8 +5,8 @@
 > 범위: 백엔드 소스, 설정, 배포, 테스트, 문서  
 > 원칙: **발견과 근거 기록만 수행했다. 애플리케이션 코드는 수정하지 않았다.**
 >
-> **2026-08-13 후속 수정**: `CORE-01`, `DOMAIN-01` 완료 (제품 감사 PC-01/PC-02와 동일 항목). 이어서 준비도 READY이고 범위가 작은 `ADMIN-01`, `SEC-03`, `SCORE-01`, `SCORE-02`, `CACHE-01`, `SEC-04`, `SEC-01` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료(부분) — `SEC-02`는 과거 Git 히스토리 정리·카카오 secret 재발급이, `COST-01`은 IP/member/전역 비용 예산 정책 결정이 각각 남음. 상세는 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
-> 나머지 P1(SEC-05, DATA-01, TEST-01)과 P2/P3(SEC-06/07, API-01~03, ADMIN-02, AI-01, DATA-02, PERF-01, TEST-02, DOC-01, OPS-01, DB-01, DESIGN-01)는 미착수.
+> **2026-08-13 후속 수정**: `CORE-01`, `DOMAIN-01` 완료 (제품 감사 PC-01/PC-02와 동일 항목). 이어서 준비도 READY이고 범위가 작은 `ADMIN-01`, `SEC-03`, `SCORE-01`, `SCORE-02`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료(부분) — `SEC-02`는 과거 Git 히스토리 정리·카카오 secret 재발급이, `COST-01`은 IP/member/전역 비용 예산 정책 결정이 각각 남음. 상세는 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
+> 나머지 P1(DATA-01, TEST-01)과 P2/P3(API-01~03, ADMIN-02, AI-01, DATA-02, PERF-01, TEST-02, DOC-01, OPS-01, DB-01, DESIGN-01)는 미착수.
 
 ## 1. 어떻게 봤는가
 
@@ -44,7 +44,7 @@ P0는 발견하지 못했다. 아래 P1은 “언젠가 개선” 수준이 아�
 | SCORE-01 | ✅ 완료(08-13) 최신순 가중 평균을 거꾸로 계산 | 오래된 실력을 최근 실력보다 크게 반영 | 매우 높음 |
 | SCORE-02 | ✅ 완료(08-13) “평가 제외” 0점을 실제 감점으로 평균 | 롤플레이 연습 시 등급이 구조적으로 하락 | 높음 |
 | TEST-01 | 안전하고 신뢰할 수 있는 전체 테스트/배포 gate 부재 | 위 회귀들이 `main` 배포 전에 차단되지 않음 | 매우 높음 |
-| SEC-05 | 공개 Grafana가 비밀번호 누락 시 `admin`으로 fallback | 설정 누락 배포에서 관리 UI 탈취 가능 | 높음 |
+| SEC-05 | ✅ 완료(08-13) 공개 Grafana가 비밀번호 누락 시 `admin`으로 fallback | 설정 누락 배포에서 관리 UI 탈취 가능 | 높음 |
 | ADMIN-01 | ✅ 완료(08-13) 관리자 목록이 존재하지 않는 필드를 렌더링 | 목록 화면 500 가능성 | 매우 높음 |
 
 ## 3. P1 상세
@@ -276,6 +276,8 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 
 ### SEC-05 [P1]. 공개 Grafana에 기본 관리자 비밀번호 fallback이 있다
 
+> **✅ 완료 (2026-08-13)**: `docker-compose.prod.yml`의 `GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}`을 `${GRAFANA_PASSWORD:?...}`로 변경 — 값이 없거나 비어있으면 `docker compose`가 즉시 실패한다(조용히 `admin`으로 넘어가지 않음). `--env-file /dev/null`로 값 없을 때 exit code 1과 에러 메시지 확인, 운영 서버 `.env`에 이미 값이 설정돼 있어 다음 배포에 영향 없음도 확인(값 자체는 출력하지 않고 존재 여부만 확인).
+
 - `docker-compose.prod.yml:62-66`은 `GRAFANA_PASSWORD`가 없거나 비어 있으면 `admin`을 사용한다.
 - `docker/nginx/nginx.conf.template:16-20`은 `/grafana/`를 외부 프록시한다.
 - `deploy.sh:4-10`은 `.env` 파일 존재만 확인하고 필수 값의 non-empty 여부는 검사하지 않는다.
@@ -284,6 +286,8 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 
 ### SEC-06 [P2]. OAuth 세션 앱에서 CSRF를 전역 비활성화했다
 
+> **✅ 완료 (2026-08-13)**: `SecurityConfig`의 `.csrf(csrf -> csrf.disable())` 제거(기본 CSRF 설정 유지). Thymeleaf `th:action` 폼은 `thymeleaf-extras-springsecurity6`가 자동으로 토큰을 실어 별도 수정 불필요(전 템플릿에서 `<form>`이 `th:action`을 쓰는 것 확인, 예외는 GET 폼 1개·fetch 기반 폼 1개뿐). JS `fetch()`로 상태를 바꾸는 4개 템플릿(관리자 CRUD 2건, 마이페이지/온보딩 주제 토글, 답변 제출/finalize)엔 `<meta name="_csrf">`를 추가하고 각 fetch 헤더에 토큰을 실었다. 테스트에서 CSRF 필터가 꺼진 슬라이스(`addFilters=false`)는 `_csrf`가 null이라 템플릿이 깨지는 걸 발견해 `${_csrf != null ? ... : ...}`로 null-safe 처리. 회귀 테스트: `SecurityConfigAdminAccessTest`에 "ADMIN 권한이어도 CSRF 토큰 없으면 403" 케이스 추가(권한 체크(SEC-01)와 CSRF가 별개 관문임을 증명).
+
 - `SecurityConfig.java:41-47`은 JSESSIONID 기반 OAuth 로그인/로그아웃을 쓰면서 CSRF를 전체 disable한다.
 - 상태 변경 경로는 `MyPageController.java:56-118`, `ExamController.java:57-72`, `CoachingController.java:74-79`, `TodayController.java:89-97`, `OnboardingController.java:116-149`, admin CRUD다.
 - 템플릿과 fetch 요청에도 CSRF token이 없다.
@@ -291,6 +295,8 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 최신 브라우저의 기본 SameSite 정책이 일부 cross-site POST를 줄일 수는 있지만 CSRF token을 대체하지 않으며, same-site 하위 도메인/브라우저·프록시 설정에 따라 보호가 사라진다. 정적 보안 리뷰에서 바로 지적될 설정이다.
 
 ### SEC-07 [P2]. 운영 Actuator/Prometheus가 무인증 외부 경로다
+
+> **✅ 완료 (2026-08-13)**: `docker/nginx/nginx.conf.template`에 `location /actuator/ { deny all; return 404; }` 추가 — 내부 Prometheus는 nginx를 거치지 않고 Docker network로 `opicnic_app:8080`에 직접 scrape하므로 영향 없음(`prometheus.prod.yml` 확인). `deploy.sh`가 이 템플릿을 매 배포마다 `nginx.conf`로 재생성하므로 다음 배포에 반영됨. `nginx -t`로 문법 유효성 확인(업스트림 호스트명 해석 실패만 나고 syntax 에러는 없음 — 고립 환경 테스트의 한계). Spring Security 쪽 `/actuator/**` permitAll 자체는 그대로 남겨둠(내부망에선 필요) — 외부 차단은 nginx 레이어에서 처리.
 
 - `SecurityConfig.java:30`은 `/actuator/**`를 permitAll한다.
 - `application.yml:81-85`는 `prometheus, health, info`를 노출한다.
