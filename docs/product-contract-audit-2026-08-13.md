@@ -179,6 +179,7 @@
 ### PC-11 [P2, READY]. “12개 이상 필수”가 실제 저장 규칙이 아니다
 
 > **✅ 완료 (2026-08-13)**: 신규 `SurveyTopicPolicy`(총 12개 + 그룹별 최소)를 온보딩·마이페이지 폼 제출과 toggle API가 공통으로 사용하도록 배선. 검증 실패 시 기존 설정은 보존되고 `?error=invalidTopics`로 리다이렉트, 마이페이지/온보딩 주제선택 화면에 실패 배너 표시. 테스트: `SurveyTopicPolicyTest`, `MyPageControllerUpdateSurveyTest`, `OnboardingControllerDuplicateSubmitTest`.
+> **후속 수정 (2026-08-13, 재검토)**: 위 1차 수정에서 toggle API의 "주제 추가" 경로는 최소 개수 검증만 걸리고 **허용 목록(돌발 전용 주제 등) 검증이 빠져있던 것을 재검토로 발견** — 화면 밖에서 직접 API를 호출하면 돌발 전용 주제를 "내 주제"로 넣을 수 있었다. `SurveyTopicPolicy.isAllowedTopic()` 추가, `MyPageController.toggleTopic()` 추가 경로에도 적용. 그룹 정의가 `OnboardingController`/`MyPageController`/`SurveyTopicPolicy` 3곳에 동일 내용으로 중복돼 있는 것은 아직 미정리(단일 소스로 리팩터링 필요, 우선순위 낮음).
 
 **제품 계약**
 

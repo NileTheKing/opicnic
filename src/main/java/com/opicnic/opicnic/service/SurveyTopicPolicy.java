@@ -46,6 +46,12 @@ public class SurveyTopicPolicy {
         return groups;
     }
 
+    // 토글 API가 주제 하나를 새로 추가할 때 쓴다 — 추가는 최소 개수 완성 전 단계에서도
+    // 호출되므로 isValid()(총 개수 12 이상 요구)를 그대로 쓸 수 없다. 허용 목록 여부만 확인한다.
+    public boolean isAllowedTopic(SurveyTopic topic) {
+        return topic != null && ALLOWED_TOPICS.contains(topic);
+    }
+
     // 총 개수, 그룹별 최소, 허용되지 않은(거주/돌발) 주제 포함 여부를 모두 확인한다.
     public boolean isValid(List<SurveyTopic> topics) {
         if (topics == null) return false;

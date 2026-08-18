@@ -132,6 +132,10 @@ public class MyPageController {
                 return Map.of("added", true, "count", profile.getSelectedTopics().size(),
                         "error", "최소 " + SurveyTopicPolicy.MIN_TOTAL_TOPICS + "개, 그룹별 최소 개수를 유지해야 합니다.");
             }
+        } else if (!surveyTopicPolicy.isAllowedTopic(topic)) {
+            // 화면 체크박스엔 애초에 안 나오는 돌발 전용 주제 등을 API 직접 호출로 우회 추가하는 것을 막는다.
+            return Map.of("added", false, "count", profile.getSelectedTopics().size(),
+                    "error", "선택할 수 없는 주제입니다.");
         }
 
         boolean added;

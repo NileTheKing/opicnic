@@ -106,4 +106,46 @@ class MyPageControllerUpdateSurveyTest {
         assertThat(result).isEqualTo("redirect:/mypage?error=invalidTopics");
         Mockito.verifyNoInteractions(surveyProfileRepository);
     }
+
+    // 토글 API로 화면 체크박스에 없는 돌발 전용 주제를 우회 추가할 수 있던 문제 회귀 테스트.
+    @Test
+    void togglingDisallowedSurpriseTopicIsRejected() {
+        MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SurveyProfileRepository surveyProfileRepository = Mockito.mock(SurveyProfileRepository.class);
+        MyPageController controller = newController(memberRepository, surveyProfileRepository);
+
+        Member member = Member.builder().id(1L).build();
+        when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1")).thenReturn(Optional.of(member));
+
+        SurveyProfile profile = SurveyProfile.builder().member(member).build();
+        profile.getSelectedTopics().addAll(VALID_TOPICS);
+        when(surveyProfileRepository.findByMemberId(1L)).thenReturn(Optional.of(profile));
+
+        Map<String, Object> result = controller.toggleTopic(SurveyTopic.BANK_VISIT, mockUser());
+
+        assertThat(result.get("added")).isEqualTo(false);
+        assertThat(result.get("error")).isNotNull();
+        assertThat(profile.getSelectedTopics()).doesNotContain(SurveyTopic.BANK_VISIT);
+        Mockito.verify(surveyProfileRepository, Mockito.never()).save(any());
+    }
+
+    @Test
+    void togglingAllowedTopicStillWorks() {
+        MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SurveyProfileRepository surveyProfileRepository = Mockito.mock(SurveyProfileRepository.class);
+        MyPageController controller = newController(memberRepository, surveyProfileRepository);
+
+        Member member = Member.builder().id(1L).build();
+        when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1")).thenReturn(Optional.of(member));
+
+        SurveyProfile profile = SurveyProfile.builder().member(member).build();
+        profile.getSelectedTopics().addAll(VALID_TOPICS);
+        when(surveyProfileRepository.findByMemberId(1L)).thenReturn(Optional.of(profile));
+        when(surveyProfileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> result = controller.toggleTopic(SurveyTopic.SINGING, mockUser());
+
+        assertThat(result.get("added")).isEqualTo(true);
+        assertThat(profile.getSelectedTopics()).contains(SurveyTopic.SINGING);
+    }
 }

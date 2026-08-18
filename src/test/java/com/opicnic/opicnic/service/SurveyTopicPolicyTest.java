@@ -53,4 +53,14 @@ class SurveyTopicPolicyTest {
         withResidence.add(SurveyTopic.LIVING_WITH_FAMILY);
         assertThat(policy.isValid(withResidence)).isFalse();
     }
+
+    @Test
+    void isAllowedTopicRejectsSurpriseAndResidenceTopics() {
+        SurveyTopicPolicy policy = new SurveyTopicPolicy();
+        assertThat(policy.isAllowedTopic(SurveyTopic.SINGING)).isTrue();
+        assertThat(policy.isAllowedTopic(SurveyTopic.NO_EXERCISE)).isTrue();
+        assertThat(policy.isAllowedTopic(SurveyTopic.BANK_VISIT)).isFalse(); // 돌발 전용
+        assertThat(policy.isAllowedTopic(SurveyTopic.LIVING_WITH_FAMILY)).isFalse(); // 거주 전용
+        assertThat(policy.isAllowedTopic(null)).isFalse();
+    }
 }
