@@ -31,10 +31,15 @@ public class ComboPracticeService {
     private ComboQuestionsResult buildResult(SurveyTopic topic, SurveyDifficulty difficulty, String category) {
         List<ComboPattern> patterns = comboPatternProvider.getPatterns(difficulty);
         if (category != null) {
-            List<ComboPattern> filtered = patterns.stream()
+            patterns = patterns.stream()
                     .filter(p -> p.category().equals(category))
                     .toList();
-            if (!filtered.isEmpty()) patterns = filtered;
+            // 난이도에 없는 category로 조용히 다른 category를 대신 내주지 않는다 (PC-04).
+            // 예: LEVEL_3~4에는 C5가, LEVEL_5~6에는 C4가 없다.
+            if (patterns.isEmpty()) {
+                throw new IllegalStateException(
+                        "difficulty=" + difficulty + "에서 지원하지 않는 category=" + category + "입니다.");
+            }
         }
         ComboPattern pattern = patterns.get(random.nextInt(patterns.size()));
         List<QuestionDto> questions = questionAssemblyService.assemble(topic, pattern);

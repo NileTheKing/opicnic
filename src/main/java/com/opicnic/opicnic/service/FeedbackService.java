@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
@@ -85,6 +86,16 @@ public class FeedbackService {
                                 subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
                                 return noResponseDto(question, speechText);
                             }
+                            if (question.getQuestionType() == null) {
+                                // 자기소개는 DB Question이 아니라 고정 문항이라 QuestionType이 없다.
+                                // 실제 시험에서도 자기소개는 채점 문항으로 취급되지 않으므로 TYPE_1~10 rubric에
+                                // 맞지 않는 채점/태깅 LLM 호출 없이 완료 처리한다. DB 저장 자체를 하지 않도록
+                                // PracticeAttemptApiController.saveFeedbackResults()에서 questionType==null을 걸러내며,
+                                // 이 필터링 덕분에 "총 문항 수"/"최근 기록"/"코칭 열람 조건" 등 문항 개수 기반
+                                // 통계에도 섞이지 않는다.
+                                subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
+                                return selfIntroductionDto(question, speechText);
+                            }
                             var feedbackMap = groqService.getOpicFeedback(speechText, question);
 
                             String mainPointDiag = str(feedbackMap, "mainPoint");
@@ -103,7 +114,12 @@ public class FeedbackService {
                                     attempt > 0 ? " (재시도 " + attempt + "회)" : "");
 
                             int fluencyScore = computeFluencyScore(speechText);
-                            int mpScore    = score(feedbackMap, "mainPointScore");
+                            // TYPE_5~7(롤플레이)은 MP를 "평가 제외"로 0 고정 반환하도록 프롬프트에 지시했다.
+                            // 이 0을 다른 4개 점수와 그대로 평균 내면 롤플레이를 연습할수록 등급이 구조적으로
+                            // 낮아진다 (SCORE-02). null로 바꿔두면 computeGrade/computeOverallText/
+                            // ExamPlanService.weightedAvg가 이미 null을 평균 분모에서 제외하므로 자동으로 해결된다.
+                            boolean mpExcluded = isRoleplayType(question.getQuestionType());
+                            Integer mpScore = mpExcluded ? null : score(feedbackMap, "mainPointScore");
                             int exScore    = score(feedbackMap, "expressionScore");
                             int acScore    = score(feedbackMap, "accuracyScore");
                             int ctScore    = score(feedbackMap, "contentScore");
@@ -202,6 +218,14 @@ public class FeedbackService {
         return false;
     }
 
+    private static FeedbackDTO selfIntroductionDto(QuestionDto question, String speechText) {
+        return FeedbackDTO.builder()
+                .question(question)
+                .sttText(speechText)
+                .overall("자기소개는 채점 대상이 아닙니다. 수고하셨어요!")
+                .build();
+    }
+
     private static FeedbackDTO noResponseDto(QuestionDto question, String speechText) {
         return FeedbackDTO.builder()
                 .question(question)
@@ -246,6 +270,10 @@ public class FeedbackService {
         if (words >= 60)  return 3;
         if (words >= 30)  return 2;
         return 1;
+    }
+
+    private static boolean isRoleplayType(QuestionType type) {
+        return type == QuestionType.TYPE_5 || type == QuestionType.TYPE_6 || type == QuestionType.TYPE_7;
     }
 
     private static String computeGrade(Integer... scores) {

@@ -55,6 +55,12 @@ public class QuestionAssemblyService {
         return QuestionDto.from(findQuestion(set, type));
     }
 
+    // 관리자 CRUD가 이 topic의 QuestionSet을 바꿨을 때 호출한다 (CACHE-01).
+    // 캐시 소유자(QuestionAssemblyService) 밖에서 직접 Map을 건드리지 않도록 여기 하나로 배선을 모은다.
+    public void evict(SurveyTopic topic) {
+        setCache.remove(topic);
+    }
+
     private Question findQuestion(QuestionSet set, QuestionType type) {
         return set.getQuestions().stream()
                 .filter(question -> question.getQuestionType() == type)

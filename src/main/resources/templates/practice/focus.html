@@ -112,7 +112,8 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a href="/practice/combo?category=C4"
+                <a th:if="${supportedComboCategories == null or supportedComboCategories.contains('C4')}"
+                   href="/practice/combo?category=C4"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -123,7 +124,8 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a href="/practice/combo?category=C5"
+                <a th:if="${supportedComboCategories == null or supportedComboCategories.contains('C5')}"
+                   href="/practice/combo?category=C5"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -134,6 +136,10 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
+                <p th:if="${supportedComboCategories != null and (!supportedComboCategories.contains('C4') or !supportedComboCategories.contains('C5'))}"
+                   class="text-xs text-gray-400 text-center py-2">
+                    현재 난이도에서 지원하지 않는 콤보는 표시하지 않았어요. 마이페이지에서 난이도를 바꾸면 다른 콤보가 열려요.
+                </p>
             </div>
         </div>
 

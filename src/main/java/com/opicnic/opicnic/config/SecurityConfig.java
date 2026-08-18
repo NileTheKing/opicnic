@@ -26,7 +26,10 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/admin/**").authenticated()
+                        // SEC-01: 일반 USER의 로그인 여부만 보지 않고 ADMIN authority를 실제로 강제한다.
+                        // CustomOAuth2UserService가 이미 member.getRole().name()을 authority 문자열로 부여하므로
+                        // 여기서 hasAuthority("ADMIN")만 걸면 된다. 뷰 라우트(/admin/**)도 API와 동일하게 보호한다.
+                        .requestMatchers("/admin/**", "/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/", "/auth/**", "/api/**", "/actuator/**", "/css/**", "/js/**").permitAll()
                         .anyRequest().authenticated()
                 )

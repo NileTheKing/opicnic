@@ -124,7 +124,8 @@ public class ExamPlanService {
                 .toList();
     }
 
-    // 지수 감쇠 가중 평균. results는 최신순 정렬 가정.
+    // 지수 감쇠 가중 평균. results는 최신순(index 0 = 최신) 정렬 가정 —
+    // 따라서 index가 작을수록(최신일수록) 가중치가 커야 한다 (SCORE-01).
     public static double weightedAvg(List<FeedbackResult> results, java.util.function.Function<FeedbackResult, Integer> getter) {
         List<Integer> values = results.stream()
                 .map(getter)
@@ -137,7 +138,7 @@ public class ExamPlanService {
         int n = values.size();
         double weightSum = 0, valueSum = 0;
         for (int i = 0; i < n; i++) {
-            double w = Math.pow(DECAY_ALPHA, n - 1 - i);
+            double w = Math.pow(DECAY_ALPHA, i);
             valueSum += w * values.get(i);
             weightSum += w;
         }
@@ -156,7 +157,7 @@ public class ExamPlanService {
         int n = perQuestion.size();
         double weightSum = 0, valueSum = 0;
         for (int i = 0; i < n; i++) {
-            double w = Math.pow(DECAY_ALPHA, n - 1 - i);
+            double w = Math.pow(DECAY_ALPHA, i);
             valueSum += w * perQuestion.get(i);
             weightSum += w;
         }
@@ -193,6 +194,9 @@ public class ExamPlanService {
     }
 
     public String typeLabel(QuestionType type) {
+        if (type == null) {
+            return "자기소개";
+        }
         return switch (type) {
             case TYPE_1 -> "현재 상태 묘사";
             case TYPE_2 -> "루틴/습관";

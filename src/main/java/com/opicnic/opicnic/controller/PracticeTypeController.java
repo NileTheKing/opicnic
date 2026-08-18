@@ -8,8 +8,8 @@ import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.QuestionAssemblyService;
-import com.opicnic.opicnic.service.TopicCatalog;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class PracticeTypeController {
     private final PracticeAttemptService practiceAttemptService;
     private final MemberRepository memberRepository;
     private final QuestionSetRepository questionSetRepository;
-    private final TopicCatalog topicCatalog;
+    private final SurveyProfileRepository surveyProfileRepository;
     private final Random random;
 
     @GetMapping("/practice/type")
@@ -43,8 +43,21 @@ public class PracticeTypeController {
         log.info("유형별 연습 시작: type={}", type);
         try {
             QuestionType questionType = QuestionType.valueOf(type);
+            Long memberId = findMemberId(oAuth2User);
 
-            List<SurveyTopic> available = questionSetRepository.findExistingTopics(topicCatalog.practiceTopics());
+            List<SurveyTopic> myTopics = memberId == null
+                    ? List.of()
+                    : surveyProfileRepository.findByMemberId(memberId)
+                            .map(profile -> profile.getSelectedTopics().stream()
+                                    .filter(t -> t != SurveyTopic.NO_EXERCISE)
+                                    .toList())
+                            .orElse(List.of());
+            if (myTopics.isEmpty()) {
+                return "redirect:/?invalidPractice=true";
+            }
+
+            List<SurveyTopic> existing = questionSetRepository.findExistingTopics(myTopics);
+            List<SurveyTopic> available = myTopics.stream().filter(existing::contains).toList();
             if (available.isEmpty()) {
                 return "redirect:/?invalidPractice=true";
             }
@@ -52,7 +65,7 @@ public class PracticeTypeController {
 
             QuestionDto question = questionAssemblyService.assembleSingle(topic, questionType);
             PracticeAttempt attempt = practiceAttemptService.createAttempt(
-                    List.of(question), findMemberId(oAuth2User), PracticeMode.COMBO, null, null);
+                    List.of(question), memberId, PracticeMode.COMBO, null, null);
 
             model.addAttribute("questions", List.of(question));
             model.addAttribute("attemptId", attempt.attemptId());

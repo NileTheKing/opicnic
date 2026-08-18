@@ -1,0 +1,37 @@
+# Docker build context에서 제외할 파일들 (SEC-03).
+# .gitignore는 Git 추적만 막을 뿐 Docker build context 전송은 별개다 —
+# Dockerfile의 `COPY . .`가 여기 없는 파일은 그대로 build stage/캐시로 보낸다.
+
+# 비밀정보
+.env
+.env.*
+
+# 버전 관리 메타데이터
+.git
+.gitignore
+
+# 빌드 산출물 (컨테이너 안에서 다시 빌드하므로 불필요)
+.gradle
+build/
+out/
+bin/
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings
+
+# 로컬 전용 자료 (성능 덤프, 조사 기록 등)
+docs/local/
+*.log
+*.jfr
+*.tdump
+*.hprof
+
+# OS
+.DS_Store

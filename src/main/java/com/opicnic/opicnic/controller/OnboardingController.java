@@ -6,6 +6,7 @@ import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.SurveyTopicPolicy;
 import com.opicnic.opicnic.service.TopicCatalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +27,7 @@ public class OnboardingController {
     private final MemberRepository memberRepository;
     private final SurveyProfileRepository surveyProfileRepository;
     private final TopicCatalog topicCatalog;
+    private final SurveyTopicPolicy surveyTopicPolicy;
 
 
     private static final Map<SurveyTopic, String> TOPIC_HINTS = Map.of(
@@ -126,6 +128,18 @@ public class OnboardingController {
         String provider = user.getAttributes().get("provider").toString();
         Member member = memberRepository.findByProviderAndProviderId(provider, providerId).orElseThrow();
 
+        // 두 탭에서 동시에 완료하면 첫 요청이 이기고, 뒤이은 요청은 중복 insert로 unique
+        // 제약(member_id) 위반 500 대신 기존 완료 상태로 조용히 수렴한다 (PC-21).
+        if (surveyProfileRepository.findByMemberId(member.getId()).isPresent()) {
+            return "redirect:/";
+        }
+
+        // 서버도 화면이 약속하는 "12개 이상 + 그룹별 최소" 규칙을 강제한다 (PC-11).
+        List<SurveyTopic> submitted = selectedTopics == null ? List.of() : selectedTopics;
+        if (!surveyTopicPolicy.isValid(submitted)) {
+            return "redirect:/onboarding/topics?error=invalidTopics";
+        }
+
         SurveyProfile.TargetGrade resolvedGrade = targetGrade != null ? targetGrade : SurveyProfile.TargetGrade.IM2;
         SurveyDifficulty resolvedDifficulty = preferredDifficulty != null ? preferredDifficulty : resolvedGrade.recommendedDifficulty;
 
@@ -145,7 +159,12 @@ public class OnboardingController {
                 ? SurveyTopic.LIVING_ALONE : SurveyTopic.LIVING_WITH_FAMILY;
         profile.getSelectedTopics().add(residenceTopic);
 
-        surveyProfileRepository.save(profile);
+        try {
+            surveyProfileRepository.save(profile);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 진짜 동시 요청이 위 존재 여부 체크를 둘 다 통과한 경우의 최종 방어선.
+            // survey_profile.member_id unique 제약 위반은 이미 다른 요청이 완료시켰다는 뜻이므로 500 대신 홈으로.
+        }
         return "redirect:/";
     }
 

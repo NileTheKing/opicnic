@@ -7,9 +7,34 @@
 | [`CHANGELOG.md`](CHANGELOG.md) | 완료 이력 | 기능 완료 시에만 추가. 과거 항목은 안 고침 |
 | [`backlog.md`](backlog.md) | 활성 작업 | 진행 상황 바뀔 때마다 갱신 |
 | [`deployment.md`](deployment.md) | 현재 인프라 | 배포 구조 바뀔 때만 갱신 |
+| [`codebase-risk-audit-2026-08-13.md`](codebase-risk-audit-2026-08-13.md) | 감사 + 작업 인계 | API·보안·데이터·테스트 리스크의 근거, 재현, 작업 준비도, 기술 완료 조건 (애플리케이션 코드 수정 없음) |
+| [`product-contract-audit-2026-08-13.md`](product-contract-audit-2026-08-13.md) | 감사 + 작업 인계 | 가입부터 오늘 할 일까지 제품 계약 불일치, 재현, 수정 경계, 선행 결정, acceptance criteria (애플리케이션 코드 수정 없음) |
 | [`question-text-progress.md`](question-text-progress.md) | 진행 중 체크리스트 | 작업 끝나면 삭제 검토 |
 | [`hold.md`](hold.md) | 보류 (기각 + 미구현 비전) | **현재 상태 아님.** 실제로 뭘 만들었는지는 CHANGELOG 참고 |
 | `local/` | 개인 저널 (gitignore) | 절대 "진실"로 취급 안 함. 과거 결론이 나중에 반박될 수 있음 |
 | `performance/` | 성능 조사 원본 (2026-04) | `local/`과 같은 성격이나 gitignore 이전에 커밋된 raw 증거. 결론은 README.md 엔지니어링 하이라이트로 이미 승격됨 |
 
 루트의 `AGENTS.md`(협업 규약) + `DOMAIN.md`(OPIc 도메인 법칙) + `PROJECT.md`(코드베이스 지도)는 위 표와 별개로 매 세션 항상 읽어야 하는 최상위 문서 — 여기 두지 않는다.
+
+## 후속 에이전트가 읽는 순서
+
+감사 항목을 실제 수정하는 작업이라면 다음 순서를 따른다.
+
+1. `AGENTS.md`, `DOMAIN.md`, `PROJECT.md`
+2. 맡은 영역의 감사 문서
+   - 기술/API/보안/운영: `codebase-risk-audit-2026-08-13.md`
+   - 제품 흐름/화면/통계 의미: `product-contract-audit-2026-08-13.md`
+3. 감사 문서에서 연결한 현재 소스와 테스트
+4. `READY / MIXED / DECISION` 상태 및 선행 결정 확인
+5. 재현 테스트 → 최소 수정 → acceptance criteria 검증 → 문서 상태 갱신
+
+두 감사 문서는 짧은 현황 요약이 아니라 작업 인계서다. finding의 원인·영향만 읽고 임의로 구현하지 말고 각 문서의 “후속 구현 에이전트 인계”, “먼저 사람이 결정해야 하는 제품 정책”, “완료 조건”을 함께 따른다.
+
+반대로 아래 자료는 단독 작업 지시서가 아니다.
+
+- `CHANGELOG.md`: 이미 완료됐다고 기록한 이력
+- `hold.md`: 기각 또는 보류한 선택지
+- `local/`: 개인 조사·실험 기록
+- `performance/`: 과거 raw 측정 증거
+
+이 자료에서 아이디어나 수치를 발견해도 현재 코드와 감사 문서로 다시 확인한 뒤 작업해야 한다.

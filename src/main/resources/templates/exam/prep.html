@@ -71,9 +71,9 @@
                     </div>
                     <span class="text-lg font-black text-brand-600" th:text="'주 ' + ${plan.weeklyComboTarget()} + '회'"></span>
                 </div>
-                <div th:if="${!plan.weakCombos().isEmpty()}" class="flex flex-col gap-1.5">
+                <div th:if="${!startableWeakCombos.isEmpty()}" class="flex flex-col gap-1.5">
                     <p class="text-[11px] text-gray-400 mb-0.5">약한 순 추천 · 기록 기반</p>
-                    <th:block th:each="combo, stat : ${plan.weakCombos()}">
+                    <th:block th:each="combo, stat : ${startableWeakCombos}">
                         <a th:if="${stat.index < 2}"
                            th:href="@{/practice/combo(category=${combo.category()})}"
                            class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors group">

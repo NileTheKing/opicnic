@@ -296,7 +296,9 @@
 
     function warnBeforeLeavingWithRecordings(event) {
         if (submissionComplete) return;
-        if (!recordings.some(Boolean)) return;
+        // recordings[]는 "다음"/제출을 눌러야 채워지므로, 아직 커밋 전인 현재 문항 녹음(recordedAudioBlob)도
+        // 이탈 경고 조건에 포함해야 방금 녹음한 답변이 경고 없이 사라지지 않는다 (PC-10).
+        if (!recordings.some(Boolean) && !recordedAudioBlob) return;
         event.preventDefault();
         event.returnValue = '';
     }

@@ -49,6 +49,13 @@
 <div class="flex-1 flex flex-col min-w-0">
 <main class="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full pb-20 md:pb-6">
 
+    <!-- 저장 실패 안내 (PC-11: 12개 미만/그룹 최소 미달 시 서버가 거부한 경우) -->
+    <div th:if="${param.error != null and param.error[0] == 'invalidTopics'}"
+         class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+        <i class="fa-solid fa-circle-exclamation text-red-400 shrink-0"></i>
+        <span>저장하지 못했어요. 연습 주제를 12개 이상, 각 그룹 최소 개수를 채워서 다시 선택해주세요.</span>
+    </div>
+
     <!-- 프로필 카드 -->
     <div class="bg-white rounded-2xl border border-brand-100 p-5 mb-6 flex items-center gap-4">
         <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-100 shrink-0">

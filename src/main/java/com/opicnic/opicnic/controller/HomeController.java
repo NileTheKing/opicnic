@@ -122,7 +122,7 @@ public class HomeController {
                 .flatMap(m -> surveyProfileRepository.findByMemberId(m.getId()))
                 .map(p -> p.getPreferredDifficulty() != null ? p.getPreferredDifficulty().name() : "LEVEL_3")
                 .orElse("LEVEL_3");
-        List<SurveyTopic> topics = questionSetRepository.findExistingTopics(topicCatalog.practiceTopics());
+        List<SurveyTopic> topics = questionSetRepository.findExistingTopics(topicCatalog.surpriseTopics());
         if (topics.isEmpty()) return "redirect:/?noTopics=true";
 
         SurveyTopic topic = topics.get(random.nextInt(topics.size()));

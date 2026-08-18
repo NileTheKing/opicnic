@@ -81,6 +81,13 @@
         </div>
     </div>
 
+    <!-- 저장 실패 안내 (PC-11: 서버가 12개 미만/그룹 최소 미달을 거부한 경우) -->
+    <div th:if="${param.error != null and param.error[0] == 'invalidTopics'}"
+         class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+        <i class="fa-solid fa-circle-exclamation text-red-400 shrink-0"></i>
+        <span>주제를 12개 이상, 각 그룹 최소 개수를 채워서 선택해주세요.</span>
+    </div>
+
     <form th:action="@{/onboarding}" method="post">
         <input type="hidden" name="occupationType" th:value="${occupationType}">
         <input type="hidden" name="residenceType" th:value="${residenceType}">

@@ -8,6 +8,7 @@ import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.NotificationSettingRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.SurveyTopicPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -26,6 +27,7 @@ public class MyPageController {
     private final MemberRepository memberRepository;
     private final NotificationSettingRepository notificationSettingRepository;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final SurveyTopicPolicy surveyTopicPolicy;
 
     @GetMapping("/mypage")
     public String showSettings(Model model, @AuthenticationPrincipal OAuth2User user) {
@@ -79,6 +81,13 @@ public class MyPageController {
         String provider = user.getAttributes().get("provider").toString();
         Member member = memberRepository.findByProviderAndProviderId(provider, providerId).orElseThrow();
 
+        // 서버도 온보딩과 동일한 "12개 이상 + 그룹별 최소" 규칙을 강제한다 (PC-11).
+        // 잘못된 요청은 기존 설정을 건드리지 않고 되돌아간다.
+        List<SurveyTopic> submitted = selectedTopics == null ? List.of() : selectedTopics;
+        if (!surveyTopicPolicy.isValid(submitted)) {
+            return "redirect:/mypage?error=invalidTopics";
+        }
+
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
                 .orElseGet(() -> SurveyProfile.builder().member(member).build());
 
@@ -87,6 +96,14 @@ public class MyPageController {
         profile.getSelectedTopics().clear();
         if (selectedTopics != null) {
             profile.getSelectedTopics().addAll(selectedTopics);
+        }
+        // 거주 주제는 일반 선택 주제 체크박스 목록에 없으므로 매번 지워지고 다시 계산해야 한다 (PC-05).
+        profile.getSelectedTopics().remove(SurveyTopic.LIVING_WITH_FAMILY);
+        profile.getSelectedTopics().remove(SurveyTopic.LIVING_ALONE);
+        if (residenceType != null) {
+            SurveyTopic residenceTopic = (residenceType == SurveyProfile.ResidenceType.ALONE)
+                    ? SurveyTopic.LIVING_ALONE : SurveyTopic.LIVING_WITH_FAMILY;
+            profile.getSelectedTopics().add(residenceTopic);
         }
 
         surveyProfileRepository.save(profile);
@@ -105,8 +122,20 @@ public class MyPageController {
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
                 .orElseGet(() -> SurveyProfile.builder().member(member).build());
 
+        boolean currentlySelected = profile.getSelectedTopics().contains(topic);
+        if (currentlySelected) {
+            List<SurveyTopic> predicted = new java.util.ArrayList<>(profile.getSelectedTopics());
+            predicted.remove(SurveyTopic.LIVING_WITH_FAMILY);
+            predicted.remove(SurveyTopic.LIVING_ALONE);
+            predicted.remove(topic);
+            if (!surveyTopicPolicy.isValid(predicted)) {
+                return Map.of("added", true, "count", profile.getSelectedTopics().size(),
+                        "error", "최소 " + SurveyTopicPolicy.MIN_TOTAL_TOPICS + "개, 그룹별 최소 개수를 유지해야 합니다.");
+            }
+        }
+
         boolean added;
-        if (profile.getSelectedTopics().contains(topic)) {
+        if (currentlySelected) {
             profile.getSelectedTopics().remove(topic);
             added = false;
         } else {

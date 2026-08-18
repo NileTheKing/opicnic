@@ -42,6 +42,10 @@ package-lock.json
 
 # Environment variables
 .env
+*.properties.old
+*.properties.bak
+*.yml.old
+*.yml.bak
 
 # macOS
 .DS_Store
