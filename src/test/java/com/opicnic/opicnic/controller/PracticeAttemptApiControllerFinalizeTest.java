@@ -2,88 +2,98 @@ package com.opicnic.opicnic.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.config.RateLimiterService;
-import com.opicnic.opicnic.domain.FeedbackResult;
-import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
 import com.opicnic.opicnic.domain.enums.AttemptStatus;
 import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
-import com.opicnic.opicnic.repository.FeedbackResultRepository;
-import com.opicnic.opicnic.repository.FeedbackTagRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.FeedbackService;
+import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-// 자기소개(questionType=null)는 실제 시험에서도 채점 문항으로 취급되지 않는다.
-// finalize가 자기소개를 FeedbackResult로 DB에 저장하지 않아야, "총 문항 수"/"최근 기록"/
-// "코칭 열람 조건" 같은 문항 개수 기반 통계에 섞이지 않는다.
+// DATA-01 회귀 테스트: finalize()는 DB 저장 전에 attemptService.tryConsume()으로 먼저
+// "제출 처리 권한"을 원자적으로 확정해야 한다. 이미 제출된 attempt면 저장을 시도하면 안 된다.
+// 자기소개 필터링 자체(어떤 문항이 저장되는지)는 FeedbackPersistenceServiceTest가 검증한다 —
+// 그 로직이 컨트롤러에서 FeedbackPersistenceService로 이동했기 때문.
 class PracticeAttemptApiControllerFinalizeTest {
 
-    @Test
-    void finalizeDoesNotPersistSelfIntroduction() {
-        PracticeAttemptService attemptService = Mockito.mock(PracticeAttemptService.class);
+    private PracticeAttemptService attemptService;
+    private FeedbackPersistenceService feedbackPersistenceService;
+    private PracticeAttemptApiController controller;
+    private final String attemptId = "attempt-1";
+
+    private void setUp() {
+        attemptService = Mockito.mock(PracticeAttemptService.class);
         FeedbackService feedbackService = Mockito.mock(FeedbackService.class);
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
-        FeedbackResultRepository feedbackResultRepository = Mockito.mock(FeedbackResultRepository.class);
-        FeedbackTagRepository feedbackTagRepository = Mockito.mock(FeedbackTagRepository.class);
+        feedbackPersistenceService = Mockito.mock(FeedbackPersistenceService.class);
 
-        PracticeAttemptApiController controller = new PracticeAttemptApiController(
+        controller = new PracticeAttemptApiController(
                 attemptService, feedbackService, memberRepository,
-                feedbackResultRepository, feedbackTagRepository, new ObjectMapper(),
-                new RateLimiterService());
+                feedbackPersistenceService, new ObjectMapper(), new RateLimiterService());
+    }
 
-        String attemptId = "attempt-1";
-        PracticeAttempt attempt = new PracticeAttempt(
-                attemptId, java.util.Arrays.asList(null, 10L), 1L, PracticeMode.MOCK_EXAM,
+    private PracticeAttempt attemptWithTwoQuestions() {
+        // memberId=null -> rejectIfNotOwner()가 소유권 검사를 건너뛰어 인증 없이도 finalize 로직만 테스트 가능
+        return new PracticeAttempt(attemptId, java.util.Arrays.asList(null, 10L), null, PracticeMode.MOCK_EXAM,
                 null, null, Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS);
-        when(attemptService.requireValidAttempt(attemptId)).thenReturn(attempt);
+    }
 
+    private MockHttpSession sessionWithCompleteResults() {
         QuestionDto selfIntro = new QuestionDto(null, "Please introduce yourself.", "자기소개", null);
         QuestionDto graded = new QuestionDto(10L, "content", "topic", QuestionType.TYPE_1);
-
-        FeedbackDTO selfIntroResult = FeedbackDTO.builder()
-                .question(selfIntro).sttText("hi").overall("자기소개는 채점 대상이 아닙니다.").build();
-        FeedbackDTO gradedResult = FeedbackDTO.builder()
-                .question(graded).sttText("answer").overallGrade("IM2")
-                .mainPointScore(3).expressionScore(3).accuracyScore(3).fluencyScore(3).contentScore(3)
-                .build();
+        FeedbackDTO selfIntroResult = FeedbackDTO.builder().question(selfIntro).sttText("hi").build();
+        FeedbackDTO gradedResult = FeedbackDTO.builder().question(graded).sttText("answer").overallGrade("IM2").build();
 
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("practiceFeedbackResults:" + attemptId,
-                new java.util.HashMap<>(Map.of(0, selfIntroResult, 1, gradedResult)));
+                new HashMap<>(Map.of(0, selfIntroResult, 1, gradedResult)));
+        return session;
+    }
+
+    @Test
+    void finalizeConsumesAttemptBeforeDelegatingPersistence() {
+        setUp();
+        when(attemptService.requireValidAttempt(attemptId)).thenReturn(attemptWithTwoQuestions());
+        when(attemptService.tryConsume(attemptId)).thenReturn(true);
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
-        when(user.getAttribute("provider")).thenReturn("kakao");
-        when(user.getAttribute("providerId")).thenReturn("provider-id-1");
-        Member member = Member.builder().id(1L).build();
-        when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1")).thenReturn(Optional.of(member));
 
-        when(feedbackResultRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+        controller.finalize(attemptId, sessionWithCompleteResults(), user);
 
-        controller.finalize(attemptId, session, user);
+        verify(attemptService).tryConsume(attemptId);
+        verify(feedbackPersistenceService, times(1)).saveFeedbackResults(any(), any(), any());
+    }
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<FeedbackResult>> captor = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(feedbackResultRepository).saveAll(captor.capture());
+    @Test
+    void finalizeDoesNotPersistWhenTryConsumeFails() {
+        setUp();
+        when(attemptService.requireValidAttempt(attemptId)).thenReturn(attemptWithTwoQuestions());
+        // 동시 요청 등으로 이미 다른 요청이 제출 처리 권한을 가져간 상황을 흉내낸다.
+        when(attemptService.tryConsume(attemptId)).thenReturn(false);
 
-        List<FeedbackResult> saved = captor.getValue();
-        assertThat(saved).hasSize(1);
-        assertThat(saved.get(0).getQuestionType()).isEqualTo(QuestionType.TYPE_1);
+        OAuth2User user = Mockito.mock(OAuth2User.class);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                controller.finalize(attemptId, sessionWithCompleteResults(), user))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(feedbackPersistenceService, never()).saveFeedbackResults(any(), any(), any());
     }
 }

@@ -9,10 +9,9 @@ import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.exception.ApiExceptionHandler;
-import com.opicnic.opicnic.repository.FeedbackResultRepository;
-import com.opicnic.opicnic.repository.FeedbackTagRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.FeedbackService;
+import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,9 +58,7 @@ class PracticeAttemptApiControllerCostGuardTest {
     @MockBean
     private MemberRepository memberRepository;
     @MockBean
-    private FeedbackResultRepository feedbackResultRepository;
-    @MockBean
-    private FeedbackTagRepository feedbackTagRepository;
+    private FeedbackPersistenceService feedbackPersistenceService;
     @MockBean
     private RateLimiterService rateLimiterService;
 

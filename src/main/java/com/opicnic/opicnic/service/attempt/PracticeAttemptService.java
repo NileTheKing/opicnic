@@ -69,8 +69,11 @@ public class PracticeAttemptService {
                 .toList();
     }
 
-    public void consume(String attemptId) {
-        store.markSubmitted(attemptId);
+    // DATA-01: 동시 finalize 요청 중 정확히 하나만 이 요청이 "제출 처리 권한"을 갖도록
+    // 원자적으로 전이한다. false면 다른 요청이 이미 처리했거나 처리 중이라는 뜻이므로
+    // 호출자는 DB 저장을 진행하면 안 된다.
+    public boolean tryConsume(String attemptId) {
+        return store.tryMarkSubmitted(attemptId);
     }
 
     public PracticeAttempt requireValidAttempt(String attemptId) {

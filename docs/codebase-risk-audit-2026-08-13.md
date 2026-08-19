@@ -6,7 +6,7 @@
 > 원칙: **발견과 근거 기록만 수행했다. 애플리케이션 코드는 수정하지 않았다.**
 >
 > **2026-08-13 후속 수정**: `CORE-01`, `DOMAIN-01` 완료 (제품 감사 PC-01/PC-02와 동일 항목). 이어서 준비도 READY이고 범위가 작은 `ADMIN-01`, `SEC-03`, `SCORE-01`, `SCORE-02`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료(부분) — `SEC-02`는 과거 Git 히스토리 정리·카카오 secret 재발급이, `COST-01`은 IP/member/전역 비용 예산 정책 결정이 각각 남음. 상세는 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
-> 나머지 P1(DATA-01, TEST-01)과 P2/P3(API-01~03, ADMIN-02, AI-01, DATA-02, PERF-01, TEST-02, DOC-01, OPS-01, DB-01, DESIGN-01)는 미착수.
+> 나머지 P1(TEST-01)과 P2/P3(API-01~03, ADMIN-02, AI-01, DATA-02, PERF-01, TEST-02, DOC-01, OPS-01, DB-01, DESIGN-01)는 미착수. (DATA-01은 2026-08-18 완료 — 단일 인스턴스 전제)
 
 ## 1. 어떻게 봤는가
 
@@ -195,6 +195,12 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 ---
 
 ### DATA-01. finalize가 exactly-once를 보장하지 못한다
+
+> **✅ 완료 (2026-08-18, 단일 인스턴스 배포 전제)**: `CaffeinePracticeAttemptStore`에 `tryMarkSubmitted()`를 추가해 `cache.asMap().computeIfPresent()`로 `IN_PROGRESS → SUBMITTED` 전이를 원자적으로 만듦(동시 요청 N개 중 정확히 1개만 `true`). `PracticeAttemptApiController.finalize()`는 DB 저장 전에 이 원자적 전이부터 확정하고, 실패하면 저장을 시도하지 않고 즉시 `IllegalStateException`을 던짐. feedback/tag 저장은 `FeedbackPersistenceService`(신규 `@Service`, `@Transactional`)로 분리해 하나의 트랜잭션으로 묶음 — 컨트롤러의 self-invocation으로는 `@Transactional`이 프록시를 안 거쳐 무시되던 문제도 같이 해결됨. 세션 결과 map(read-modify-write) 경합은 이번 범위에 포함하지 않음 — 별도 브라우저 탭에서만 발생 가능하고 최종 finalize 원자성과 무관.
+>
+> **전제**: Caffeine 캐시는 JVM 로컬 메모리이므로 이 원자성은 단일 인스턴스에서만 보장됨. 인스턴스를 여러 대로 늘리면(예: Redis 등 외부 store로 교체) 재검토 필요.
+>
+> 테스트: `CaffeinePracticeAttemptStoreTest`(스레드 50개로 동시에 `tryMarkSubmitted()` 호출해 정확히 1개만 성공함을 실증, 이미 전이된 후 재호출 시 `false`, 존재하지 않는 attempt는 `false`), `PracticeAttemptApiControllerFinalizeTest`(저장 전에 `tryConsume` 호출, 실패 시 저장 자체가 일어나지 않음), `FeedbackPersistenceServiceTest`(자기소개 필터링이 이동한 로직 검증).
 
 **근거**
 
