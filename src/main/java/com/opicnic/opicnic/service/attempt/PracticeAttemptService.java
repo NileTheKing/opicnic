@@ -1,6 +1,5 @@
 package com.opicnic.opicnic.service.attempt;
 
-import com.opicnic.opicnic.domain.Question;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
 import com.opicnic.opicnic.domain.enums.AttemptStatus;
 import com.opicnic.opicnic.domain.enums.PracticeMode;
@@ -25,8 +24,12 @@ public class PracticeAttemptService {
     private final PracticeAttemptStore store;
     private final QuestionRepository questionRepository;
 
-    // Question은 정적 데이터 — 앱 수명 동안 캐시 유효
-    private final Map<Long, Question> questionCache = new ConcurrentHashMap<>();
+    // Question은 정적 데이터 — 앱 수명 동안 캐시 유효.
+    // JPA 엔티티가 아니라 QuestionDto를 캐싱한다: Question.questionSet은 LAZY라, 엔티티를 캐시에
+    // 담아두면 그 엔티티를 로드했던 요청의 영속성 컨텍스트가 끝난 뒤(다른 요청이 캐시 히트로 재사용할 때)
+    // topic을 읽으려다 LazyInitializationException이 난다. DTO는 이미 topic이 문자열로 풀려있어
+    // 영속성 컨텍스트와 무관하게 재사용 가능하다.
+    private final Map<Long, QuestionDto> questionCache = new ConcurrentHashMap<>();
 
     public PracticeAttempt createAttempt(List<QuestionDto> questions, Long memberId, PracticeMode mode,
                                          String comboPatternKey, String comboCategory) {
@@ -61,11 +64,11 @@ public class PracticeAttemptService {
                 .toList();
         if (!cacheMissIds.isEmpty()) {
             questionRepository.findAllById(cacheMissIds)
-                    .forEach(q -> questionCache.put(q.getId(), q));
+                    .forEach(q -> questionCache.put(q.getId(), QuestionDto.from(q)));
         }
 
         return targetIds.stream()
-                .map(id -> id == null ? selfIntroDto() : QuestionDto.from(requireQuestion(questionCache, id)))
+                .map(id -> id == null ? selfIntroDto() : requireQuestion(questionCache, id))
                 .toList();
     }
 
@@ -97,8 +100,8 @@ public class PracticeAttemptService {
         );
     }
 
-    private Question requireQuestion(Map<Long, Question> questionMap, Long questionId) {
-        Question question = questionMap.get(questionId);
+    private QuestionDto requireQuestion(Map<Long, QuestionDto> questionMap, Long questionId) {
+        QuestionDto question = questionMap.get(questionId);
         if (question == null) {
             throw new IllegalStateException("문제를 찾을 수 없습니다. questionId=" + questionId);
         }

@@ -66,3 +66,4 @@ docker/mysql/data/
 # Local development notes
 docs/local/
 scripts/*.webm
+!scripts/test_audio.webm

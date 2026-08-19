@@ -2,7 +2,9 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
-// 실행: STT_ENABLED=false LLM_ENABLED=false k6 run scripts/load-test.js
+// 실행: SPRING_PROFILES_ACTIVE=dev STT_ENABLED=false LLM_ENABLED=false ./gradlew bootRun 로 서버 기동 후
+//      k6 run scripts/load-test.js
+// (POST /api/practice-attempts/start는 dev 프로파일에서만 열리는 DevPracticeController 전용 엔드포인트)
 //
 // 목적: Mock STT/LLM 모드에서 VirtualThread + StructuredTaskScope 처리량 측정
 //       Groq rate limit 우회, readAllBytes() 힙 부하만 격리해서 측정
@@ -60,10 +62,17 @@ const TOPIC = 'MOVIE_WATCHING';
 const DIFFICULTY = 'LEVEL_3';
 
 export default function () {
+    // 0단계: CSRF 토큰 발급 — k6는 로그인 세션이 없어 CSRF 토큰도 없다. 같은 VU 안에서는
+    // 세션 쿠키가 자동으로 유지되므로(k6 기본 cookie jar), 이후 POST에 헤더로 실어 보낸다.
+    const csrfRes = http.get(`${BASE}/api/practice-attempts/csrf`);
+    const csrfToken = csrfRes.json('token');
+    const csrfHeader = csrfRes.json('headerName');
+
     // 1단계: attempt 생성
     const startRes = http.post(
         `${BASE}/api/practice-attempts/start?topic=${TOPIC}&difficulty=${DIFFICULTY}`,
         null,
+        { headers: { [csrfHeader]: csrfToken } },
     );
     startDuration.add(startRes.timings.duration);
 
@@ -93,9 +102,9 @@ export default function () {
     );
 
     const answersRes = http.post(
-        `${BASE}/api/practice-attempts/answers`,
+        `${BASE}/api/practice-attempts/${attemptId}/answers`,
         body,
-        { headers: { 'Content-Type': contentType } }
+        { headers: { 'Content-Type': contentType, [csrfHeader]: csrfToken } }
     );
     answersDuration.add(answersRes.timings.duration);
 

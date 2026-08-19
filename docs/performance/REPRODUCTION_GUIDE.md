@@ -9,9 +9,11 @@ OPIcnic 백엔드의 성능 벤치마크를 동일한 환경에서 수행하기 
 - **데이터**: `DataInitializer.java`를 통해 `MOVIE_WATCHING` / `LEVEL_3` 데이터가 적재되어 있어야 함
 
 ## 2. 서버 실행
-가상 스레드 옵션과 메모리 설정을 포함하여 실행합니다.
+가상 스레드 옵션과 메모리 설정을 포함하여 실행합니다. `SPRING_PROFILES_ACTIVE=dev`가 있어야
+로그인 세션 없이 attempt를 시작하는 `POST /api/practice-attempts/start`(k6 스크립트가 사용)가 열립니다.
 ```bash
-AI_GEMINI_ENABLED=false \
+SPRING_PROFILES_ACTIVE=dev \
+LLM_ENABLED=false \
 STT_ENABLED=false \
 JAVA_OPTS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" \
 ./gradlew bootRun

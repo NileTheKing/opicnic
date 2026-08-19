@@ -433,6 +433,14 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### TEST-02 [P2]. 공식 k6 재현 절차가 clean clone에서 동작하지 않는다
 
+> **✅ 완료 (2026-08-19)**: `POST /api/practice-attempts/start`(dev 프로파일 전용, 로그인 세션 없이 attempt 생성)를 `DevPracticeController`로 복원 — 과거 커밋(34466d5)에서 sequential feedback 경로 정리하며 함께 삭제됐던 걸 확인. `load-test.js`의 `/answers` 경로를 `/{attemptId}/answers`로 실제 라우트에 맞게 수정. `test_audio.webm`(1MB)을 `.gitignore` 예외 처리해 커밋. `REPRODUCTION_GUIDE.md`의 `AI_GEMINI_ENABLED` → `LLM_ENABLED` 정정 + `SPRING_PROFILES_ACTIVE=dev` 필요함을 명시.
+>
+> 로컬 MySQL 띄우고 실제로 `SPRING_PROFILES_ACTIVE=dev LLM_ENABLED=false STT_ENABLED=false ./gradlew bootRun` + `k6 run scripts/load-test.js`로 end-to-end 실행 검증. 그 과정에서 두 가지를 추가로 발견/수정:
+> 1. SEC-06(CSRF 재활성화)의 부작용으로 k6의 무세션 POST가 로그인 페이지로 302 리다이렉트됨 → `DevPracticeController`에 `GET /api/practice-attempts/csrf` 토큰 발급 엔드포인트 추가, 스크립트가 먼저 토큰을 받아 헤더에 실어 보내도록 수정(CSRF 보호 자체는 그대로 유지 — 우회하지 않음).
+> 2. **실제 프로덕션 버그 발견**: `PracticeAttemptService.questionCache`가 `Question` JPA 엔티티를 앱 수명 내내 캐싱하는데, `Question.questionSet`이 `FetchType.LAZY`라 어떤 요청이 엔티티를 로드해 캐시에 넣은 뒤, **다른 요청**이 캐시 히트로 그 엔티티를 재사용하며 `questionSet.getTopic()`을 부르면 이미 닫힌 영속성 컨텍스트의 프록시를 건드려 `LazyInitializationException`(500)이 남. 실제 부하테스트로 재현 확인(45% 실패율 중 다수가 이 예외). `questionCache`가 엔티티 대신 `QuestionDto`(topic이 이미 문자열로 풀린 값)를 캐싱하도록 수정해 해결 — 캐시 히트 경로가 더 이상 엔티티/프록시를 건드리지 않음. 재현 재실행으로 500이 0건이 됨을 확인(남은 실패는 전부 COST-01 rate limiter의 정상 429).
+>
+> 이 lazy-loading 버그는 실사용자가 문제를 제출할 때 언제든 터질 수 있는 경로였고, 재현 가능한 부하테스트가 이번까지 없었던 게 발견을 막고 있었다는 점에서 TEST-02가 왜 필요했는지 그 자체로 증명한 셈. 테스트: `PracticeAttemptServiceQuestionCacheTest`(캐시 히트 시 LAZY 연관관계를 다시 건드리지 않음을 mock으로 검증 — fix 되돌리면 실패하는 것 확인함).
+
 - `scripts/load-test.js:14`는 `test_audio.webm`을 연다.
 - `scripts/*.webm`은 `.gitignore:64`에 걸려 추적되지 않는다. clean clone에는 `scripts/test_audio.wav`만 있다.
 - `scripts/load-test.js:65`는 없는 `POST /api/practice-attempts/start`를 호출한다.
