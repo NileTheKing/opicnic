@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.config;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -14,7 +15,7 @@ class RateLimitInterceptorTest {
 
     @Test
     void getRequestsDoNotConsumeBucket() throws Exception {
-        RateLimitInterceptor interceptor = new RateLimitInterceptor(new RateLimiterService());
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(new RateLimiterService(new StandardEnvironment()));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/analytics/coaching");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -27,7 +28,7 @@ class RateLimitInterceptorTest {
 
     @Test
     void postRequestsConsumeOneUnitAndEventuallyGetLimited() throws Exception {
-        RateLimitInterceptor interceptor = new RateLimitInterceptor(new RateLimiterService());
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(new RateLimiterService(new StandardEnvironment()));
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/analytics/coaching");
 
         int allowedCount = 0;

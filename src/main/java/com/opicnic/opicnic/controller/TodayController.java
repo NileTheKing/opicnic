@@ -52,7 +52,7 @@ public class TodayController {
         }
 
         ExamSchedule schedule = scheduleOpt.get();
-        List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
+        List<FeedbackResult> results = feedbackResultRepository.findSummaryByMemberId(member.getId());
         ExamPlanService.DiagnosisResult diagnosis = examPlanService.diagnose(results);
         int dailyMinutes = schedule.getDailyMinutes() != null ? schedule.getDailyMinutes() : 60;
         int studyDaysPerWeek = schedule.getStudyDaysPerWeek() != null ? schedule.getStudyDaysPerWeek() : 5;

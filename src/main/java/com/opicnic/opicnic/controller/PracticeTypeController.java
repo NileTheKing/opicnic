@@ -56,8 +56,15 @@ public class PracticeTypeController {
                 return "redirect:/?invalidPractice=true";
             }
 
+            // REVIEW-07: findExistingTopics는 "이 topic에 QuestionSet이 하나라도 있는지"만 보므로,
+            // 그 세트들이 전부 이 questionType을 갖지 않은 불완전한 세트여도 후보에 남는다.
+            // 그런 topic이 뽑히면 assembleSingle()이 예외를 던지고, 다른 사용자 topic이 있어도
+            // 그냥 "연습 불가"로 끝났다 — 이 type을 실제로 낼 수 있는 topic만 후보로 남긴다.
             List<SurveyTopic> existing = questionSetRepository.findExistingTopics(myTopics);
-            List<SurveyTopic> available = myTopics.stream().filter(existing::contains).toList();
+            List<SurveyTopic> available = myTopics.stream()
+                    .filter(existing::contains)
+                    .filter(t -> questionAssemblyService.hasQuestionType(t, questionType))
+                    .toList();
             if (available.isEmpty()) {
                 return "redirect:/?invalidPractice=true";
             }

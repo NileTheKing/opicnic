@@ -41,7 +41,7 @@ public class ExamController {
     @GetMapping
     public String examPage(@AuthenticationPrincipal OAuth2User oAuth2User, Model model) {
         Member member = resolveMember(oAuth2User);
-        List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
+        List<FeedbackResult> results = feedbackResultRepository.findSummaryByMemberId(member.getId());
 
         ExamPlanService.DiagnosisResult diagnosis = examPlanService.diagnose(results);
         model.addAttribute("diagnosis", diagnosis);
@@ -74,6 +74,12 @@ public class ExamController {
         return "exam/prep";
     }
 
+    // API-02: 화면은 dailyMinutes={30,60,90,120}, studyDaysPerWeek={3,5,7}만 보여주지만
+    // 서버는 그 약속을 강제하지 않아 임의 정수(음수, 0, 과도한 값)가 그대로 저장돼 학습 계획
+    // 계산에 들어갈 수 있었다. 브라우저가 보여주는 선택지와 서버가 받아들이는 값의 범위를 맞춘다.
+    private static final Set<Integer> ALLOWED_DAILY_MINUTES = Set.of(30, 60, 90, 120);
+    private static final Set<Integer> ALLOWED_STUDY_DAYS_PER_WEEK = Set.of(3, 5, 7);
+
     @PostMapping("/schedule")
     public String saveSchedule(
             @AuthenticationPrincipal OAuth2User oAuth2User,
@@ -81,6 +87,11 @@ public class ExamController {
             @RequestParam TargetGrade targetGrade,
             @RequestParam(defaultValue = "60") int dailyMinutes,
             @RequestParam(defaultValue = "5") int studyDaysPerWeek) {
+        if (!ALLOWED_DAILY_MINUTES.contains(dailyMinutes)
+                || !ALLOWED_STUDY_DAYS_PER_WEEK.contains(studyDaysPerWeek)
+                || examDate.isBefore(LocalDate.now())) {
+            return "redirect:/exam?error=invalidSchedule";
+        }
         Member member = resolveMember(oAuth2User);
         examScheduleRepository.save(ExamSchedule.builder()
                 .member(member)

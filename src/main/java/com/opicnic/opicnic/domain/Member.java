@@ -12,6 +12,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor  // 이거 추가!
 @Entity
+// DATA-02: 동시 OAuth 콜백(중복 클릭, 네트워크 재시도)이 findByProviderAndProviderId의
+// "조회 후 없으면 생성" 사이의 틈을 통과하면 같은 사람 계정이 두 번 생길 수 있었다.
+// DB 유니크 제약으로 마지막 방어선을 둔다.
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "providerId"}))
 public class Member {
 
     @Id

@@ -45,7 +45,7 @@ public class AnalyticsController {
         String provider = user.getAttributes().get("provider").toString();
         Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
 
-        List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
+        List<FeedbackResult> results = feedbackResultRepository.findSummaryByMemberId(member.getId());
         model.addAttribute("totalCount", results.size());
         model.addAttribute("coachingTeaser", coachingService.buildTeaser(member));
 
@@ -76,19 +76,26 @@ public class AnalyticsController {
         return "analytics/analytics";
     }
 
+    // REVIEW-02: 롤플레이만 연습한 사용자는 mainPointScore 표본이 없다. weightedAvg가 이제
+    // 표본 없음을 null로 구분해주므로, 그 항목은 "0점"으로 그리지 않고 scores 목록에서 아예
+    // 빼서 전체 평균/최약점(weakestKeys) 판정에 섞이지 않게 한다.
     private List<ScoreStat> buildScoreStats(List<FeedbackResult> results) {
-        return SCORE_LABELS.entrySet().stream().map(entry -> {
-            String key = entry.getKey();
-            double avg = ExamPlanService.weightedAvg(results, r -> switch (key) {
-                case "mainPoint"  -> r.getMainPointScore();
-                case "content"    -> r.getContentScore();
-                case "expression" -> r.getExpressionScore();
-                case "fluency"    -> r.getFluencyScore();
-                case "accuracy"   -> r.getAccuracyScore();
-                default -> null;
-            });
-            avg = Math.round(avg * 10.0) / 10.0;
-            return new ScoreStat(key, entry.getValue(), avg, (int) (avg / 5.0 * 100));
-        }).toList();
+        return SCORE_LABELS.entrySet().stream()
+                .map(entry -> {
+                    String key = entry.getKey();
+                    Double avg = ExamPlanService.weightedAvg(results, r -> switch (key) {
+                        case "mainPoint"  -> r.getMainPointScore();
+                        case "content"    -> r.getContentScore();
+                        case "expression" -> r.getExpressionScore();
+                        case "fluency"    -> r.getFluencyScore();
+                        case "accuracy"   -> r.getAccuracyScore();
+                        default -> null;
+                    });
+                    if (avg == null) return null;
+                    double rounded = Math.round(avg * 10.0) / 10.0;
+                    return new ScoreStat(key, entry.getValue(), rounded, (int) (rounded / 5.0 * 100));
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

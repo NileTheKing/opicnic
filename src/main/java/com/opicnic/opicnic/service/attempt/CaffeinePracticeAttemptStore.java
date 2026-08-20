@@ -29,25 +29,32 @@ public class CaffeinePracticeAttemptStore implements PracticeAttemptStore {
     }
 
     @Override
-    public void markSubmitted(String attemptId) {
-        findById(attemptId).ifPresent(a ->
-                cache.put(attemptId, a.withStatus(AttemptStatus.SUBMITTED)));
+    public boolean tryStartFinalizing(String attemptId) {
+        return transition(attemptId, AttemptStatus.IN_PROGRESS, AttemptStatus.FINALIZING);
     }
 
-    // DATA-01: 같은 attempt에 대한 동시 finalize 요청이 둘 다 "아직 제출 안 됨"을 확인하고
-    // 통과해버리는 걸 막는다. Caffeine의 ConcurrentMap 뷰(asMap())의 computeIfPresent는
-    // 같은 key에 대해 원자적으로 실행되므로(다른 스레드가 그 사이에 끼어들 수 없음), 여기서
-    // "이미 제출됐는지 확인"과 "제출됨으로 표시"가 한 동작으로 묶인다. 단일 인스턴스 전제 —
-    // 서버가 여러 대가 되면 이 in-memory 캐시 자체를 공유 저장소(DB/Redis)로 옮겨야 한다.
     @Override
-    public boolean tryMarkSubmitted(String attemptId) {
+    public boolean confirmSubmitted(String attemptId) {
+        return transition(attemptId, AttemptStatus.FINALIZING, AttemptStatus.SUBMITTED);
+    }
+
+    @Override
+    public boolean revertToInProgress(String attemptId) {
+        return transition(attemptId, AttemptStatus.FINALIZING, AttemptStatus.IN_PROGRESS);
+    }
+
+    // DATA-01/REVIEW-01: Caffeine의 ConcurrentMap 뷰(asMap())의 computeIfPresent는 같은 key에 대해
+    // 원자적으로 실행되므로(다른 스레드가 그 사이에 끼어들 수 없음), "현재 상태 확인"과 "다음 상태로
+    // 변경"이 한 동작으로 묶인다. 단일 인스턴스 전제 — 서버가 여러 대가 되면 이 in-memory 캐시 자체를
+    // 공유 저장소(DB/Redis)로 옮겨야 한다.
+    private boolean transition(String attemptId, AttemptStatus from, AttemptStatus to) {
         AtomicBoolean transitioned = new AtomicBoolean(false);
         cache.asMap().computeIfPresent(attemptId, (id, existing) -> {
-            if (existing.status() == AttemptStatus.SUBMITTED) {
+            if (existing.status() != from) {
                 return existing;
             }
             transitioned.set(true);
-            return existing.withStatus(AttemptStatus.SUBMITTED);
+            return existing.withStatus(to);
         });
         return transitioned.get();
     }

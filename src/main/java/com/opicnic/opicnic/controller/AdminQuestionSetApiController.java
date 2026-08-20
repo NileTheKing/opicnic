@@ -6,6 +6,7 @@ import com.opicnic.opicnic.dto.QuestionSetApiDto;
 import com.opicnic.opicnic.exception.ResourceNotFoundException;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import com.opicnic.opicnic.service.QuestionAssemblyService;
+import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class AdminQuestionSetApiController {
 
     private final QuestionSetRepository questionSetRepository;
     private final QuestionAssemblyService questionAssemblyService;
+    private final PracticeAttemptService practiceAttemptService;
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody QuestionSetApiDto request) {
@@ -31,6 +33,9 @@ public class AdminQuestionSetApiController {
         // 이 topic이 이전에 빈 목록으로 캐시됐을 수 있으므로(setCache.computeIfAbsent), 새 세트가
         // 바로 출제 후보에 반영되도록 무효화한다 (CACHE-01).
         questionAssemblyService.evict(saved.getTopic());
+        // REVIEW-08: PracticeAttemptService의 questionCache(questionId 기준)는 CACHE-01의 topic
+        // evict로는 안 비워진다. 관리 작업은 드물어서 전체 clear로 충분하다.
+        practiceAttemptService.evictAllQuestionCache();
         return ResponseEntity.ok(toDto(saved));
     }
 
@@ -46,6 +51,9 @@ public class AdminQuestionSetApiController {
         // topic이 바뀌었을 수 있으므로 이전/이후 topic 캐시를 모두 무효화한다 (CACHE-01).
         questionAssemblyService.evict(previousTopic);
         questionAssemblyService.evict(saved.getTopic());
+        // REVIEW-08: 이 세트에 속한 Question들의 QuestionDto가 이미 practiceAttemptService에
+        // 캐시돼 있었다면 옛 topic/내용을 계속 서빙한다 — 함께 비운다.
+        practiceAttemptService.evictAllQuestionCache();
         return ResponseEntity.ok(toDto(saved));
     }
 
@@ -56,6 +64,8 @@ public class AdminQuestionSetApiController {
         existing.setDeleted(true);
         questionSetRepository.save(existing);
         questionAssemblyService.evict(existing.getTopic()); // CACHE-01: 삭제된 세트가 계속 출제되지 않도록
+        // REVIEW-08: 삭제된 세트의 문항이 이미 questionCache에 있었다면 계속 서빙될 수 있으므로 함께 비운다.
+        practiceAttemptService.evictAllQuestionCache();
         return ResponseEntity.noContent().build();
     }
 

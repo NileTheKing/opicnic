@@ -72,11 +72,30 @@ public class PracticeAttemptService {
                 .toList();
     }
 
-    // DATA-01: 동시 finalize 요청 중 정확히 하나만 이 요청이 "제출 처리 권한"을 갖도록
-    // 원자적으로 전이한다. false면 다른 요청이 이미 처리했거나 처리 중이라는 뜻이므로
-    // 호출자는 DB 저장을 진행하면 안 된다.
-    public boolean tryConsume(String attemptId) {
-        return store.tryMarkSubmitted(attemptId);
+    // REVIEW-01: 동시 finalize 요청 중 정확히 하나만 IN_PROGRESS -> FINALIZING 전이에 성공해
+    // "DB 저장 권한"을 갖도록 한다. false면 다른 요청이 이미 처리했거나(SUBMITTED) 처리
+    // 중이라는(FINALIZING) 뜻이므로 호출자는 DB 저장을 진행하면 안 된다.
+    public boolean tryStartFinalizing(String attemptId) {
+        return store.tryStartFinalizing(attemptId);
+    }
+
+    // REVIEW-01: DB 저장이 성공적으로 끝난 뒤 FINALIZING -> SUBMITTED로 확정한다.
+    public boolean confirmSubmitted(String attemptId) {
+        return store.confirmSubmitted(attemptId);
+    }
+
+    // REVIEW-01: DB 저장이 실패하면 FINALIZING에 영구히 멈춰있지 않도록 IN_PROGRESS로 되돌려
+    // 사용자가 finalize를 다시 시도할 수 있게 복구한다.
+    public boolean revertFinalizing(String attemptId) {
+        return store.revertToInProgress(attemptId);
+    }
+
+    // REVIEW-08: 관리자가 QuestionSet을 수정/삭제해도 이 캐시는 questionId 기준이라 CACHE-01의
+    // QuestionAssemblyService.evict(topic)로는 안 비워진다 — 이미 캐시에 담긴 QuestionDto는
+    // 옛 topic/내용을 계속 서빙한다. 관리 작업은 드물어서 topic 단위로 정교하게 골라내는 대신
+    // 전체를 비우는 것으로 충분하다(다음 조회 때 캐시 미스로 다시 채워짐).
+    public void evictAllQuestionCache() {
+        questionCache.clear();
     }
 
     public PracticeAttempt requireValidAttempt(String attemptId) {
@@ -85,8 +104,22 @@ public class PracticeAttemptService {
         if (attempt.isExpired()) {
             throw new IllegalStateException("세션이 만료되었습니다.");
         }
-        if (attempt.status() == AttemptStatus.SUBMITTED) {
+        // FINALIZING도 SUBMITTED와 동일하게 막는다 — DB 저장이 진행 중인 attempt에 새 답변
+        // 제출/재시도가 끼어들면 세션 결과 map을 finalize 스레드와 동시에 건드리게 된다.
+        if (attempt.status() == AttemptStatus.SUBMITTED || attempt.status() == AttemptStatus.FINALIZING) {
             throw new IllegalStateException("이미 제출된 세션입니다.");
+        }
+        return attempt;
+    }
+
+    // REVIEW-01: finalize 전용 조회. submitAnswers/retry와 달리 SUBMITTED를 예외로 막지 않는다 —
+    // 이미 완료된 attempt에 대한 재요청을 컨트롤러가 멱등하게(같은 성공 응답) 처리할 수 있어야
+    // 하므로, 상태에 따른 분기는 여기서 던지지 않고 호출자(컨트롤러)에게 맡긴다.
+    public PracticeAttempt requireAttemptForFinalize(String attemptId) {
+        PracticeAttempt attempt = store.findById(attemptId)
+                .orElseThrow(() -> new IllegalStateException("세션이 만료되었거나 존재하지 않습니다."));
+        if (attempt.isExpired()) {
+            throw new IllegalStateException("세션이 만료되었습니다.");
         }
         return attempt;
     }

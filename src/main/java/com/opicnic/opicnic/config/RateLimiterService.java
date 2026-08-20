@@ -2,6 +2,8 @@ package com.opicnic.opicnic.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -21,6 +23,11 @@ public class RateLimiterService {
     public static final int CAPACITY_PER_HOUR = 15;
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Environment environment;
+
+    public RateLimiterService(Environment environment) {
+        this.environment = environment;
+    }
 
     private Bucket getBucket(String key) {
         return buckets.computeIfAbsent(key, k ->
@@ -37,6 +44,18 @@ public class RateLimiterService {
         return getBucket(getUserKey()).tryConsume(cost);
     }
 
+    // FU-03: PracticeAttemptApiController가 답변 제출 경로에서 호출한다. attemptMemberId==null이고
+    // dev 프로파일이면(=DevPracticeController가 로그인 세션 없이 만든 k6 부하테스트 attempt) 버킷을
+    // 아예 소비하지 않는다 — 유한 용량의 또 다른 공유 버킷을 만드는 대신 이 조합만 완전히 예외 처리한다.
+    // dev의 로그인 회원 attempt(memberId != null)와 production의 익명 요청은 계속 기존 한도(시간당
+    // CAPACITY_PER_HOUR)를 그대로 적용받는다.
+    public boolean tryConsume(int cost, Long attemptMemberId) {
+        if (attemptMemberId == null && isDevProfileActive()) {
+            return true;
+        }
+        return tryConsume(cost);
+    }
+
     private String getUserKey() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof OAuth2User oAuth2User) {
@@ -44,5 +63,12 @@ public class RateLimiterService {
             if (providerId != null) return "user:" + providerId;
         }
         return "anonymous";
+    }
+
+    // FU-03: 활성 프로파일 배열만 직접 보면 "활성 프로파일 없음 + spring.profiles.default=dev"인
+    // 기본 실행 상태(운영 배포에서도 흔히 쓰는 형태)를 못 잡는다. acceptsProfiles()는 활성 프로파일이
+    // 없을 때 default 프로파일로 판정을 대신하므로 이 경우도 dev로 인식한다.
+    private boolean isDevProfileActive() {
+        return environment.acceptsProfiles(Profiles.of("dev"));
     }
 }

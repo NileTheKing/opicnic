@@ -33,6 +33,19 @@ class ExamPlanServiceWeightedAvgTest {
     }
 
     @Test
+    void noSamplesReturnsNullNotZero() {
+        // REVIEW-02: 표본이 없으면(예: 롤플레이만 연습해 mainPointScore가 전부 null) 0.0이 아니라
+        // null이어야 한다 — 0.0은 "가장 낮은 점수"와 구분이 안 돼 최약점으로 잘못 뽑힌다.
+        assertThat(ExamPlanService.weightedAvg(List.of(), FeedbackResult::getMainPointScore)).isNull();
+
+        List<FeedbackResult> onlyRoleplay = List.of(
+                FeedbackResult.builder().mainPointScore(null).build(),
+                FeedbackResult.builder().mainPointScore(null).build()
+        );
+        assertThat(ExamPlanService.weightedAvg(onlyRoleplay, FeedbackResult::getMainPointScore)).isNull();
+    }
+
+    @Test
     void recentLowScorePullsWeightedAverageBelowSimpleAverage() {
         // 최신=1, 과거=5 (반대 fixture)
         List<FeedbackResult> results = new ArrayList<>();
@@ -50,8 +63,7 @@ class ExamPlanServiceWeightedAvgTest {
 
     @Test
     void belowMinForWeightedUsesSimpleAverage() {
-        // MIN_FOR_WEIGHTED=3 미만(0/1/2개)은 단순 평균
-        assertThat(ExamPlanService.weightedAvg(List.of(), FeedbackResult::getMainPointScore)).isEqualTo(0.0);
+        // MIN_FOR_WEIGHTED=3 미만(1/2개)은 단순 평균. 0개는 noSamplesReturnsNullNotZero()에서 다룬다.
         assertThat(ExamPlanService.weightedAvg(List.of(withMainPoint(4)), FeedbackResult::getMainPointScore))
                 .isEqualTo(4.0);
         assertThat(ExamPlanService.weightedAvg(List.of(withMainPoint(2), withMainPoint(4)), FeedbackResult::getMainPointScore))

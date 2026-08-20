@@ -5,8 +5,13 @@
 > 범위: 백엔드 소스, 설정, 배포, 테스트, 문서  
 > 원칙: **발견과 근거 기록만 수행했다. 애플리케이션 코드는 수정하지 않았다.**
 >
-> **2026-08-13 후속 수정**: `CORE-01`, `DOMAIN-01` 완료 (제품 감사 PC-01/PC-02와 동일 항목). 이어서 준비도 READY이고 범위가 작은 `ADMIN-01`, `SEC-03`, `SCORE-01`, `SCORE-02`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료(부분) — `SEC-02`는 과거 Git 히스토리 정리·카카오 secret 재발급이, `COST-01`은 IP/member/전역 비용 예산 정책 결정이 각각 남음. 상세는 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
-> 나머지 P1(TEST-01)과 P2/P3(API-01~03, ADMIN-02, AI-01, DATA-02, PERF-01, TEST-02, DOC-01, OPS-01, DB-01, DESIGN-01)는 미착수. (DATA-01은 2026-08-18 완료 — 단일 인스턴스 전제)
+> **2026-08-13~19 후속 수정**: `CORE-01`, `DOMAIN-01`, `ADMIN-01`, `SEC-03`, `SCORE-01`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07`, `API-02`, `DATA-02`, `PERF-01`, `DOC-01` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료했다. 상세 이력은 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
+>
+> **2026-08-20 재리뷰**: `DATA-01`, `SCORE-02`, `API-01`, `ADMIN-02`, `AI-01`은 부분 완료, `TEST-02`는 실행 경로는 복구됐지만 dev rate limit 때문에 성능 threshold가 실패하는 상태로 판정했다. 후속 구현의 source of truth는 [`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md)다.
+>
+> **2026-08-20 FU 후속 수정**: `FU-02`(SCORE-02), `FU-03`(TEST-02), `FU-04`(API-01), `FU-06`(AI-01) 완료. `FU-01`(DATA-01, DB marker 기반 멱등성)과 `FU-05`(ADMIN-02, 모든 진입점 조립 가능성)는 이번 배치에서 제외 — 여전히 부분 완료 상태.
+>
+> 나머지 P1(`TEST-01`)은 보류, P3(`API-03`, `OPS-01`, `DB-01`, `DESIGN-01`)는 미착수다.
 
 ## 1. 어떻게 봤는가
 
@@ -40,9 +45,9 @@ P0는 발견하지 못했다. 아래 P1은 “언젠가 개선” 수준이 아�
 | SEC-04 | ✅ 완료(08-13) 런타임 Tomcat 10.1.39에 공개된 Important CVE 포함 | 공개 multipart 경로를 통한 DoS 등 | 매우 높음 |
 | COST-01 | 🟡 부분 완료(08-13) 비용 API limiter가 죽은 경로에만 연결됨 | Groq 비용·쿼터·서버 자원 무제한 소비 | 매우 높음 |
 | CORE-01 | ✅ 완료(08-13) 모의고사 자기소개 문항의 `questionType=null` 미처리 | 정상적인 15문항 모의고사 완료 불가 | 매우 높음 |
-| DATA-01 | finalize가 원자적·멱등적이지 않음 | 부분 저장·중복 피드백·통계 오염 | 매우 높음 |
+| DATA-01 | 🟡 부분 완료(08-20 재리뷰) finalize가 DB 기준으로 원자적·멱등적이지 않음 | 부분 저장·중복 피드백·통계 오염 | 매우 높음 |
 | SCORE-01 | ✅ 완료(08-13) 최신순 가중 평균을 거꾸로 계산 | 오래된 실력을 최근 실력보다 크게 반영 | 매우 높음 |
-| SCORE-02 | ✅ 완료(08-13) “평가 제외” 0점을 실제 감점으로 평균 | 롤플레이 연습 시 등급이 구조적으로 하락 | 높음 |
+| SCORE-02 | ✅ 완료(08-20, FU-02) 짧은 롤플레이 응답도 평가 제외 적용 | 롤플레이 연습 시 등급이 구조적으로 하락 | 높음 |
 | TEST-01 | 안전하고 신뢰할 수 있는 전체 테스트/배포 gate 부재 | 위 회귀들이 `main` 배포 전에 차단되지 않음 | 매우 높음 |
 | SEC-05 | ✅ 완료(08-13) 공개 Grafana가 비밀번호 누락 시 `admin`으로 fallback | 설정 누락 배포에서 관리 UI 탈취 가능 | 높음 |
 | ADMIN-01 | ✅ 완료(08-13) 관리자 목록이 존재하지 않는 필드를 렌더링 | 목록 화면 500 가능성 | 매우 높음 |
@@ -196,11 +201,11 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 
 ### DATA-01. finalize가 exactly-once를 보장하지 못한다
 
-> **✅ 완료 (2026-08-18, 단일 인스턴스 배포 전제)**: `CaffeinePracticeAttemptStore`에 `tryMarkSubmitted()`를 추가해 `cache.asMap().computeIfPresent()`로 `IN_PROGRESS → SUBMITTED` 전이를 원자적으로 만듦(동시 요청 N개 중 정확히 1개만 `true`). `PracticeAttemptApiController.finalize()`는 DB 저장 전에 이 원자적 전이부터 확정하고, 실패하면 저장을 시도하지 않고 즉시 `IllegalStateException`을 던짐. feedback/tag 저장은 `FeedbackPersistenceService`(신규 `@Service`, `@Transactional`)로 분리해 하나의 트랜잭션으로 묶음 — 컨트롤러의 self-invocation으로는 `@Transactional`이 프록시를 안 거쳐 무시되던 문제도 같이 해결됨. 세션 결과 map(read-modify-write) 경합은 이번 범위에 포함하지 않음 — 별도 브라우저 탭에서만 발생 가능하고 최종 finalize 원자성과 무관.
+> **🟡 부분 완료 (2026-08-20 재리뷰)**: `IN_PROGRESS → FINALIZING → SUBMITTED` 전이와 Caffeine CAS로 단일 JVM의 일반 동시 요청을 차단했고, feedback/tag 저장도 하나의 Spring transaction으로 묶었다. 명확한 persistence 예외 뒤 상태 복구와 정상 완료 재요청도 단위 테스트로 고정됐다.
 >
-> **전제**: Caffeine 캐시는 JVM 로컬 메모리이므로 이 원자성은 단일 인스턴스에서만 보장됨. 인스턴스를 여러 대로 늘리면(예: Redis 등 외부 store로 교체) 재검토 필요.
+> 그러나 DB commit과 Caffeine `SUBMITTED` 확정이 별도 경계이고 `confirmSubmitted()`의 false를 무시한다. commit 성공/ACK 유실, cache eviction, commit 결과 불명확 예외에서 DB 완료 여부를 판정할 durable marker/unique가 없어 중복 저장 또는 완료 상태 유실이 가능하다. 따라서 기존의 “exactly-once 완료” 주장은 유지하지 않는다.
 >
-> 테스트: `CaffeinePracticeAttemptStoreTest`(스레드 50개로 동시에 `tryMarkSubmitted()` 호출해 정확히 1개만 성공함을 실증, 이미 전이된 후 재호출 시 `false`, 존재하지 않는 attempt는 `false`), `PracticeAttemptApiControllerFinalizeTest`(저장 전에 `tryConsume` 호출, 실패 시 저장 자체가 일어나지 않음), `FeedbackPersistenceServiceTest`(자기소개 필터링이 이동한 로직 검증).
+> 남은 최소 설계와 실제 transaction 테스트는 [`audit-followup-spec-2026-08-20.md#3-fu-01--db-기준-finalize-멱등원자성`](audit-followup-spec-2026-08-20.md#3-fu-01--db-기준-finalize-멱등원자성)을 따른다.
 
 **근거**
 
@@ -244,7 +249,7 @@ Git에서는 `.env`를 ignore하지만 Docker build context에서는 제외되�
 
 ### SCORE-02. “평가 제외”를 뜻하는 0점이 실제 감점으로 계산된다
 
-> **✅ 완료 (2026-08-13)**: `FeedbackService`가 TYPE_5~7(롤플레이) 응답의 mainPointScore를 0 대신 `null`로 저장하도록 수정. `computeGrade`/`computeOverallText`/`ExamPlanService.weightedAvg`가 이미 null을 평균 분모와 최약점 판정에서 제외하고 있어 추가 스키마 변경 없이 해결됨. 테스트: `FeedbackServiceRoleplayMainPointTest`.
+> **✅ 완료 (2026-08-20, FU-02)**: 남아있던 5단어 미만 무응답 경로까지 닫음 — `noResponseDto()`가 questionType을 확인해 TYPE_5~7이면 `mainPointScore=null`을 쓰도록 수정(그 외 유형은 기존 MP=1 유지). 정상 길이/짧은 응답 모두 같은 `isRoleplayType()` 규칙을 공유해 이중화하지 않음. 테스트: `FeedbackServiceRoleplayMainPointTest`(TYPE_5~7 × 빈 문자열/1~4단어 파라미터라이즈드 + TYPE_1 대조군).
 
 **근거**
 
@@ -315,6 +320,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### API-01 [P2]. 잘못된 클라이언트 요청이 400이 아니라 500이 된다
 
+> **✅ 완료 (2026-08-20, FU-04)**: handler 탐색 전(eager multipart parsing) 예외를 selector 없는 별도 `@RestControllerAdvice`(`MultipartExceptionHandler`)로 옮겨 처리 — `@RestController` selector가 있는 `ApiExceptionHandler`는 handler type이 아직 없는 이 시점엔 적용되지 않기 때문. 실제 `MultipartResolver`가 `resolveMultipart()` 단계에서 던지는 상황을 MockMvc로 재현해 413/400을 확인. 재리뷰 중 추가로 발견: handler가 이미 확정된 뒤(컨트롤러 내부) `PayloadTooLargeException`을 던지는 경로에선 두 advice가 모두 "적용 가능"해져, order 없이는 `ApiExceptionHandler`의 catch-all이 먼저 걸려 413 대신 500이 났다 — `MultipartExceptionHandler`에 `@Order(Ordered.HIGHEST_PRECEDENCE)`를 줘서 항상 먼저 검토되도록 고정. 테스트: `MultipartFrameworkExceptionIntegrationTest`(handler 탐색 전 413/400 2건 + 컨트롤러 내부 예외 413 1건 + 정상 경로 유지 1건), `ApiExceptionHandlerMultipartTest`.
+
 - `ApiExceptionHandler.java:30-35`는 Bean Validation 예외만 400으로 처리한다.
 - `:44-47`의 catch-all이 `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException` 같은 바인딩 오류도 500으로 만든다.
 - `PracticeAttemptService.java:50`은 `questionIndexes=[null]`에서 NPE가 난다.
@@ -328,6 +335,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 클라이언트 오류가 서버 장애 지표와 retry 노이즈로 섞이고, API 소비자는 어떤 필드가 잘못됐는지 안정적으로 판단할 수 없다.
 
 ### API-02 [P2]. 핵심 도메인 검증이 브라우저에만 있다
+
+> **✅ 완료 (2026-08-19)**: "배경설문" 절반은 이미 PC-11/후속 수정에서 `SurveyTopicPolicy.isValid()`(distinct 개수 기준이라 중복 제출 우회도 막음)로 서버 검증이 붙어있었음을 재확인. 남아있던 "시험 일정" 절반 — `ExamController.saveSchedule()`이 `dailyMinutes`/`studyDaysPerWeek`를 검증 없이 그대로 저장하던 것 — 을 화면이 실제로 보여주는 값 집합({30,60,90,120}/{3,5,7})으로 제한하고, 시험일이 과거면 거부하도록 수정. 실패 시 `?error=invalidSchedule` 배너. 테스트: `ExamControllerScheduleValidationTest`.
 
 **배경설문**
 
@@ -367,6 +376,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### ADMIN-02 [P2]. 정상 관리자 CRUD만으로 출제 불가능한 세트를 만들 수 있다
 
+> **🟡 부분 완료 (2026-08-20 재리뷰)**: topic이 정해진 뒤 `QuestionAssemblyService.assemble()`/`assembleSingle()`은 필요한 type을 한 set 안에 모두 가진 후보만 선택한다. `/practice/type`도 요청 type을 실제로 낼 수 있는 topic만 고른다. 하지만 랜덤, 돌발, 주제별/카테고리별 콤보, 집중연습 화면, 모의고사는 여전히 `findExistingTopics()`만으로 topic을 먼저 선택한다. 빈 set뿐인 topic이 선택되면 다른 정상 topic이 있어도 실패하며 모의고사는 500까지 가능하다. 후속 명세는 [`FU-05`](audit-followup-spec-2026-08-20.md#7-fu-05--모든-연습-진입점이-실제-조립-가능성을-사용)를 따른다.
+
 - `AdminQuestionSetApiController.java:25-28`은 name/topic만 있는 빈 `QuestionSet`을 저장한다.
 - 질문/콤보를 후속 추가하는 API는 없다.
 - `QuestionSetRepository.java:22-23`은 빈 세트도 “존재하는 topic”으로 계산한다.
@@ -395,6 +406,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### AI-01 [P2]. 외부 LLM 응답을 domain validation 없이 정상 데이터로 저장한다
 
+> **✅ 완료 (2026-08-20, FU-06)**: 남아있던 답변 단위 중복 문제까지 닫음 — `addTags()`가 `LinkedHashSet`으로 카테고리당 distinct tag만 남기도록 수정(중복/blank/unknown은 5개 상한을 소비하지 않음). `CoachingService`의 요소별/유형별 집계도 row 개수가 아니라 `Set<feedbackResultId>` 크기로 바꿔, DB에 이미 남아있는 중복 row로도 답변 하나가 반복 패턴 기준(MIN_PATTERN_COUNT=3)을 혼자 충족하지 못하게 방어. 테스트: `FeedbackServiceScoreValidationTest`(중복 6개→distinct 1개, allowlist 밖/중복 혼재→최초 등장 순서만 유지), `CoachingServiceDistinctOccurrenceTest`(같은 답변 중복 row는 occurrence 1, 서로 다른 답변 3개는 occurrence 3).
+
 - `FeedbackService.java:278-295`는 태그 JSON 파싱 실패를 빈 목록으로 바꾼다. 실제 “태그 없음”과 장애를 구분하지 못한다.
 - `:298-300`은 category/tag allowlist와 길이를 확인하지 않는다.
 - `:308-312`는 점수가 정수인지만 보고 1~5 범위 clamp/reject를 하지 않는다.
@@ -403,6 +416,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 모델이 malformed JSON, `score=99`, 과도하게 긴 tag를 반환하면 분석 수치 오염, 태그 유실, DB 저장 실패가 발생한다. 외부 API 응답도 신뢰 경계 밖 입력이라는 기본기가 빠진 상태다.
 
 ### DATA-02 [P2]. OAuth 회원 데이터 무결성을 DB가 보장하지 않는다
+
+> **✅ 완료 (2026-08-19)**: (1) 신규 가입 시 `member.setNotificationSetting(...)`만 하고 FK 소유 쪽인 `notificationSetting.setMember(...)`을 안 해서 `member_id=null` orphan row가 매번 생기던 문제 → 양쪽 다 설정하도록 수정. (2) `Member`에 `(provider, providerId)` DB unique 제약 추가, `CustomOAuth2UserService.loadUser()`에서 `@Transactional`을 제거(전체를 하나의 트랜잭션으로 묶으면 유니크 제약 위반을 잡아도 Spring이 이미 rollback-only로 표시해 커밋 시점에 `UnexpectedRollbackException`이 남 — 각 리포지토리 호출이 자체 트랜잭션을 쓰도록 분리)하고, 동시 콜백이 존재 확인을 둘 다 통과해 저장이 유니크 제약을 위반하면 이미 다른 요청이 만든 회원으로 재조회해 수렴하도록 함. 테스트: `CustomOAuth2UserServiceMemberCreationTest`.
 
 **알림 설정 관계**
 
@@ -423,6 +438,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### PERF-01 [P2]. 일반 화면이 모든 대용량 피드백 엔티티를 무제한 로드한다
 
+> **✅ 완료 (2026-08-19)**: `HistoryController`는 이미 `Pageable`로 20개씩 페이징하고 있어 대상이 아니었음(재확인). 실제 무제한 전체 로드는 `AnalyticsController`/`ExamController`/`TodayController`/`HomeController` 4곳 — 확인해보니 이 넷은 모두 점수·등급·유형·comboCategory·createdAt 요약 필드만 쓰고 TEXT 컬럼 15개는 전혀 렌더링하지 않았다. `FeedbackResultRepository.findSummaryByMemberId()`(JPQL constructor expression)를 추가해 이 요약 필드만 DB에서 SELECT하도록 하고 4곳 모두 교체. 실제 MySQL(Testcontainers)에 대해 필드 매핑이 맞는지, TEXT 컬럼이 정말 안 실려오는지(null) 검증. 테스트: `FeedbackResultRepositorySummaryTest`.
+
 - `FeedbackResult.java:37-99`는 STT, 진단, quote/fix, 모범답변 등 다수 TEXT 컬럼을 가진다.
 - `FeedbackResultRepository.java:11`은 회원의 전체 엔티티를 최신순으로 반환한다.
 - `AnalyticsController.java:48`, `ExamController.java:36`, `TodayController.java:55`, `HomeController.java:74`가 이 전체 조회를 사용한다.
@@ -433,13 +450,15 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 
 ### TEST-02 [P2]. 공식 k6 재현 절차가 clean clone에서 동작하지 않는다
 
-> **✅ 완료 (2026-08-19)**: `POST /api/practice-attempts/start`(dev 프로파일 전용, 로그인 세션 없이 attempt 생성)를 `DevPracticeController`로 복원 — 과거 커밋(34466d5)에서 sequential feedback 경로 정리하며 함께 삭제됐던 걸 확인. `load-test.js`의 `/answers` 경로를 `/{attemptId}/answers`로 실제 라우트에 맞게 수정. `test_audio.webm`(1MB)을 `.gitignore` 예외 처리해 커밋. `REPRODUCTION_GUIDE.md`의 `AI_GEMINI_ENABLED` → `LLM_ENABLED` 정정 + `SPRING_PROFILES_ACTIVE=dev` 필요함을 명시.
+> **🟡 부분 완료 (2026-08-20 재리뷰)**: `POST /api/practice-attempts/start`(dev 프로파일 전용, 로그인 세션 없이 attempt 생성)를 `DevPracticeController`로 복원 — 과거 커밋(34466d5)에서 sequential feedback 경로 정리하며 함께 삭제됐던 걸 확인. `load-test.js`의 `/answers` 경로를 `/{attemptId}/answers`로 실제 라우트에 맞게 수정. `test_audio.webm`(1MB)을 `.gitignore` 예외 처리해 커밋. `REPRODUCTION_GUIDE.md`의 `AI_GEMINI_ENABLED` → `LLM_ENABLED` 정정 + `SPRING_PROFILES_ACTIVE=dev` 필요함을 명시.
 >
 > 로컬 MySQL 띄우고 실제로 `SPRING_PROFILES_ACTIVE=dev LLM_ENABLED=false STT_ENABLED=false ./gradlew bootRun` + `k6 run scripts/load-test.js`로 end-to-end 실행 검증. 그 과정에서 두 가지를 추가로 발견/수정:
 > 1. SEC-06(CSRF 재활성화)의 부작용으로 k6의 무세션 POST가 로그인 페이지로 302 리다이렉트됨 → `DevPracticeController`에 `GET /api/practice-attempts/csrf` 토큰 발급 엔드포인트 추가, 스크립트가 먼저 토큰을 받아 헤더에 실어 보내도록 수정(CSRF 보호 자체는 그대로 유지 — 우회하지 않음).
 > 2. **실제 프로덕션 버그 발견**: `PracticeAttemptService.questionCache`가 `Question` JPA 엔티티를 앱 수명 내내 캐싱하는데, `Question.questionSet`이 `FetchType.LAZY`라 어떤 요청이 엔티티를 로드해 캐시에 넣은 뒤, **다른 요청**이 캐시 히트로 그 엔티티를 재사용하며 `questionSet.getTopic()`을 부르면 이미 닫힌 영속성 컨텍스트의 프록시를 건드려 `LazyInitializationException`(500)이 남. 실제 부하테스트로 재현 확인(45% 실패율 중 다수가 이 예외). `questionCache`가 엔티티 대신 `QuestionDto`(topic이 이미 문자열로 풀린 값)를 캐싱하도록 수정해 해결 — 캐시 히트 경로가 더 이상 엔티티/프록시를 건드리지 않음. 재현 재실행으로 500이 0건이 됨을 확인(남은 실패는 전부 COST-01 rate limiter의 정상 429).
 >
 > 이 lazy-loading 버그는 실사용자가 문제를 제출할 때 언제든 터질 수 있는 경로였고, 재현 가능한 부하테스트가 이번까지 없었던 게 발견을 막고 있었다는 점에서 TEST-02가 왜 필요했는지 그 자체로 증명한 셈. 테스트: `PracticeAttemptServiceQuestionCacheTest`(캐시 히트 시 LAZY 연관관계를 다시 건드리지 않음을 mock으로 검증 — fix 되돌리면 실패하는 것 확인함).
+>
+> **✅ 완료 (2026-08-20, FU-03)**: dev anonymous VU 전체가 `dev-loadtest`라는 또 다른 유한 버킷(시간당 15)을 공유해 20~100 VU 실행이 곧 429가 되던 문제 → `RateLimiterService.tryConsume(cost, attemptMemberId)`로 계약을 바꿔, dev 프로파일이면서 `attemptMemberId==null`(=`DevPracticeController`가 로그인 세션 없이 만든 k6 attempt)인 조합만 소비 자체를 건너뛰도록 함. dev의 로그인 회원 attempt와 production 익명은 기존 시간당 15문항 한도를 그대로 유지. 프로파일 판정도 활성 프로파일 배열 대신 `Environment.acceptsProfiles(Profiles.of("dev"))`로 바꿔 `spring.profiles.default=dev`(활성 프로파일 미지정) 케이스도 인식하도록 함. 테스트: `RateLimiterServiceDevProfileTest`(active dev/default dev + null memberId는 무제한, active dev + 실제 memberId·production + null memberId는 기존 15회 한도 유지). k6 실제 재실행(`error_rate < 0.05` 통과)까지는 이번 세션에서 직접 수행하지 않음 — 재현 절차·수치 갱신은 별도 확인 필요.
 
 - `scripts/load-test.js:14`는 `test_audio.webm`을 연다.
 - `scripts/*.webm`은 `.gitignore:64`에 걸려 추적되지 않는다. clean clone에는 `scripts/test_audio.wav`만 있다.
@@ -451,6 +470,8 @@ JVM/HTTP/DB pool/process 메트릭과 서비스 상태가 인증 없이 수집 �
 현재 README의 성능 수치가 거짓이라는 뜻은 아니다. 다만 면접관이 문서대로 재현 스크립트를 돌리면 파일 또는 라우트 단계에서 실패하므로, **현재 커밋에서 수치가 재현 가능하다는 증거 체인**은 끊겨 있다.
 
 ### DOC-01 [P2]. 완료 문서와 현재 코드가 정면으로 충돌한다
+
+> **✅ 완료 (2026-08-19)**: 세 claim을 재검증. (1) `README.md`의 "10회/시간" — COST-01에서 이미 실제 코드가 바뀌었으므로(시간당 15문항, 검증 통과 후 소비) README 문구를 현재 동작에 맞게 수정. (2) `CHANGELOG.md`의 REST 정비 완료 claim — CHANGELOG는 "과거 항목은 안 고친다"는 자체 append-only 원칙이 있어 그 시점 기록은 그대로 두고, 이번 세션에서 실제로 고친 API-01/API-02를 새 항목으로 추가해 간극을 메움(과거 claim 자체를 지금 다시 참이 되게 만든 셈). (3) `PROJECT.md`의 "Docker만 없어서 테스트 실패, 코드는 정상" — 실제로 확인해보니 거짓이었음: `QuestionSetAdminIntegrationTest`는 Docker/Testcontainers가 정상 작동해도 실패했다. 원인은 SEC-01(ADMIN 권한 강제)·SEC-06(CSRF 재활성화) 이후에도 이 테스트가 인증/CSRF 없이 호출했고, 심지어 호출하는 `/admin/question-sets` form 경로 자체가 REST API(`/api/admin/question-sets`)로 이전되며 사라진 상태였음(테스트 계약이 완전히 구식). 현재 REST 경로 + ADMIN 인증 + CSRF로 재작성해 통과 확인, `PROJECT.md` 문구도 정정.
 
 - `README.md:197`, `docs/CHANGELOG.md:9`: 10회/시간 limiter가 동작한다고 함 ↔ 실제 matcher는 죽은 경로.
 - `docs/CHANGELOG.md:20`: REST 경로, 공통 에러, 검증 정비 완료 ↔ malformed JSON 500, multipart/설문 검증 누락.

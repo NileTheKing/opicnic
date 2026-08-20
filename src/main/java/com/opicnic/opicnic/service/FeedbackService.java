@@ -106,7 +106,7 @@ public class FeedbackService {
                             String tagsJson = groqService.extractFeedbackTags(
                                     question.getQuestionType().name(),
                                     mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
-                            List<FeedbackTagDto> tags = parseTags(tagsJson);
+                            List<FeedbackTagDto> tags = parseTags(tagsJson, question.getQuestionType().name());
 
                             long subtaskMs = System.currentTimeMillis() - subtaskStart;
                             subtaskDurations.add(subtaskMs);
@@ -226,13 +226,17 @@ public class FeedbackService {
                 .build();
     }
 
+    // FU-02: 5단어 미만 "무응답" 조기 반환은 questionType을 보지 않고 mainPointScore=1을 항상 넣었다.
+    // 정상 길이 응답은 이미 isRoleplayType()으로 TYPE_5~7의 MP를 null(평가 제외)로 처리하는데(SCORE-02),
+    // 짧은 응답만 이 규칙을 우회해 롤플레이 무응답도 "핵심전달 1점" 표본으로 잘못 쌓였다.
     private static FeedbackDTO noResponseDto(QuestionDto question, String speechText) {
+        Integer mainPointScore = isRoleplayType(question.getQuestionType()) ? null : 1;
         return FeedbackDTO.builder()
                 .question(question)
                 .sttText(speechText)
                 .overall("응답이 감지되지 않았습니다.")
                 .overallGrade("IL")
-                .mainPointScore(1).expressionScore(1).accuracyScore(1).fluencyScore(1).contentScore(1)
+                .mainPointScore(mainPointScore).expressionScore(1).accuracyScore(1).fluencyScore(1).contentScore(1)
                 .improvements("답변을 녹음해주세요.")
                 .build();
     }
@@ -302,20 +306,21 @@ public class FeedbackService {
     }
 
     // 태깅 콜의 중첩 스키마({"mainPoint":[],"expression":{"vocab":[],"sentence":[],"imagery":[]},"accuracy":[],"content":[]})를
-    // FeedbackTag row로 저장하기 쉽게 (category, tag) 평탄화
-    private List<FeedbackTagDto> parseTags(String tagsJson) {
+    // FeedbackTag row로 저장하기 쉽게 (category, tag) 평탄화. questionType은 mainPoint/content의
+    // allowlist가 유형별로 달라 필요하다(FeedbackTagVocabulary 참고).
+    private List<FeedbackTagDto> parseTags(String tagsJson, String questionType) {
         try {
             JsonNode root = objectMapper.readTree(tagsJson);
             List<FeedbackTagDto> result = new ArrayList<>();
-            addTags(result, "mainPoint", root.get("mainPoint"));
+            addTags(result, "mainPoint", root.get("mainPoint"), FeedbackTagVocabulary.mainPointOptions(questionType));
             JsonNode expression = root.get("expression");
             if (expression != null) {
-                addTags(result, "vocab", expression.get("vocab"));
-                addTags(result, "sentence", expression.get("sentence"));
-                addTags(result, "imagery", expression.get("imagery"));
+                addTags(result, "vocab", expression.get("vocab"), FeedbackTagVocabulary.EXPRESSION_VOCAB);
+                addTags(result, "sentence", expression.get("sentence"), FeedbackTagVocabulary.EXPRESSION_SENTENCE);
+                addTags(result, "imagery", expression.get("imagery"), FeedbackTagVocabulary.EXPRESSION_IMAGERY);
             }
-            addTags(result, "accuracy", root.get("accuracy"));
-            addTags(result, "content", root.get("content"));
+            addTags(result, "accuracy", root.get("accuracy"), FeedbackTagVocabulary.ACCURACY);
+            addTags(result, "content", root.get("content"), FeedbackTagVocabulary.contentOptions(questionType));
             return result;
         } catch (Exception e) {
             log.warn("태그 파싱 실패, 빈 목록 반환: {}", e.getMessage());
@@ -323,9 +328,34 @@ public class FeedbackService {
         }
     }
 
-    private static void addTags(List<FeedbackTagDto> result, String category, JsonNode arr) {
+    // AI-01: LLM이 과도하게 긴 문자열을 태그로 반환해도 그대로 DB에 안 들어가게 길이를 제한하고,
+    // 빈 문자열은 애초에 태그로서 의미가 없으므로 버린다.
+    private static final int MAX_TAG_LENGTH = 60;
+    // REVIEW-09: allowlist 검증만으로는 "유효한 태그를 비정상적으로 많이" 반환하는 경우(반복/환각)를
+    // 못 막는다. 카테고리당 상한을 둬 한 카테고리가 통계를 도배하지 않도록 한다.
+    private static final int MAX_TAGS_PER_CATEGORY = 5;
+
+    // FU-06: 이전엔 allowlist를 통과한 동일 태그를 상한(5개)까지 그대로 중복 추가했다.
+    // CoachingService가 태그 row 개수를 "발생 횟수"로 세므로, 답변 하나가 같은 태그를 5번
+    // 반환하면 그것만으로 MIN_PATTERN_COUNT(3)를 채워 패턴처럼 보고되는 문제가 있었다.
+    // LinkedHashSet으로 답변(카테고리) 하나당 같은 태그는 최초 1회만 남기고, 중복/blank/unknown은
+    // 상한(distinct 개수 기준)을 소비하지 않는다.
+    private static void addTags(List<FeedbackTagDto> result, String category, JsonNode arr,
+                                 java.util.Set<String> allowlist) {
         if (arr == null || !arr.isArray()) return;
-        for (JsonNode n : arr) result.add(new FeedbackTagDto(category, n.asText()));
+        java.util.Set<String> distinctTags = new java.util.LinkedHashSet<>();
+        for (JsonNode n : arr) {
+            if (distinctTags.size() >= MAX_TAGS_PER_CATEGORY) break;
+            String tag = n.asText();
+            if (tag == null || tag.isBlank()) continue;
+            if (tag.length() > MAX_TAG_LENGTH) tag = tag.substring(0, MAX_TAG_LENGTH);
+            // REVIEW-09: 프롬프트가 지정한 고정 어휘 밖의 태그(환각/오타/스키마 이탈)는 저장하지 않는다.
+            if (!allowlist.contains(tag)) continue;
+            distinctTags.add(tag); // 이미 있던 태그면 size가 늘지 않아 상한을 소비하지 않는다.
+        }
+        for (String tag : distinctTags) {
+            result.add(new FeedbackTagDto(category, tag));
+        }
     }
 
     private static String str(Map<String, Object> map, String key) {
@@ -333,11 +363,23 @@ public class FeedbackService {
         return v == null ? null : v.toString();
     }
 
-    private static Integer score(Map<String, Object> map, String key) {
+    // AI-01: LLM 응답도 신뢰 경계 밖 입력이다. 점수 필드가 없거나 파싱이 안 되거나 1~5 범위를
+    // 벗어나면(예: score=99) 조용히 null/기본값으로 넘기지 않고 예외를 던져, 이미 이 서브태스크를
+    // 감싸고 있는 재시도 루프가 "LLM 응답 품질 실패"로 취급해 재시도하도록 한다. 예전엔 score()가
+    // null을 반환하면 이 값을 그대로 int로 언박싱하는 호출부에서 NPE가 났고, 또는 mainPointScore의
+    // 경우 "롤플레이라 평가 제외"와 "파싱 실패"가 똑같이 null로 뭉쳐져 통계에서 구분이 안 됐다.
+    private static int score(Map<String, Object> map, String key) {
         Object v = map.get(key);
-        if (v == null) return null;
-        if (v instanceof Integer i) return i;
-        try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
+        Integer parsed = null;
+        if (v instanceof Integer i) {
+            parsed = i;
+        } else if (v != null) {
+            try { parsed = Integer.parseInt(v.toString()); } catch (NumberFormatException ignored) { }
+        }
+        if (parsed == null || parsed < 1 || parsed > 5) {
+            throw new IllegalStateException("AI 응답의 점수 필드가 유효하지 않습니다: " + key + "=" + v);
+        }
+        return parsed;
     }
 
 }

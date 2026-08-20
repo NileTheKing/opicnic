@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.config.RateLimiterService;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
+import com.opicnic.opicnic.domain.enums.AttemptStatus;
 import com.opicnic.opicnic.dto.ErrorResponse;
+import com.opicnic.opicnic.exception.PayloadTooLargeException;
 import com.opicnic.opicnic.exception.RateLimitExceededException;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FinalizeResponseDto;
@@ -65,13 +67,23 @@ public class PracticeAttemptApiController {
         return processSubmission(attemptId, request, oAuth2User);
     }
 
+    private static final String RESULT_URL = "/practice/feedback/result";
+
     @PostMapping("/{attemptId}/finalize")
     public ResponseEntity<?> finalize(@PathVariable String attemptId,
                                       HttpSession session,
                                       @AuthenticationPrincipal OAuth2User oAuth2User) {
-        PracticeAttempt attempt = attemptService.requireValidAttempt(attemptId);
+        // REVIEW-01: submitAnswers/retry와 달리 SUBMITTED를 예외로 던지지 않는 조회를 쓴다 —
+        // 이미 완료된 attempt에 대한 재요청(더블클릭, 응답을 못 받은 클라이언트의 네트워크 재시도)을
+        // 아래에서 멱등하게(같은 성공 응답) 처리하기 위함이다.
+        PracticeAttempt attempt = attemptService.requireAttemptForFinalize(attemptId);
         ResponseEntity<?> forbidden = rejectIfNotOwner(attempt, oAuth2User);
         if (forbidden != null) return forbidden;
+
+        if (attempt.status() == AttemptStatus.SUBMITTED) {
+            // 이미 끝난 제출을 다시 finalize해도 410로 막지 않고 같은 성공 응답을 그대로 돌려준다.
+            return ResponseEntity.ok(new FinalizeResponseDto(RESULT_URL));
+        }
 
         int questionCount = attempt.questionIds().size();
         Map<Integer, FeedbackDTO> results = getAttemptResults(session, attemptId);
@@ -84,18 +96,34 @@ public class PracticeAttemptApiController {
                 .map(Map.Entry::getValue)
                 .toList();
 
-        // DATA-01: DB 저장 전에 "이 요청이 제출 처리 권한을 땄는지"를 원자적으로 먼저 확정한다.
-        // 동시에 두 번 finalize가 들어와도(더블클릭, 두 탭 등) 정확히 하나만 true를 받으므로
-        // saveFeedbackResults가 두 번 실행되어 피드백이 중복 저장되는 걸 막는다.
-        if (!attemptService.tryConsume(attemptId)) {
-            throw new IllegalStateException("이미 제출된 세션입니다.");
+        // REVIEW-01: DB 저장 전에 "이 요청이 제출 처리 권한을 땄는지"를 원자적으로 먼저 확정한다
+        // (IN_PROGRESS -> FINALIZING). 동시에 두 번 finalize가 들어와도(더블클릭, 두 탭 등) 정확히
+        // 하나만 true를 받으므로 saveFeedbackResults가 두 번 실행되어 피드백이 중복 저장되는 걸 막는다.
+        if (!attemptService.tryStartFinalizing(attemptId)) {
+            // 이 사이 다른 요청이 이미 SUBMITTED까지 끝냈다면 멱등하게 성공 응답, 아직 처리
+            // 중(FINALIZING)이면 지금은 처리할 수 없다는 뜻으로 기존과 같이 예외로 응답한다.
+            PracticeAttempt latest = attemptService.requireAttemptForFinalize(attemptId);
+            if (latest.status() == AttemptStatus.SUBMITTED) {
+                return ResponseEntity.ok(new FinalizeResponseDto(RESULT_URL));
+            }
+            throw new IllegalStateException("이미 다른 요청이 제출을 처리하고 있습니다.");
         }
 
-        feedbackPersistenceService.saveFeedbackResults(feedbackResults, oAuth2User, attempt);
+        try {
+            feedbackPersistenceService.saveFeedbackResults(feedbackResults, oAuth2User, attempt);
+        } catch (RuntimeException e) {
+            // REVIEW-01: DB 저장 실패 시 SUBMITTED로 확정하지 않고 IN_PROGRESS로 되돌린다.
+            // 되돌리지 않으면 FINALIZING에 영구히 멈춰 다음 finalize 시도도 계속 막히고,
+            // 사용자는 이미 다 낸 답변을 영영 제출할 수 없게 된다.
+            attemptService.revertFinalizing(attemptId);
+            throw e;
+        }
+
+        attemptService.confirmSubmitted(attemptId);
         removeAttemptResults(session, attemptId);
         session.setAttribute(SESSION_FEEDBACK_RESULTS, feedbackResults);
 
-        return ResponseEntity.ok(new FinalizeResponseDto("/practice/feedback/result"));
+        return ResponseEntity.ok(new FinalizeResponseDto(RESULT_URL));
     }
 
     // COST-01: 답변 1건당 STT+채점+태깅 LLM 호출이 나가므로, 실제 외부 호출 전에 입력을 걸러
@@ -140,9 +168,21 @@ public class PracticeAttemptApiController {
 
         List<QuestionDto> questions = attemptService.restoreQuestionsForIndexes(attemptId, questionIndexes);
 
+        // REVIEW-05: 이 컨트롤러는 Spring의 MultipartResolver를 거치지 않고 request.getParts()로
+        // 직접 파싱한다 — 컨테이너 수준 한도(application.yml의 max-request-size 150MB) 초과나
+        // multipart가 아닌 Content-Type으로 호출되면 Servlet 스펙상 여기서 IOException/ServletException이
+        // 난다. 그대로 흘려보내면 catch-all(500)로 새므로, 크기 초과는 413로, 그 외 파싱 실패는
+        // 400으로 구분해서 ApiExceptionHandler가 처리할 수 있는 타입으로 바꿔 던진다.
         List<Part> fileParts = new ArrayList<>();
-        for (var part : request.getParts()) {
-            if ("files".equals(part.getName())) fileParts.add(part);
+        try {
+            for (var part : request.getParts()) {
+                if ("files".equals(part.getName())) fileParts.add(part);
+            }
+        } catch (IOException | ServletException e) {
+            if (isMultipartSizeExceeded(e)) {
+                throw new PayloadTooLargeException("첨부파일이 너무 큽니다.");
+            }
+            throw new IllegalArgumentException("첨부파일 요청을 처리할 수 없습니다. 콘텐츠 타입을 확인해주세요.");
         }
 
         if (fileParts.size() != questions.size()) {
@@ -165,7 +205,10 @@ public class PracticeAttemptApiController {
         // 호출이 나가기 직전인 여기서 소비해야 "검증 실패 = 비용 없음 = 한도 소비 없음"이 맞아떨어진다.
         long gradedQuestionCount = questions.stream().filter(q -> q.getId() != null).count();
         int cost = (int) Math.max(1, gradedQuestionCount);
-        if (!rateLimiterService.tryConsume(cost)) {
+        // FU-03: attempt.memberId()를 함께 넘겨야, dev 프로파일 + memberId=null(DevPracticeController가
+        // 만든 k6 부하테스트 attempt)인 경우에만 소비를 건너뛴다. 로그인 회원(dev 포함)과 운영 익명은
+        // 기존 한도를 그대로 유지해야 하므로 memberId 없이는 이 구분이 불가능하다.
+        if (!rateLimiterService.tryConsume(cost, attempt.memberId())) {
             throw new RateLimitExceededException("시간당 문항 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
         }
 
@@ -207,6 +250,20 @@ public class PracticeAttemptApiController {
 
     private void removeAttemptResults(HttpSession session, String attemptId) {
         session.removeAttribute(sessionResultKey(attemptId));
+    }
+
+    // REVIEW-05: 컨테이너(Tomcat)가 요청 크기 한도 초과 시 던지는 예외의 정확한 타입은 구현체마다
+    // 다르지만 클래스명/원인 체인 어딘가에 크기 관련 단서(Size)가 남는다. 파싱 실패 원인을
+    // "너무 큼"과 "그 외(콘텐츠 타입 등)"로만 구분하면 되므로 문자열 단서로 판별한다.
+    private static boolean isMultipartSizeExceeded(Throwable e) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause.getClass().getSimpleName().toLowerCase().contains("size")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     private String sessionResultKey(String attemptId) {

@@ -94,8 +94,10 @@ public class MyPageController {
         profile.setOccupationType(occupationType);
         profile.setResidenceType(residenceType);
         profile.getSelectedTopics().clear();
+        // REVIEW-06: isValid()가 이미 중복 제출을 거부하지만, selectedTopics(엔티티 필드)가
+        // Set이 아니라 List라 원본 중복 리스트가 그대로 addAll되면 중복이 영속화된다 — 방어적으로 한 번 더 distinct.
         if (selectedTopics != null) {
-            profile.getSelectedTopics().addAll(selectedTopics);
+            profile.getSelectedTopics().addAll(selectedTopics.stream().distinct().toList());
         }
         // 거주 주제는 일반 선택 주제 체크박스 목록에 없으므로 매번 지워지고 다시 계산해야 한다 (PC-05).
         profile.getSelectedTopics().remove(SurveyTopic.LIVING_WITH_FAMILY);

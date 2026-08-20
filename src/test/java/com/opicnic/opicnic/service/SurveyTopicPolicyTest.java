@@ -54,6 +54,19 @@ class SurveyTopicPolicyTest {
         assertThat(policy.isValid(withResidence)).isFalse();
     }
 
+    // REVIEW-06 회귀 테스트: distinct 개수만 보면 [JOGGING, JOGGING, ...]처럼 중복 제출도
+    // "실질적으로 12개 이상"이면 통과해버렸다 — 그 결과 원본(중복 포함) 리스트가 그대로
+    // profile.selectedTopics(List, Set 아님)에 저장될 수 있었다. 제출 리스트 자체에 중복이
+    // 있으면 총 개수·그룹 조건과 무관하게 거부해야 한다.
+    @Test
+    void duplicateTopicInSubmittedListIsRejectedEvenWithEnoughDistinctTopics() {
+        SurveyTopicPolicy policy = new SurveyTopicPolicy();
+        List<SurveyTopic> withDuplicate = new ArrayList<>(VALID_TOPICS);
+        withDuplicate.add(VALID_TOPICS.get(0)); // 이미 있는 주제를 한 번 더 추가 (distinct는 여전히 12개)
+
+        assertThat(policy.isValid(withDuplicate)).isFalse();
+    }
+
     @Test
     void isAllowedTopicRejectsSurpriseAndResidenceTopics() {
         SurveyTopicPolicy policy = new SurveyTopicPolicy();

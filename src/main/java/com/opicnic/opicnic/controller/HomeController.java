@@ -71,7 +71,7 @@ public class HomeController {
     private void addTodaySummary(Member member, Model model) {
         model.addAttribute("hasSchedule", false);
         examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId()).ifPresent(schedule -> {
-            List<FeedbackResult> results = feedbackResultRepository.findByMemberIdOrderByCreatedAtDesc(member.getId());
+            List<FeedbackResult> results = feedbackResultRepository.findSummaryByMemberId(member.getId());
             ExamPlanService.DiagnosisResult diagnosis = examPlanService.diagnose(results);
             int dailyMinutes = schedule.getDailyMinutes() != null ? schedule.getDailyMinutes() : 60;
             int studyDaysPerWeek = schedule.getStudyDaysPerWeek() != null ? schedule.getStudyDaysPerWeek() : 5;

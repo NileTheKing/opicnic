@@ -139,7 +139,8 @@ public class CoachingService {
 
         Map<String, Double> elementScores = new LinkedHashMap<>();
         for (String element : elementSections.byElement().keySet()) {
-            double avg = ExamPlanService.weightedAvg(results, ELEMENT_SCORE_GETTER.get(element));
+            Double avg = ExamPlanService.weightedAvg(results, ELEMENT_SCORE_GETTER.get(element));
+            if (avg == null) continue; // 표본 없음(REVIEW-02) — 이 요소는 실제로 태그가 있어야 byElement에 들어오므로 사실상 발생하지 않지만 방어적으로 스킵
             elementScores.put(element, Math.round(avg * 10.0) / 10.0);
         }
 
@@ -159,7 +160,11 @@ public class CoachingService {
 
     // 요소별(메인포인트/표현력/정확성/내용구성) 집계 — 태그를 코드가 세고, LLM은 이 결과만 문장으로 씀
     private ElementSections buildElementSections(Map<Long, FeedbackResult> resultById, List<FeedbackTag> tags) {
-        Map<String, Integer> counts = new LinkedHashMap<>(); // "category.tag" -> count
+        // FU-06: "category.tag" -> 이 태그가 붙은 서로 다른 FeedbackResult id 집합. row 개수가 아니라
+        // 답변(FeedbackResult) 단위로 세야 한다 — addTags()가 답변 하나 안에서는 이제 같은 태그를
+        // 중복 저장하지 않지만, 그 전에 이미 DB에 남아있는 중복 row까지 방어하려면 여기서도
+        // "몇 개의 서로 다른 답변에서 나왔는지"로 세야 답변 하나가 혼자 패턴을 만들 수 없다.
+        Map<String, Set<Long>> resultIdsByKey = new LinkedHashMap<>();
         Map<String, List<Candidate>> candidates = new LinkedHashMap<>();
 
         for (FeedbackTag t : tags) {
@@ -169,7 +174,7 @@ public class CoachingService {
             if (t.getCategory().equals("imagery") && !GROUP_A.contains(r.getQuestionType().name())) continue;
 
             String key = t.getCategory() + "." + t.getTag();
-            counts.merge(key, 1, Integer::sum);
+            resultIdsByKey.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(r.getId());
 
             String quote = quoteFor(t.getCategory(), r);
             String fix = fixFor(t.getCategory(), r);
@@ -180,8 +185,8 @@ public class CoachingService {
 
         // 요소별로 묶어서 요소 안에서만 분산배정: 요소 간 같은 답변 재사용은 회피, 요소 내 하위태그끼리 겹치는 건 허용(정직한 신호)
         Map<String, List<String>> keysByElement = new LinkedHashMap<>();
-        for (String key : counts.keySet()) {
-            if (counts.get(key) < MIN_PATTERN_COUNT) continue;
+        for (String key : resultIdsByKey.keySet()) {
+            if (resultIdsByKey.get(key).size() < MIN_PATTERN_COUNT) continue;
             String element = CATEGORY_TO_ELEMENT.get(key.split("\\.")[0]);
             keysByElement.computeIfAbsent(element, k -> new ArrayList<>()).add(key);
         }
@@ -198,7 +203,7 @@ public class CoachingService {
             List<ExampleItem> examples = new ArrayList<>();
             for (String key : keys) {
                 String tag = key.split("\\.")[1];
-                int count = counts.get(key);
+                int count = resultIdsByKey.get(key).size();
                 List<Candidate> cs = candidates.getOrDefault(key, List.of());
                 Candidate chosen = cs.stream().filter(c -> !usedInElement.contains(c.resultId())).findFirst()
                         .orElse(cs.isEmpty() ? null : cs.get(0));
@@ -224,7 +229,9 @@ public class CoachingService {
         Map<String, Integer> typeAttempts = typeStats.stream()
                 .collect(Collectors.toMap(ExamPlanService.TypeStat::typeKey, ExamPlanService.TypeStat::count));
 
-        Map<String, Integer> counts = new LinkedHashMap<>(); // "TYPE_9|category.tag" -> count
+        // FU-06: 요소별 집계와 동일한 이유로 row 개수가 아니라 "TYPE|category.tag"당 서로 다른
+        // FeedbackResult id 개수로 비율의 분자를 구한다.
+        Map<String, Set<Long>> resultIdsByKey = new LinkedHashMap<>(); // "TYPE_9|category.tag" -> result id 집합
         for (FeedbackTag t : tags) {
             if (t.getTag().endsWith("_GOOD")) continue;
             FeedbackResult r = resultById.get(t.getFeedbackResult().getId());
@@ -232,21 +239,22 @@ public class CoachingService {
             if (t.getCategory().equals("imagery") && !GROUP_A.contains(r.getQuestionType().name())) continue;
 
             String key = r.getQuestionType().name() + "|" + t.getCategory() + "." + t.getTag();
-            counts.merge(key, 1, Integer::sum);
+            resultIdsByKey.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(r.getId());
         }
 
         Map<String, List<String>> linesByType = new LinkedHashMap<>();
-        for (var e : counts.entrySet()) {
+        for (var e : resultIdsByKey.entrySet()) {
             String[] parts = e.getKey().split("\\|");
             String typeKey = parts[0];
+            int occurrence = e.getValue().size();
             int attempts = typeAttempts.getOrDefault(typeKey, 0);
             // 절대개수가 아니라 비율로 판정: 표본 크기가 유형마다 달라서("5회 중 2회"와 "20회 중 2회"는 다른 신호) 절대개수 비교는 부적절
             if (attempts < TYPE_MIN_ATTEMPTS) continue;
-            if ((double) e.getValue() / attempts < TYPE_PATTERN_RATIO) continue;
+            if ((double) occurrence / attempts < TYPE_PATTERN_RATIO) continue;
 
             String tag = parts[1].split("\\.")[1];
             linesByType.computeIfAbsent(typeKey, k -> new ArrayList<>())
-                    .add("- " + tag + ": " + e.getValue() + "/" + attempts + "건");
+                    .add("- " + tag + ": " + occurrence + "/" + attempts + "건");
         }
 
         StringBuilder sb = new StringBuilder();

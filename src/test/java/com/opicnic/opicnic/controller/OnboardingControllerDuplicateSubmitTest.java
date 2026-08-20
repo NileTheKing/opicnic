@@ -106,4 +106,26 @@ class OnboardingControllerDuplicateSubmitTest {
         assertThat(result).isEqualTo("redirect:/onboarding/topics?error=invalidTopics");
         verify(surveyProfileRepository, never()).save(any());
     }
+
+    // REVIEW-06 회귀 테스트: distinct 개수만 보면 중복 제출도 "12개 이상"이면 통과했고,
+    // selectedTopics가 List라 원본 중복이 그대로 저장될 수 있었다. 중복 제출 자체를 거부해야 한다.
+    @Test
+    void duplicateTopicInSubmissionIsRejected() {
+        MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SurveyProfileRepository surveyProfileRepository = Mockito.mock(SurveyProfileRepository.class);
+        OnboardingController controller = newController(memberRepository, surveyProfileRepository);
+
+        Member member = Member.builder().id(1L).build();
+        when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1")).thenReturn(Optional.of(member));
+        when(surveyProfileRepository.findByMemberId(1L)).thenReturn(Optional.empty());
+
+        List<com.opicnic.opicnic.domain.enums.SurveyTopic> withDuplicate = new java.util.ArrayList<>(VALID_TOPICS);
+        withDuplicate.add(VALID_TOPICS.get(0));
+
+        String result = controller.completeOnboarding(null, SurveyProfile.ResidenceType.WITH_FAMILY,
+                null, null, withDuplicate, mockUser());
+
+        assertThat(result).isEqualTo("redirect:/onboarding/topics?error=invalidTopics");
+        verify(surveyProfileRepository, never()).save(any());
+    }
 }

@@ -52,12 +52,16 @@ public class SurveyTopicPolicy {
         return topic != null && ALLOWED_TOPICS.contains(topic);
     }
 
-    // 총 개수, 그룹별 최소, 허용되지 않은(거주/돌발) 주제 포함 여부를 모두 확인한다.
+    // 총 개수, 그룹별 최소, 허용되지 않은(거주/돌발) 주제 포함 여부, 중복 여부를 모두 확인한다.
     public boolean isValid(List<SurveyTopic> topics) {
         if (topics == null) return false;
         if (topics.stream().anyMatch(t -> !ALLOWED_TOPICS.contains(t))) return false;
 
         Set<SurveyTopic> distinct = Set.copyOf(topics);
+        // REVIEW-06: distinct 개수만 보면 예전엔 [JOGGING, JOGGING, ...] 같은 중복 제출도
+        // "실질적으로 12개 이상"이면 통과해버렸다 — 그 결과 원본 리스트(중복 포함)가 그대로
+        // profile.selectedTopics(List)에 저장됐다. 제출 리스트 자체에 중복이 있으면 거부한다.
+        if (distinct.size() != topics.size()) return false;
         if (distinct.size() < MIN_TOTAL_TOPICS) return false;
 
         for (var entry : GROUP_MIN.entrySet()) {

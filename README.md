@@ -194,7 +194,7 @@ graph LR
 | **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70B-Versatile (채점/코칭 작성), Groq Llama-3.1-8B-Instant (태깅) |
 | **Database** | MySQL 8.0, Spring Data JPA |
 | **Cache** | Caffeine (세션), ConcurrentHashMap (QuestionSet) |
-| **Rate Limiting** | Bucket4j (사용자별 10회/시간) |
+| **Rate Limiting** | Bucket4j (사용자별 시간당 15문항, 검증 통과 후 실제 채점 문항 수만큼 소비) |
 | **Infra** | Oracle Cloud ARM A1, Docker Compose, Cloudflare SSL |
 | **Monitoring** | Prometheus, Grafana, Spring Actuator |
 

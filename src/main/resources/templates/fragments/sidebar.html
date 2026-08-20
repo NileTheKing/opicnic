@@ -91,10 +91,14 @@
                 <span>마이페이지</span>
             </a>
             <div class="border-t border-gray-100"></div>
-            <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors">
-                <i class="fa-solid fa-arrow-right-from-bracket w-4 text-center"></i>
-                <span>로그아웃</span>
-            </a>
+            <!-- REVIEW-03: SEC-06으로 CSRF가 다시 켜지면서 Spring Security 로그아웃 필터가
+                 POST만 매치한다. GET 링크로는 /auth/logout에 매핑되는 컨트롤러가 없어 404가 난다. -->
+            <form method="post" th:action="@{/auth/logout}">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left">
+                    <i class="fa-solid fa-arrow-right-from-bracket w-4 text-center"></i>
+                    <span>로그아웃</span>
+                </button>
+            </form>
         </div>
 
         <button id="sidebar-profile-btn"

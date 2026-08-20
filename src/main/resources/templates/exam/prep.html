@@ -30,6 +30,12 @@
             <h1 class="text-xl font-bold text-gray-900">시험 준비</h1>
         </div>
 
+        <!-- 저장 실패 안내 (API-02: 허용된 값 범위를 벗어나거나 시험일이 과거인 경우 서버가 거부한 경우) -->
+        <div th:if="${param.error != null and param.error[0] == 'invalidSchedule'}"
+             class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+            <i class="fa-solid fa-circle-exclamation text-red-400 shrink-0"></i>
+            <span>저장하지 못했어요. 시험일은 오늘 이후로, 하루 공부 시간/주 공부 일수는 화면에 제공된 값 중에서 선택해주세요.</span>
+        </div>
 
         <!-- D-day 헤더 + 학습 계획 (시험 등록 후) -->
         <div th:if="${plan != null}">

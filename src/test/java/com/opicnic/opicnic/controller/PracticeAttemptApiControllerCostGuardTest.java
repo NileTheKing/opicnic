@@ -88,7 +88,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("중복")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -102,7 +102,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("null")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -119,7 +119,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("초과")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -139,7 +139,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("이미 채점이 완료된")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -155,7 +155,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("너무 큽니다")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -171,7 +171,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("지원하지 않는 파일 형식")));
 
         verify(feedbackService, never()).getComboFeedbackStreaming(any(), any());
-        verify(rateLimiterService, never()).tryConsume(anyInt());
+        verify(rateLimiterService, never()).tryConsume(anyInt(), any());
     }
 
     @Test
@@ -179,7 +179,7 @@ class PracticeAttemptApiControllerCostGuardTest {
         when(attemptService.requireValidAttempt(ATTEMPT_ID)).thenReturn(threeQuestionAttempt());
         QuestionDto question = new QuestionDto(1L, "q", "topic", QuestionType.TYPE_1);
         when(attemptService.restoreQuestionsForIndexes(any(), anyList())).thenReturn(List.of(question));
-        when(rateLimiterService.tryConsume(anyInt())).thenReturn(true);
+        when(rateLimiterService.tryConsume(anyInt(), any())).thenReturn(true);
         when(feedbackService.getComboFeedbackStreaming(any(), any()))
                 .thenReturn(List.of(FeedbackDTO.builder().question(question).build()));
 
@@ -189,7 +189,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(status().isOk());
 
         // 1문항 제출 -> 1 소비. rateLimiterService는 검증(위 6개 테스트)을 통과한 뒤에만 호출돼야 한다.
-        verify(rateLimiterService).tryConsume(1);
+        verify(rateLimiterService).tryConsume(1, null);
         verify(feedbackService).getComboFeedbackStreaming(any(), any());
     }
 
@@ -198,7 +198,7 @@ class PracticeAttemptApiControllerCostGuardTest {
         when(attemptService.requireValidAttempt(ATTEMPT_ID)).thenReturn(threeQuestionAttempt());
         QuestionDto question = new QuestionDto(1L, "q", "topic", QuestionType.TYPE_1);
         when(attemptService.restoreQuestionsForIndexes(any(), anyList())).thenReturn(List.of(question));
-        when(rateLimiterService.tryConsume(anyInt())).thenReturn(false);
+        when(rateLimiterService.tryConsume(anyInt(), any())).thenReturn(false);
 
         mockMvc.perform(multipart("/api/practice-attempts/{id}/answers", ATTEMPT_ID)
                         .part(audioFile("a.webm", 1024, "audio/webm"))
@@ -218,7 +218,7 @@ class PracticeAttemptApiControllerCostGuardTest {
         QuestionDto selfIntro = new QuestionDto(null, "자기소개", "자기소개", null);
         QuestionDto graded = new QuestionDto(10L, "q", "topic", QuestionType.TYPE_1);
         when(attemptService.restoreQuestionsForIndexes(any(), anyList())).thenReturn(List.of(selfIntro, graded));
-        when(rateLimiterService.tryConsume(anyInt())).thenReturn(true);
+        when(rateLimiterService.tryConsume(anyInt(), any())).thenReturn(true);
         when(feedbackService.getComboFeedbackStreaming(any(), any())).thenReturn(List.of(
                 FeedbackDTO.builder().question(selfIntro).build(),
                 FeedbackDTO.builder().question(graded).build()));
@@ -230,6 +230,6 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .andExpect(status().isOk());
 
         // 2문항 제출했지만 자기소개(index 0) 제외하고 1만 소비돼야 한다.
-        verify(rateLimiterService).tryConsume(1);
+        verify(rateLimiterService).tryConsume(1, null);
     }
 }

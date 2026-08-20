@@ -52,13 +52,21 @@ public class ExamPlanService {
             return new DiagnosisResult(null, 0, false, Map.of());
         }
 
-        Map<String, Double> avgs = Map.of(
-                "핵심전달", weightedAvg(results, r -> r.getMainPointScore()),
-                "내용전개",  weightedAvg(results, r -> r.getContentScore()),
-                "표현력",     weightedAvg(results, r -> r.getExpressionScore()),
-                "발화량",     weightedAvg(results, r -> r.getFluencyScore()),
-                "정확성",     weightedAvg(results, r -> r.getAccuracyScore())
-        );
+        // REVIEW-02: 롤플레이만 연습한 사용자는 mainPointScore 표본이 하나도 없다(TYPE_5~7은
+        // "평가 제외"로 null 저장 — SCORE-02). weightedAvg가 표본 없음을 0.0으로 반환하면
+        // "핵심전달 0점"으로 오인되어 전체 평균을 깎고 항상 최약점으로 뽑힌다. null로 구분해
+        // 표본이 없는 항목은 overall 평균과 scoreAvgs(최약점 판정용)에서 아예 제외한다.
+        Map<String, Double> rawAvgs = new LinkedHashMap<>();
+        rawAvgs.put("핵심전달", weightedAvg(results, r -> r.getMainPointScore()));
+        rawAvgs.put("내용전개",  weightedAvg(results, r -> r.getContentScore()));
+        rawAvgs.put("표현력",     weightedAvg(results, r -> r.getExpressionScore()));
+        rawAvgs.put("발화량",     weightedAvg(results, r -> r.getFluencyScore()));
+        rawAvgs.put("정확성",     weightedAvg(results, r -> r.getAccuracyScore()));
+
+        Map<String, Double> avgs = rawAvgs.entrySet().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (a, b) -> a, LinkedHashMap::new));
 
         double overall = avgs.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
         return new DiagnosisResult(estimateGrade(overall), round1(overall), true, avgs);
@@ -126,12 +134,14 @@ public class ExamPlanService {
 
     // 지수 감쇠 가중 평균. results는 최신순(index 0 = 최신) 정렬 가정 —
     // 따라서 index가 작을수록(최신일수록) 가중치가 커야 한다 (SCORE-01).
-    public static double weightedAvg(List<FeedbackResult> results, java.util.function.Function<FeedbackResult, Integer> getter) {
+    // REVIEW-02: 표본이 하나도 없으면(예: 롤플레이만 연습해 mainPointScore가 전부 null) 0.0이 아니라
+    // null을 반환한다. 0.0은 "실제로 낮은 점수"와 구분이 안 되어 전체 평균과 최약점 판정을 왜곡시켰다.
+    public static Double weightedAvg(List<FeedbackResult> results, java.util.function.Function<FeedbackResult, Integer> getter) {
         List<Integer> values = results.stream()
                 .map(getter)
                 .filter(Objects::nonNull)
                 .toList();
-        if (values.isEmpty()) return 0.0;
+        if (values.isEmpty()) return null;
         if (values.size() < MIN_FOR_WEIGHTED) {
             return values.stream().mapToInt(Integer::intValue).average().orElse(0.0);
         }

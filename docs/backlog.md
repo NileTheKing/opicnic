@@ -4,6 +4,36 @@
 
 ---
 
+## Audit Re-review Follow-up (2026-08-20)
+
+실행 명세: [`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md)
+
+### Done (재리뷰로 종료 확인)
+
+- POST + CSRF 로그아웃
+- 온보딩/마이페이지 설문 주제 중복 거부
+- 관리자 QuestionSet create/update/delete 후 `PracticeAttemptService` DTO 캐시 제거
+
+### Done (FU 후속 완료, 2026-08-20)
+
+- FU-02 / SCORE-02: 5단어 미만 TYPE_5~7도 `mainPointScore=null` — `noResponseDto()`가 questionType 확인하도록 수정
+- FU-03 / TEST-02: dev 전용 null-member k6 attempt만 rate limit 우회 — `tryConsume(cost, attemptMemberId)` 계약 변경
+- FU-04 / API-01: handler 탐색 전 multipart 실패도 공통 413/400 응답 — selector 없는 `MultipartExceptionHandler`(+`@Order(HIGHEST_PRECEDENCE)`) 신설
+- FU-06 / AI-01: 답변별 tag distinct와 coaching의 feedback ID 기준 집계 — `addTags()` distinct 처리 + `CoachingService` occurrence를 `Set<feedbackResultId>` 기준으로 변경
+
+### Next
+
+- [ ] FU-01 / DATA-01: DB finalization marker를 source of truth로 둔 finalize 멱등성
+- [ ] FU-05 / ADMIN-02: 모든 연습 진입점에서 pattern 조립 가능한 topic만 선택
+
+### 이번 묶음에서 제외
+
+- TEST-01(보류)
+- API-03, OPS-01, DB-01, DESIGN-01(기존 P3 미착수)
+- 캐시 적용 성능 수치와 제거된 캐시 애노테이션 과정
+
+---
+
 ## Practice Attempt / Feedback Retry
 
 ### Done

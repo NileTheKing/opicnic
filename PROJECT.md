@@ -125,4 +125,4 @@ HomeController (/practice/mock)
 ## Verification Notes
 
 - `./gradlew compileJava` currently passes.
-- `./gradlew test` currently fails because `QuestionSetAdminIntegrationTest` requires Docker (Testcontainers). Docker not running = test fails. Code itself is correct.
+- `./gradlew test` passes except two known local-MySQL-dependent classes (`FullPipelineEndToEndTest`, `ManualSeedRunner`) that need `docker compose up -d mysql` with `.env` sourced into the shell running gradle — TEST-01 tracks making this a real deploy gate. Docker itself is not the blocker: Testcontainers-based tests (`QuestionSetAdminIntegrationTest`, `FeedbackResultRepositorySummaryTest`) spin up their own ephemeral MySQL and pass on a clean machine with just Docker running (DOC-01, 2026-08-19 — `QuestionSetAdminIntegrationTest` used to fail even with Docker running because it POSTed to a `/admin/question-sets` form route that no longer exists and carried no ADMIN auth/CSRF; rewritten against the current REST API).

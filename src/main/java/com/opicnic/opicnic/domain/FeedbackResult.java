@@ -100,4 +100,26 @@ public class FeedbackResult {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    // PERF-01: 홈/학습분석/오늘/시험계획 화면은 점수·등급·유형 같은 요약 필드만 쓰고 STT/진단/
+    // quote/fix/모범답변 같은 TEXT 컬럼 15개는 전혀 렌더링하지 않는다. 그런데도 전체 이력을
+    // findByMemberIdOrderByCreatedAtDesc(memberId)로 무제한 로드하면 이 TEXT까지 매번 다
+    // 끌고 온다. JPQL constructor expression으로 요약 필드만 SELECT하는 이 생성자를 쓰면
+    // DB에서부터 TEXT 컬럼을 아예 읽지 않는다 — FeedbackResultRepository.findSummaryByMemberId 참고.
+    public FeedbackResult(Long id, com.opicnic.opicnic.domain.enums.QuestionType questionType,
+                          String surveyTopicName, String comboCategory, String overallGrade,
+                          Integer mainPointScore, Integer expressionScore, Integer accuracyScore,
+                          Integer contentScore, Integer fluencyScore, LocalDateTime createdAt) {
+        this.id = id;
+        this.questionType = questionType;
+        this.surveyTopicName = surveyTopicName;
+        this.comboCategory = comboCategory;
+        this.overallGrade = overallGrade;
+        this.mainPointScore = mainPointScore;
+        this.expressionScore = expressionScore;
+        this.accuracyScore = accuracyScore;
+        this.contentScore = contentScore;
+        this.fluencyScore = fluencyScore;
+        this.createdAt = createdAt;
+    }
 }

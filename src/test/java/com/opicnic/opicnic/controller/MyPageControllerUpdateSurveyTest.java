@@ -107,6 +107,27 @@ class MyPageControllerUpdateSurveyTest {
         Mockito.verifyNoInteractions(surveyProfileRepository);
     }
 
+    // REVIEW-06 회귀 테스트: distinct 개수만 보면 중복 제출도 "12개 이상"이면 통과했고,
+    // selectedTopics가 List라 원본 중복이 그대로 저장될 수 있었다. 중복 제출 자체를 거부해야 한다.
+    @Test
+    void savingWithDuplicateTopicIsRejectedAndProfilePreserved() {
+        MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SurveyProfileRepository surveyProfileRepository = Mockito.mock(SurveyProfileRepository.class);
+        MyPageController controller = newController(memberRepository, surveyProfileRepository);
+
+        Member member = Member.builder().id(1L).build();
+        when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1")).thenReturn(Optional.of(member));
+
+        List<SurveyTopic> withDuplicate = new java.util.ArrayList<>(VALID_TOPICS);
+        withDuplicate.add(VALID_TOPICS.get(0));
+
+        String result = controller.updateSurvey(null, SurveyProfile.ResidenceType.WITH_FAMILY,
+                withDuplicate, mockUser());
+
+        assertThat(result).isEqualTo("redirect:/mypage?error=invalidTopics");
+        Mockito.verifyNoInteractions(surveyProfileRepository);
+    }
+
     // 토글 API로 화면 체크박스에 없는 돌발 전용 주제를 우회 추가할 수 있던 문제 회귀 테스트.
     @Test
     void togglingDisallowedSurpriseTopicIsRejected() {
