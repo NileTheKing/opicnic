@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.io.InputStream;
 import java.util.Map;
 
 @Service
@@ -40,7 +39,7 @@ public class STTService {
         this.objectMapper = objectMapper;
     }
 
-    public String sendStreamToStt(InputStream inputStream, String filename) {
+    public String sendStreamToStt(byte[] audioBytes, String filename) {
         if (!enabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -49,9 +48,8 @@ public class STTService {
             return "I went to the beautiful park yesterday and had a great time with my best friends.";
         }
 
-        InputStreamResource resource = new InputStreamResource(inputStream) {
+        ByteArrayResource resource = new ByteArrayResource(audioBytes) {
             @Override public String getFilename() { return filename; }
-            @Override public long contentLength() { return -1; }
         };
 
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();

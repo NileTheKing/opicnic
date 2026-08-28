@@ -7,8 +7,6 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +48,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);
@@ -77,7 +75,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);
@@ -109,7 +107,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);
@@ -141,7 +139,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);
@@ -175,7 +173,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);
@@ -207,7 +205,7 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);

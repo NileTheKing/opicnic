@@ -9,8 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -54,7 +52,7 @@ class FeedbackServiceRoleplayMainPointTest {
                 .thenReturn("{\"mainPoint\":[],\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}");
 
         QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_6);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(roleplayQuestion));
 
         FeedbackDTO result = results.get(0);
@@ -87,7 +85,7 @@ class FeedbackServiceRoleplayMainPointTest {
         when(sttService.sendStreamToStt(any(), any())).thenReturn(sttText);
 
         QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", type);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(roleplayQuestion));
 
         FeedbackDTO result = results.get(0);
@@ -113,7 +111,7 @@ class FeedbackServiceRoleplayMainPointTest {
         when(sttService.sendStreamToStt(any(), any())).thenReturn("no idea");
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
 
         FeedbackDTO result = results.get(0);

@@ -6,8 +6,6 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +30,7 @@ class FeedbackServiceSelfIntroTest {
         QuestionDto selfIntro = new QuestionDto(null,
                 "Please introduce yourself.", "자기소개", null);
 
-        List<InputStream> streams = List.of(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
         List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(selfIntro));
 
         assertThat(results).hasSize(1);

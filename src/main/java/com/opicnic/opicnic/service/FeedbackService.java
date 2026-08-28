@@ -12,8 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,14 +36,14 @@ public class FeedbackService {
     }
 
     public List<FeedbackDTO> getComboFeedbackStreaming(
-            List<InputStream> inputStreams, List<QuestionDto> questions) {
+            List<byte[]> audioBuffers, List<QuestionDto> questions) {
 
-        if (inputStreams.size() != questions.size()) {
+        if (audioBuffers.size() != questions.size()) {
             throw new IllegalArgumentException(
-                "음성 파일 수(" + inputStreams.size() + ")와 질문 수(" + questions.size() + ")가 일치하지 않습니다.");
+                "음성 파일 수(" + audioBuffers.size() + ")와 질문 수(" + questions.size() + ")가 일치하지 않습니다.");
         }
 
-        log.info("[Structured Concurrency] 피드백 분석 시작 ({}개)", inputStreams.size());
+        log.info("[Structured Concurrency] 피드백 분석 시작 ({}개)", audioBuffers.size());
         long start = System.currentTimeMillis();
 
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
@@ -53,16 +51,15 @@ public class FeedbackService {
 
             List<Long> subtaskDurations = new CopyOnWriteArrayList<>();
 
-            for (int i = 0; i < inputStreams.size(); i++) {
+            for (int i = 0; i < audioBuffers.size(); i++) {
                 final int idx = i;
-                final InputStream is = inputStreams.get(i);
+                final byte[] audioBuffer = audioBuffers.get(i);
                 final QuestionDto question = questions.get(i);
 
                 subtasks.add(scope.fork(() -> {
                     long subtaskStart = System.currentTimeMillis();
                     log.info("[Subtask-{}] STT & LLM 처리 시작 (Thread: {})", idx, Thread.currentThread());
 
-                    byte[] audioBuffer = is.readAllBytes();
                     int maxAttempts = 3;
                     Exception lastException = null;
                     boolean lastWasRateLimited = false;
@@ -81,7 +78,7 @@ public class FeedbackService {
                             }
 
                             String speechText = sttService.sendStreamToStt(
-                                    new ByteArrayInputStream(audioBuffer), "audio_" + idx + ".webm");
+                                    audioBuffer, "audio_" + idx + ".webm");
                             if (speechText == null || speechText.trim().split("\\s+").length < 5) {
                                 subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
                                 return noResponseDto(question, speechText);

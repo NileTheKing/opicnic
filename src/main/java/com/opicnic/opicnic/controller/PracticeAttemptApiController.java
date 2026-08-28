@@ -32,7 +32,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -197,8 +196,8 @@ public class PracticeAttemptApiController {
                 throw new IllegalArgumentException("지원하지 않는 파일 형식입니다.");
             }
         }
-        List<InputStream> streams = new ArrayList<>();
-        for (var part : fileParts) streams.add(part.getInputStream());
+        List<byte[]> answerBytes = new ArrayList<>();
+        for (var part : fileParts) answerBytes.add(part.getInputStream().readAllBytes());
 
         // 검증을 모두 통과한 뒤에야 한도를 소비한다. 인터셉터에서 미리 소비하면 여기까지 오지 못하고
         // 400으로 거부될 요청(중복 index, 대용량 파일 등)도 한도를 깎아먹게 되므로, 실제로 외부
@@ -212,7 +211,7 @@ public class PracticeAttemptApiController {
             throw new RateLimitExceededException("시간당 문항 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
         }
 
-        List<FeedbackDTO> submittedFeedbackResults = feedbackService.getComboFeedbackStreaming(streams, questions);
+        List<FeedbackDTO> submittedFeedbackResults = feedbackService.getComboFeedbackStreaming(answerBytes, questions);
 
         List<Integer> failedIndexes = new ArrayList<>();
         for (int i = 0; i < submittedFeedbackResults.size(); i++) {
