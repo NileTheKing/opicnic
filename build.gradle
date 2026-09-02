@@ -101,4 +101,15 @@ bootRun {
 tasks.named('test') {
 	useJUnitPlatform()
 	jvmArgs(['--enable-preview'])
+	// 수동 측정 테스트(ManualMockExamMeasurementTest)용: gradle CLI의 -D를 테스트 JVM으로 전달하고
+	// 힙을 로컬 기존 성능 측정과 동일하게 2g로 고정. 평소 test 실행에는 영향 없음.
+	maxHeapSize = '2g'
+	['manual.mockexam', 'manual.scoringtokens', 'GROQ_API_KEY', 'STT_ENABLED', 'LLM_ENABLED'].each { k ->
+		if (System.getProperty(k) != null) {
+			systemProperty k, System.getProperty(k)
+		}
+	}
+	if (System.getProperty('manual.mockexam') == 'true' || System.getProperty('manual.scoringtokens') == 'true') {
+		testLogging { showStandardStreams = true }
+	}
 }
