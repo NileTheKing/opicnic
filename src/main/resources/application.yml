@@ -39,13 +39,18 @@ spring:
     stt:
       api-key: ${GROQ_API_KEY}
       enabled: ${STT_ENABLED:true}
+    tagging:
+      # 태깅 전용 모델. 채점 모델(아래 chat.options.model)과 일부러 분리 — Groq 한도는 모델별로 따로 적용돼서
+      # 나눠 쓰면 TPD를 두 배로 쓸 수 있다.
+      model: openai/gpt-oss-20b
     openai:
       api-key: ${GROQ_API_KEY}
       base-url: https://api.groq.com/openai
       enabled: ${LLM_ENABLED:true}
       chat:
         options:
-          model: llama-3.3-70b-versatile
+          # Groq이 모델을 내리는 일이 반복됨(2026-07-31 llama-4-scout, 2026-08-31 llama-3.3-70b + llama-3.1-8b) — 죽으면 여기부터 확인
+          model: openai/gpt-oss-120b
           stream-usage: false
   mvc:
     async:

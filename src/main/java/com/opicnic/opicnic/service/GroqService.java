@@ -34,6 +34,9 @@ public class GroqService {
     @Value("${LLM_MOCK_DELAY_MS:0}")
     private long mockDelayMs;
 
+    @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
+    private String taggingModel;
+
     private static final String SYSTEM_PROMPT =
             "당신은 OPIc 시험 전문 평가자입니다.\n" +
                     "입력은 음성 STT 결과이므로 더듬음·filler words는 감안하고, 문맥에 맞지 않는 단어는 STT 오류로 간주해 크게 감점하지 마세요.\n" +
@@ -196,9 +199,17 @@ public class GroqService {
                 "사용자 응답: " + speechText
         );
 
+        // gpt-oss 계열은 reasoning 토큰을 completion에 포함해서 출력이 llama 때보다 크게 늘었다.
+        // 250~300단어 답변 실측 completion 2,574 → 3000이면 여유가 400여 토큰뿐이라 잘림(=JSON 파싱 실패) 위험.
+        // reasoningEffort를 low로 낮춰 실제 출력을 줄이고(실측 2,574 → 1,022), 상한도 4096으로 올려 이중으로 막는다.
+        // 상한을 올리지 않고 3000을 유지하는 이유: Groq은 max_tokens를 TPM 예약분으로 잡는다.
+        // 429 본문으로 실증됨 — "Limit 8000, Used 4271, Requested 7120"에서 7120 = prompt 3024 + max_tokens 4096.
+        // effort=low로 실측 completion이 1,022까지 내려와 3000도 3배 여유이고,
+        // 상한을 올리면 요청당 TPM 점유만 늘어 429가 잦아진다.
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
                 .temperature(0.0)
+                .reasoningEffort("low")
                 .maxTokens(3000)
                 .build();
 
@@ -256,7 +267,7 @@ public class GroqService {
         // 무거운 생성 작업의 일일 토큰 한도를 아낀다.
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage),
                 OpenAiChatOptions.builder()
-                        .model("llama-3.1-8b-instant")
+                        .model(taggingModel)
                         .temperature(0.0)
                         .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
                         .maxTokens(1500)
@@ -312,7 +323,8 @@ public class GroqService {
                 OpenAiChatOptions.builder()
                         .temperature(0.2)
                         .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
-                        .maxTokens(3000)
+                        // 자유 생성이라 채점보다 길어질 수 있고 여기에 gpt-oss의 reasoning 토큰까지 붙는다 — 채점과 같이 상향.
+                        .maxTokens(4096)
                         .build());
 
         ChatResponse response = chatModel.call(prompt);
