@@ -149,7 +149,7 @@ class PracticeAttemptApiControllerCostGuardTest {
                 .thenReturn(List.of(new QuestionDto(1L, "q", "topic", QuestionType.TYPE_1)));
 
         mockMvc.perform(multipart("/api/practice-attempts/{id}/answers", ATTEMPT_ID)
-                        .part(audioFile("a.webm", 16 * 1024 * 1024, "audio/webm")) // 16MB > 15MB 한도
+                        .part(audioFile("a.webm", 16 * 1024 * 1024, "audio/webm")) // 16MB > 4MB 한도
                         .param("questionIndexes", "[0]"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("너무 큽니다")));

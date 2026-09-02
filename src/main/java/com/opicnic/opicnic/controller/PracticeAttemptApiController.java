@@ -128,7 +128,9 @@ public class PracticeAttemptApiController {
     // COST-01: 답변 1건당 STT+채점+태깅 LLM 호출이 나가므로, 실제 외부 호출 전에 입력을 걸러
     // 한 번의 요청으로 비용을 증폭시킬 수 있는 경로(중복/null index, 과도한 파일, 이미 성공한
     // 문항 재제출)를 막는다.
-    private static final int MAX_ANSWER_FILE_BYTES = 15 * 1024 * 1024; // 실제 1~2분 webm 음성은 보통 수백 KB~1MB대
+    // 톰캣 max-file-size(4MB)와 같은 값. 실제 방어는 파싱 단계인 톰캣이 먼저 하고, 여기는 이중 방어 겸
+    // 한국어 에러 메시지를 주기 위한 것이다. (2분 녹음 webm/opus 실측 0.5~1.3MB → 4MB는 약 3배 여유)
+    private static final int MAX_ANSWER_FILE_BYTES = 4 * 1024 * 1024;
     private static final String ALLOWED_ANSWER_CONTENT_TYPE = "audio/webm";
 
     // 예외는 여기서 잡지 않고 ApiExceptionHandler(전역 @RestControllerAdvice)로 흘려보낸다.

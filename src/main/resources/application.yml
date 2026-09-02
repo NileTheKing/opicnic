@@ -59,8 +59,8 @@ spring:
     multipart:
       enabled: true # 다시 활성화
       file-size-threshold: 2MB # 2MB 이하는 디스크에 쓰지 않고 메모리에서 처리 (핵심 최적화)
-      max-file-size: 150MB
-      max-request-size: 150MB
+      max-file-size: 4MB # 2분 녹음 webm/opus 실측 최대 1.3MB의 약 3배 여유
+      max-request-size: 64MB # 모의고사 15문항을 한 요청에 담는 구조 (15 x 4MB + 여유)
 
   security:
     oauth2:

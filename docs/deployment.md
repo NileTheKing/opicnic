@@ -47,7 +47,7 @@ server {
     ssl_certificate /etc/cloudflare/origin.pem;
     ssl_certificate_key /etc/cloudflare/private.key;
 
-    client_max_body_size 150M;
+    client_max_body_size 64M;  # 컨테이너 nginx/톰캣 max-request-size와 동일하게 유지할 것
 
     location / {
         proxy_pass http://127.0.0.1:18080;

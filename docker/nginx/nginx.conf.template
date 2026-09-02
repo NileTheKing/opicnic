@@ -2,7 +2,9 @@ server {
     listen 80;
     server_name ${DOMAIN};
 
-    client_max_body_size 150M;
+    # 톰캣 max-request-size(64MB)와 같은 값. 초과 요청은 여기서 413으로 끊겨
+    # 애플리케이션까지 가지 않는다. 모의고사 15문항 x 4MB 기준.
+    client_max_body_size 64M;
 
     # SEC-07: actuator(헬스체크/메트릭)는 외부에 열 필요 없다 — 내부 Prometheus는
     # 이 nginx를 거치지 않고 Docker network로 opicnic_app:8080에 직접 scrape한다.

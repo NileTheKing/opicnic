@@ -22,7 +22,12 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: opicnic_app
+    # 힙을 명시하지 않으면 JVM은 MaxRAMPercentage 기본값 25%를 호스트 전체 메모리(24GB)에
+    # 적용해 약 6GB까지 잡는다. 이 호스트는 다른 서비스와 공유하므로 컨테이너 한도와 힙을
+    # 둘 다 명시해서 JVM이 옆 서비스 몫까지 쓰지 못하게 한다. (5GB 힙 + 약 1GB 비힙)
+    mem_limit: 6g
     environment:
+      - JAVA_TOOL_OPTIONS=-Xmx5g
       - SPRING_PROFILES_ACTIVE=prod
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}

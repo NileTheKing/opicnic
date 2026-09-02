@@ -165,6 +165,8 @@
 
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+    // OPIc 실제 답변은 2분을 넘지 않는다. 업로드 크기 방어선의 첫 겹(브라우저)이기도 하다.
+    const MAX_RECORDING_SECONDS = 120;
     let currentQuestionIndex = 0;
     let mediaRecorder, audioChunks = [], audioPlayer;
     let isRecording = false, startTime, timerInterval;
@@ -361,8 +363,12 @@
 
     function updateTimer() {
         if (!isRecording) return;
-        const elapsed = Math.floor((new Date() - startTime) / 1000);
+        const elapsed = Math.min(Math.floor((new Date() - startTime) / 1000), MAX_RECORDING_SECONDS);
         timerDisplay.textContent = pad(Math.floor(elapsed / 60)) + ':' + pad(elapsed % 60);
+        if (elapsed >= MAX_RECORDING_SECONDS) {
+            stopRecording();
+            showError('답변은 최대 ' + (MAX_RECORDING_SECONDS / 60) + '분까지 녹음됩니다. 녹음을 자동으로 종료했습니다.');
+        }
     }
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
