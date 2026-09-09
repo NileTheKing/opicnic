@@ -122,7 +122,22 @@ HomeController (/practice/mock)
 - Keep `docs/local/` ignored. It is for local development notes.
 - `/api/**`는 Spring Security에서 기본 permitAll — 새 관리자/보호 API를 `/api/`로 추가할 땐 `SecurityConfig`에 명시적 예외 규칙을 먼저 추가할 것 (`AdminQuestionSetApiController` 참고).
 
+### 외부 LLM 제공자 (Groq) — 실측 기준
+
+- **모델 ID는 수명이 짧다.** 2026-07-31 `llama-4-scout`, 2026-08-31 `llama-3.3-70b-versatile` + `llama-3.1-8b-instant`가 예고 없이 내려가 404가 났다. 우리 코드는 그대로인데 운영 채점이 멈춘다. 채점이 전부 실패하면 **먼저 `GET https://api.groq.com/openai/v1/models`로 모델 생존을 확인할 것.** 현재 채점 `openai/gpt-oss-120b`(`application.yml`), 태깅 `openai/gpt-oss-20b`(`spring.ai.tagging.model`).
+- **채점/태깅 모델을 일부러 다른 것으로 둔다.** Groq 한도는 모델별로 따로 적용돼서 나눠 쓰면 TPD를 200K + 200K로 쓸 수 있다. 같은 모델로 합치지 말 것.
+- **TPM 8,000이 실질 상한이다.** 채점 1건이 prompt만 약 3,024토큰이라 분당 1건 남짓이 한계다. TPD(200K)가 아니라 이쪽이 먼저 걸린다. 모의고사 15문항 일괄 제출은 이 한도상 한 번에 통과할 수 없다.
+- **`max_tokens`는 실제 사용량이 아니라 예약분으로 잡힌다.** 429 본문으로 실증됨 — `Limit 8000, Used 4271, Requested 7120`에서 7120 = prompt 3,024 + max_tokens 4,096. **상한을 올리면 그만큼 TPM 점유가 늘어 429가 잦아진다.** 잘림이 걱정되면 상한을 올리지 말고 `reasoningEffort("low")`로 실제 출력을 줄일 것(실측 completion 2,574 → 1,022).
+- **gpt-oss 계열은 reasoning 토큰을 completion에 포함한다.** llama 때 기준으로 잡은 `maxTokens`가 그대로면 JSON이 중간에서 잘리고 `parseResponse()`가 예외를 던져 해당 문항이 실패 카드가 된다.
+- 프롬프트 캐싱은 gpt-oss 3종만 지원하며 자동 적용된다(프리픽스 정확 일치, TTL 2시간). 캐시된 토큰은 rate limit에서 빠지지만 **차감이 처리 후라 병렬 요청에는 도움이 안 된다**(공식 문서 명시).
+
+### 컨테이너 이름
+
+- **컨테이너를 이름으로 직접 호출하는 곳에는 언더스코어가 들어가면 안 된다.** 그 이름이 그대로 `Host` 헤더에 실리는데 톰캣이 도메인 이름의 언더스코어를 거부해 400이 난다(2026-09-09 Prometheus 수집 중단의 원인). compose 서비스 이름(`app`, `mysql` 등)을 쓸 것. `container_name`(`opicnic_app`)은 nginx `proxy_pass`와 배포 스크립트가 참조하므로 유지한다.
+
 ## Verification Notes
 
 - `./gradlew compileJava` currently passes.
 - `./gradlew test` passes except two known local-MySQL-dependent classes (`FullPipelineEndToEndTest`, `ManualSeedRunner`) that need `docker compose up -d mysql` with `.env` sourced into the shell running gradle — TEST-01 tracks making this a real deploy gate. Docker itself is not the blocker: Testcontainers-based tests (`QuestionSetAdminIntegrationTest`, `FeedbackResultRepositorySummaryTest`) spin up their own ephemeral MySQL and pass on a clean machine with just Docker running (DOC-01, 2026-08-19 — `QuestionSetAdminIntegrationTest` used to fail even with Docker running because it POSTed to a `/admin/question-sets` form route that no longer exists and carried no ADMIN auth/CSRF; rewritten against the current REST API).
+- 수동 측정 러너 2종은 시스템 프로퍼티로 게이트돼 있어 `./gradlew test`에 딸려 돌지 않는다. 실제 Groq API를 호출하므로 토큰을 소모한다 — `ManualMockExamMeasurementTest`(`-Dmanual.mockexam=true`, 15문항 일괄 제출), `ManualScoringTokenMeasurementTest`(`-Dmanual.scoringtokens=true`, 채점 토큰 실측). gradle이 CLI `-D`를 테스트 워커에 안 넘겨서 `build.gradle`에 전달 설정이 들어가 있다.
+

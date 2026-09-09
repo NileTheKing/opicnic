@@ -62,6 +62,59 @@ server {
 
 Axon은 별도 compose에서 `127.0.0.1:28080:80` 같은 포트로 노출한 뒤, host Nginx에 `axon.opicnic.xyz` 서버 블록을 추가한다.
 
+## Resource Limits
+
+앱 컨테이너의 메모리는 명시적으로 잡는다. 명시하지 않으면 JVM이 `MaxRAMPercentage` 기본값 25%를 **호스트 전체 메모리(24GB)** 에 적용해 약 6GB까지 잡는다. 이 VM은 다른 프로젝트(axon 스택 등)와 공유하므로 JVM이 옆 서비스 몫까지 쓰게 된다.
+
+```yaml
+# docker-compose.prod.yml, app 서비스
+mem_limit: 6g
+environment:
+  - JAVA_TOOL_OPTIONS=-Xmx5g   # 힙 5GB + 비힙 약 1GB
+```
+
+적용 확인:
+
+```bash
+docker logs opicnic_app 2>&1 | grep "Picked up JAVA_TOOL_OPTIONS"
+docker exec opicnic_app sh -c 'java -XX:+PrintFlagsFinal -version | grep MaxHeapSize'
+```
+
+## Upload Size Limits
+
+업로드 상한은 **4겹이 같은 값을 바라봐야 한다.** 한 곳만 바꾸면 바깥쪽에서 먼저 잘리거나 안쪽이 무의미해진다.
+
+| 위치 | 값 | 파일 |
+|---|---|---|
+| 브라우저 녹음 시간 | 120초 | `templates/practice/question.html` (`MAX_RECORDING_SECONDS`) |
+| 호스트 nginx | 64M | `/etc/nginx/sites-available/opicnic` (**VM에만 존재**) |
+| 컨테이너 nginx | 64M | `docker/nginx/nginx.conf.template` |
+| 톰캣 | 4MB / 64MB | `application.yml` (`max-file-size` / `max-request-size`) |
+| 컨트롤러 | 4MB | `PracticeAttemptApiController.MAX_ANSWER_FILE_BYTES` |
+
+근거는 2분 녹음 webm/opus 실측 0.5~1.3MB(`scripts/test_1m20s.webm` 80초 844KB = 84.4kbps). 64MB는 모의고사 15문항을 한 요청에 담는 현 제출 구조 기준(15 × 4MB + 여유)이다.
+
+**호스트 nginx는 리포에 없다.** 위 `Host Nginx Example`과 실제 VM 파일을 함께 고쳐야 한다.
+
+## Monitoring
+
+Prometheus 스크레이프 대상은 **compose 서비스 이름**을 쓴다.
+
+```yaml
+# docker/prometheus/prometheus.prod.yml
+- targets: ['app:8080']      # O
+- targets: ['opicnic_app:8080']   # X — 400 Bad Request
+```
+
+`container_name`을 쓰면 그 이름이 그대로 `Host` 헤더에 실리는데, 톰캣이 도메인 이름의 언더스코어를 거부한다. 브라우저 트래픽은 nginx가 `Host`를 실제 도메인으로 바꿔주기 때문에 멀쩡해서, **앱은 정상인데 메트릭만 안 들어오는 형태로 조용히 깨진다.**
+
+설정 파일은 바인드 마운트라 `compose up -d`로는 다시 안 읽힌다. 컨테이너를 재시작해야 한다.
+
+```bash
+docker restart opicnic_prometheus
+docker exec opicnic_prometheus wget -qO- 'http://localhost:9090/api/v1/targets?state=any'
+```
+
 ## Deployment Notes
 
 ### First-Time VM Setup
