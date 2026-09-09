@@ -63,6 +63,11 @@ public class FeedbackService {
                     int maxAttempts = 3;
                     Exception lastException = null;
                     boolean lastWasRateLimited = false;
+                    // 루프 밖으로 꺼내 성공한 STT 결과를 재시도 간 재사용한다. 채점/태깅 LLM만 실패해도
+                    // STT부터 다시 부르던 구조가 429를 자가 유발했다(2026-08-31 실측: 15문항 재시도로
+                    // STT 호출 43건 중 22건만 성공, 429 21회 — Whisper RPM 20을 스스로 초과). STT 자체가
+                    // 실패한 경우엔 speechText가 null로 남아 다음 시도에서 정상적으로 재호출된다.
+                    String speechText = null;
 
                     for (int attempt = 0; attempt < maxAttempts; attempt++) {
                         try {
@@ -77,8 +82,10 @@ public class FeedbackService {
                                 Thread.sleep(delay);
                             }
 
-                            String speechText = sttService.sendStreamToStt(
-                                    audioBuffer, "audio_" + idx + ".webm");
+                            if (speechText == null) {
+                                speechText = sttService.sendStreamToStt(
+                                        audioBuffer, "audio_" + idx + ".webm");
+                            }
                             if (speechText == null || speechText.trim().split("\\s+").length < 5) {
                                 subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
                                 return noResponseDto(question, speechText);
