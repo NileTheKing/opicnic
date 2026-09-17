@@ -15,10 +15,16 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +40,20 @@ public class GroqService {
     @Value("${LLM_MOCK_DELAY_MS:0}")
     private long mockDelayMs;
 
+    @Value("${LLM_MOCK_429_RATE:0}")
+    private double mock429Rate;
+
+    @Value("${LLM_MOCK_5XX_RATE:0}")
+    private double mock5xxRate;
+
     @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
     private String taggingModel;
+
+    // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
+    private static final String MOCK_429_BODY =
+            "Rate limit reached for model `openai/gpt-oss-120b` in organization ... on tokens per minute (TPM): "
+                    + "Limit 8000, Used 4271, Requested 7120. Please try again in 24.9s.";
+    private static final String MOCK_5XX_BODY = "Service Unavailable";
 
     private static final String SYSTEM_PROMPT =
             "당신은 OPIc 시험 전문 평가자입니다.\n" +
@@ -158,6 +176,18 @@ public class GroqService {
         if (!aiEnabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
+            // S2 측정용 실패 주입 — LLM_MOCK_429_RATE/LLM_MOCK_5XX_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
+            double roll = ThreadLocalRandom.current().nextDouble();
+            if (roll < mock429Rate) {
+                log.info("[MOCK] LLM 실패 주입 (429)");
+                throw HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests",
+                        HttpHeaders.EMPTY, MOCK_429_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            }
+            if (roll < mock429Rate + mock5xxRate) {
+                log.info("[MOCK] LLM 실패 주입 (503)");
+                throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable",
+                        HttpHeaders.EMPTY, MOCK_5XX_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
             }
             log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환 (delay={}ms)", mockDelayMs);
             String mock = "{\"mainPoint\":\"메인포인트가 명확합니다.\",\"mainPointScore\":3,\"mainPointQuote\":\"\",\"mainPointFix\":\"\"," +

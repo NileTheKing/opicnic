@@ -63,8 +63,8 @@ S2의 mock 실패 모델은 **실제 429 본문**(2026-08-31, 09-02에 받은 `r
 
 ## 전제 작업
 
-- mock 실패 주입 스위치 (`STT_MOCK_FAIL_RATE`, `LLM_MOCK_429_RATE` 등) — 지금 mock은 고정 딜레이뿐
-- 모의고사 attempt용 dev 엔드포인트 — 지금 dev `/start`는 콤보만
+- [x] mock 실패 주입 스위치 (`STT_MOCK_429_RATE`/`STT_MOCK_5XX_RATE`/`LLM_MOCK_429_RATE`/`LLM_MOCK_5XX_RATE`, 기본값 0) — 2026-09-17 추가, `STTService`/`GroqService`의 `!enabled` mock 분기 안에서만 동작, 운영 경로 무변경
+- [x] 모의고사 attempt용 dev 엔드포인트 — 2026-09-17 `POST /api/practice-attempts/start-mock` 추가
 - S1용 셸 스크립트 (kill / `docker restart` + DB 검증)
 - 산출물 보존: 실행마다 `docs/performance/<날짜>/`에 k6 JSON + 추출 요약 커밋. 원본 로그는 리포 밖. (4월 k6, 8월 서버 로그, 9월 gc.log를 잃은 뒤의 규칙)
 

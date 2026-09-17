@@ -34,6 +34,21 @@ JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" \
 k6 run --vus 500 --duration 30s scripts/load-test.js
 ```
 
+### S1 (모의고사 15문항)
+`SPRING_PROFILES_ACTIVE=dev`에서 `POST /api/practice-attempts/start-mock`으로 로그인 없이 15문항 모의고사
+attempt를 시작할 수 있다(응답 형식은 `/start`와 동일: `attemptId`/`questionIndexes`/`questionCount`).
+
+### S2 (외부 API 실패 주입)
+mock(`STT_ENABLED=false`/`LLM_ENABLED=false`) 상태에서 아래 4개 환경변수로 429/5xx 실패율을 주입할 수 있다
+(기본값 0 — 안 주면 기존처럼 항상 성공). LLM 쪽은 채점(`getOpicFeedback`)에만 적용되고 태깅은 그대로다.
+```bash
+STT_MOCK_429_RATE=0.2   # STT 429 실패율 (0.0~1.0)
+STT_MOCK_5XX_RATE=0.1   # STT 5xx 실패율
+LLM_MOCK_429_RATE=0.2   # 채점 LLM 429 실패율
+LLM_MOCK_5XX_RATE=0.1   # 채점 LLM 5xx 실패율
+```
+호출 횟수는 `[MOCK] ... 실패 주입 (429)` / `(503)` 로그 라인을 grep해서 센다.
+
 ## 4. 정밀 프로파일링 (JFR)
 병목 분석 필요 시 실행 중인 JVM에 JFR 녹화를 명령합니다.
 ```bash

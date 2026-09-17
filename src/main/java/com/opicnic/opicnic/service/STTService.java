@@ -6,12 +6,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Slf4j
@@ -19,15 +24,25 @@ public class STTService {
 
     private static final String GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 
+    // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
+    private static final String MOCK_429_BODY =
+            "Rate limit reached for model `whisper-large-v3` in organization ... on requests per minute (RPM): "
+                    + "Limit 20, Used 20, Requested 1. Please try again in 3s.";
+    private static final String MOCK_5XX_BODY = "Service Unavailable";
+
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final boolean enabled;
     private final long mockDelayMs;
+    private final double mock429Rate;
+    private final double mock5xxRate;
 
     public STTService(RestClient.Builder restClientBuilder,
                       @Value("${spring.ai.stt.api-key}") String apiKey,
                       @Value("${spring.ai.stt.enabled:true}") boolean enabled,
                       @Value("${STT_MOCK_DELAY_MS:0}") long mockDelayMs,
+                      @Value("${STT_MOCK_429_RATE:0}") double mock429Rate,
+                      @Value("${STT_MOCK_5XX_RATE:0}") double mock5xxRate,
                       ObjectMapper objectMapper) {
         // restClientBuilder는 Spring Boot가 spring.http.client.* 타임아웃 설정을 적용해 관리하는 빈이다.
         // RestClient.builder()를 직접 호출하면 이 전역 타임아웃을 상속받지 못한다.
@@ -36,6 +51,8 @@ public class STTService {
                 .build();
         this.enabled = enabled;
         this.mockDelayMs = mockDelayMs;
+        this.mock429Rate = mock429Rate;
+        this.mock5xxRate = mock5xxRate;
         this.objectMapper = objectMapper;
     }
 
@@ -43,6 +60,18 @@ public class STTService {
         if (!enabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
+            // S2 측정용 실패 주입 — STT_MOCK_429_RATE/STT_MOCK_5XX_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
+            double roll = ThreadLocalRandom.current().nextDouble();
+            if (roll < mock429Rate) {
+                log.info("[MOCK] STT 실패 주입 (429)");
+                throw HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests",
+                        HttpHeaders.EMPTY, MOCK_429_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            }
+            if (roll < mock429Rate + mock5xxRate) {
+                log.info("[MOCK] STT 실패 주입 (503)");
+                throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable",
+                        HttpHeaders.EMPTY, MOCK_5XX_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
             }
             log.info("[MOCK] STT 스킵, 고정 텍스트 반환 (delay={}ms)", mockDelayMs);
             return "I went to the beautiful park yesterday and had a great time with my best friends.";
