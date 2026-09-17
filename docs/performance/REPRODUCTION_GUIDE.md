@@ -15,9 +15,18 @@ OPIcnic 백엔드의 성능 벤치마크를 동일한 환경에서 수행하기 
 SPRING_PROFILES_ACTIVE=dev \
 LLM_ENABLED=false \
 STT_ENABLED=false \
-JAVA_OPTS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" \
+JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" \
 ./gradlew bootRun
 ```
+
+> **`JAVA_OPTS`가 아니라 `JAVA_TOOL_OPTIONS`다.** `gradlew`의 `JAVA_OPTS`는 Gradle 클라이언트 JVM에만 적용되고
+> `bootRun`이 포크하는 앱 JVM에는 전달되지 않는다(`build.gradle`의 `jvmArgs`만 받음). 2026-09-11까지 이 가이드가
+> `JAVA_OPTS`로 적혀 있어서 앱은 기본 힙(시스템 메모리 1/4)으로 돌고 있었다. 기동 후 반드시 확인할 것:
+> ```bash
+> jcmd $(pgrep -f OpicnicApplication) VM.flags | grep -o "MaxHeapSize=[0-9]*"
+> ```
+> 상세: `2026-09-11-gc-pressure-finding.md` 발견 1.
+
 
 ## 3. 부하 테스트 실행 (k6)
 ```bash

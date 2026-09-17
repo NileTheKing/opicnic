@@ -16,7 +16,8 @@ Git SHA: `8e70a543fd3f0a371e99e1779fa3bab11a4214b3` (테스트 중 코드/설정
 
 ## 2. 실행 조건
 
-- `SPRING_PROFILES_ACTIVE=dev LLM_ENABLED=false STT_ENABLED=false JAVA_OPTS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" ./gradlew bootRun` (호스트 맥 위 직접 실행, Docker 아님 — 4월/오늘 동일)
+- `SPRING_PROFILES_ACTIVE=dev LLM_ENABLED=false STT_ENABLED=false JAVA_OPTS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" ./gradlew bootRun`
+  - **[2026-09-11 정정]** `JAVA_OPTS`는 `bootRun` 앱 JVM에 전달되지 않는다. 이 실행의 실제 힙은 기본값(시스템 16GB의 1/4 = **약 4GB**)이었을 가능성이 높다. 따라서 3절 "`-Xmx2g` 힙을 소진"은 "약 4GB 힙을 소진"으로 읽어야 한다. 상세: `2026-09-11-gc-pressure-finding.md` 발견 1 (호스트 맥 위 직접 실행, Docker 아님 — 4월/오늘 동일)
 - MySQL은 `docker-compose.yml`의 3306 포트를 다른 프로젝트(`axon-mysql`)가 점유 중이라, 독립 컨테이너(`mysql:8.0`, 포트 3307)로 대체 — 앱 설정 파일은 무수정, env var로만 접속 포트 변경
 - `k6 run --vus 500 --duration 30s`, `test_audio.webm` 1,048,576 bytes
 - STT/LLM mock delay: 0ms (`STT_MOCK_DELAY_MS`/`LLM_MOCK_DELAY_MS` 미설정 — 4월 코드에는 이 개념 자체가 없었으므로 동일 조건)
