@@ -10,6 +10,7 @@
 | [`codebase-risk-audit-2026-08-13.md`](codebase-risk-audit-2026-08-13.md) | 감사 + 작업 인계 | API·보안·데이터·테스트 리스크의 근거, 재현, 작업 준비도, 기술 완료 조건 (애플리케이션 코드 수정 없음) |
 | [`product-contract-audit-2026-08-13.md`](product-contract-audit-2026-08-13.md) | 감사 + 작업 인계 | 가입부터 오늘 할 일까지 제품 계약 불일치, 재현, 수정 경계, 선행 결정, acceptance criteria (애플리케이션 코드 수정 없음) |
 | [`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md) | 활성 감사 후속 명세 | 2026-08-19 수정 재리뷰에서 남은 6건의 최소 설계, 실패 fixture, 완료 조건, 범위 밖 |
+| [`async-r2-design-2026-09-17.md`](async-r2-design-2026-09-17.md) | 설계 결정 | 음성 채점 비동기화 + R2. 결정 근거, 구조, 연쇄 변경, 제외한 대안. 구현 전 고정 |
 | [`question-text-progress.md`](question-text-progress.md) | 진행 중 체크리스트 | 작업 끝나면 삭제 검토 |
 | [`hold.md`](hold.md) | 보류 (기각 + 미구현 비전) | **현재 상태 아님.** 실제로 뭘 만들었는지는 CHANGELOG 참고 |
 | `local/` | 개인 저널 (gitignore) | 절대 "진실"로 취급 안 함. 과거 결론이 나중에 반박될 수 있음 |
