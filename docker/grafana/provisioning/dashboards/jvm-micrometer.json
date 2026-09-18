@@ -26,7 +26,7 @@
    }
   ]
  },
- "description": "Dashboard for Micrometer instrumented applications (Java, Spring Boot, Micronaut)",
+ "description": "Grafana 커뮤니티 대시보드 4701을 그대로 사용. JVM 내부(메모리 영역, GC, 스레드, 클래스 로딩). 서비스 지표는 OPIcnic 운영 대시보드에서.",
  "editable": true,
  "gnetId": 4701,
  "graphTooltip": 1,
@@ -2933,7 +2933,7 @@
   ]
  },
  "timezone": "browser",
- "title": "JVM (Micrometer) — 커뮤니티 #4701",
+ "title": "JVM (Micrometer)",
  "version": 33,
  "uid": "jvm-micrometer"
 }
