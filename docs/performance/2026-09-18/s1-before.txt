@@ -1,0 +1,12 @@
+# S1 before — 2026-09-18 17:29:26
+# base=http://localhost:8080 audio=scripts/test_audio.webm runs=5
+# 서버 환경(mock 지연 등)은 기동 명령을 여기 손으로 적을 것:
+#   SPRING_PROFILES_ACTIVE=dev STT_ENABLED=false LLM_ENABLED=false STT_MOCK_DELAY_MS=3000 LLM_MOCK_DELAY_MS=4500 JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g" ./gradlew bootRun (MySQL 8.0 임시 컨테이너 3307, 사용자 1명 순차)
+# 해석: 동기 구조라 answers_s = 사용자 대기 시간 = 처리 완료 시간. 15문항이 StructuredTaskScope로 병렬이라 mock 지연 7.5s에 붙는다.
+#       dev attempt(memberId=null)는 finalize해도 DB 저장 안 됨 — DB 검증은 전환 후.
+run  attemptId                             questions  answers_s  finalize_s  failed
+1    4933a037-fa03-4367-b0a0-798e7634be2e  15         7.616412   0.013460    []
+2    384db034-165b-45b4-84c3-62ff1950a8cb  15         7.579978   0.005777    []
+3    b52e681c-af37-4680-99a9-756b959b3728  15         7.577964   0.007237    []
+4    8f7569b8-cdb8-471f-85fe-9e80a699bcd2  15         7.575924   0.004972    []
+5    dd1f39ff-4d58-43d0-9e62-d8702e685465  15         7.577003   0.007987    []

@@ -348,8 +348,8 @@ OPIc에서 유형(묘사/경험/롤플레이 등)에 익숙해지면 주제가 �
 
 ### Next — 순서대로
 
-- [ ] **S1용 셸 스크립트** — 모의고사 제출 → 처리 중 클라이언트 kill / 서버 restart → DB에서 15문항 완료 확인. `slo.md` 전제 작업 중 유일하게 남은 것
-- [ ] **전환 전 S1~S3 측정** — 지금 코드로. 구현 **전에** 해야 전/후 비교가 성립. 호출 증폭은 `opicnic_external_call_seconds_count` 비율로
+- [x] **S1용 셸 스크립트** — `scripts/s1.sh`, 전환 전 실측 7.6s 기록(`performance/2026-09-18/s1-before.txt`). kill/restart·DB 검증은 전환 전엔 결과가 구조상 정해져 있고 dev attempt(memberId=null)는 DB 저장이 안 돼 성립하지 않음 → 전환 후 구현 때 dev attempt 저장 경로를 붙이고 나서 추가
+- [ ] **전환 전 S2·S3 측정** — 지금 코드로. 구현 **전에** 해야 전/후 비교가 성립. 호출 증폭은 `opicnic_external_call_seconds_count` 비율로. "전" 값은 SLO 판정이 아니라 현상 기록(`slo.md` 전/후 표 참고)
 - [ ] **R2 + 비동기 1단계 구현** — `docs/async-r2-design-2026-09-17.md` 4절. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
 - [ ] **전환 후 S1~S4 측정** → `slo.md` 전/후 표 완성
 - [ ] 블로그 초안 — 위가 끝난 뒤
