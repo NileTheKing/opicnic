@@ -1,7 +1,7 @@
 {
   "uid": "opicnic-overview",
-  "title": "OPIcnic — 골든 시그널 + 의존성 RED",
-  "description": "1행: 앱 골든 시그널. 2행: Groq 의존성 RED(stt/score/tag). 외부 LLM 모델 소멸 장애는 2행에서만 보인다.",
+  "title": "OPIcnic — 장애 대응",
+  "description": "새벽 3시에 10초 안에 판단하기 위한 대시보드. 0행: 지금 통과/미달(stat). 1행: 사용자가 겪는 것. 2행: Groq 의존성이 살아 있나. 3행: 우리가 폭주하지 않는가. 4행: 읽는 법. 임계값 출처는 docs/performance/slo.md와 docker/prometheus/rules.yml.",
   "tags": [
     "opicnic"
   ],
@@ -9,7 +9,7 @@
   "editable": true,
   "graphTooltip": 1,
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": {
     "from": "now-6h",
@@ -23,231 +23,446 @@
   },
   "panels": [
     {
+      "id": 100,
+      "type": "row",
+      "title": "지금 상태 — 통과/미달을 색으로",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
       "id": 1,
-      "type": "timeseries",
-      "title": "요청/s",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
+      "type": "stat",
+      "title": "채점 실패율 5m",
+      "description": "무엇: 최근 5분 Groq 채점(kind=score) 호출 중 outcome≠ok 비율. 나쁜 상태: 50% 이상이면 ScoringFailureRateHigh 알림과 같은 조건(2m 지속 시 발화). 그때 뭘 보나: 2행 '의존하는 것'의 실패율·429 패널로 넘어가 원인(429 vs 5xx vs timeout) 확인, GET https://api.groq.com/openai/v1/models로 모델 생존 확인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
-          "expr": "sum(rate(http_server_requests_seconds_count[1m]))",
-          "legendFormat": "req/s"
+          "expr": "(sum(increase(opicnic_external_call_seconds_count{provider=\"groq\", kind=\"score\", outcome!=\"ok\"}[5m])) / (sum(increase(opicnic_external_call_seconds_count{provider=\"groq\", kind=\"score\"}[5m])) > 0)) or vector(0)",
+          "legendFormat": "채점 실패율"
         }
       ]
     },
     {
       "id": 2,
-      "type": "timeseries",
-      "title": "5xx 비율",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
+      "type": "stat",
+      "title": "접수 p95 5m",
+      "description": "무엇: 답안 제출 접수(/api/practice-attempts/{attemptId}/answers) 응답 시간 p95. 비동기 접수 응답이지 채점 완료가 아니다. 나쁜 상태: 5초 이상이면 접수 자체가 막힌 것(SLO 500ms의 10배). 그때 뭘 보나: 3행 힙 사용률·HikariCP pending — 접수 지연은 보통 DB/GC 포화가 원인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 5 }
+            ]
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
-          "legendFormat": "5xx"
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{uri=~\"/api/practice-attempts/\\\\{attemptId\\\\}/answers.*\"}[5m])))",
+          "legendFormat": "접수 p95"
         }
       ]
     },
     {
       "id": 3,
-      "type": "timeseries",
-      "title": "HTTP p95",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
+      "type": "stat",
+      "title": "5xx 비율 5m",
+      "description": "무엇: 전체 HTTP 요청 중 5xx 비율. 나쁜 상태: 1% 이상이면 서버가 요청을 못 받아내고 있는 것. 그때 뭘 보나: 1행 요청/s로 어느 uri가 5xx를 내는지, 3행 힙/CPU로 자원 고갈 여부 확인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.01 }
+            ]
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket[5m])))",
-          "legendFormat": "p95"
+          "expr": "(sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / (sum(rate(http_server_requests_seconds_count[5m])) > 0)) or vector(0)",
+          "legendFormat": "5xx"
         }
       ]
     },
     {
       "id": 4,
-      "type": "timeseries",
-      "title": "포화 (힙 사용률 · HikariCP pending · 프로세스 CPU)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
+      "type": "stat",
+      "title": "활성 알림 수",
+      "description": "무엇: 현재 firing 상태인 Prometheus 알림 개수(지금은 ScoringFailureRateHigh 하나뿐). 나쁜 상태: 1개 이상이면 이미 Discord로 알림이 갔어야 한다. 그때 뭘 보나: Alertmanager/Discord에서 어느 알림인지 확인 후 해당 행으로 이동.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
-          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / sum(jvm_memory_max_bytes{area=\"heap\"})",
-          "legendFormat": "힙 사용률"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "B",
-          "expr": "sum(hikaricp_connections_pending)",
-          "legendFormat": "HikariCP pending"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "C",
-          "expr": "process_cpu_usage",
-          "legendFormat": "프로세스 CPU"
+          "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)",
+          "legendFormat": "firing"
         }
-      ],
-      "description": "힙 사용률·CPU는 0~1 비율, pending은 개수"
+      ]
     },
     {
       "id": 5,
-      "type": "timeseries",
-      "title": "의존성 호출/s (Groq)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 0,
-        "y": 8
-      },
+      "type": "stat",
+      "title": "힙 사용률",
+      "description": "무엇: JVM 힙 사용량 / 최대 힙. 나쁜 상태: 90% 이상이면 Full GC·OOM 위험 구간(2026-09-11 Full GC 3회/30초 재발 지표). 그때 뭘 보나: 3행 힙 사용률 시계열에서 추세(계속 증가=누수) 확인, 요청/s와 상관관계.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / (sum(jvm_memory_max_bytes{area=\"heap\"}) > 0)",
+          "legendFormat": "힙 사용률"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "외부 API 429 비율 5m",
+      "description": "무엇: Groq 전체 호출(stt/score/tag) 중 429(rate limit) 비율. 나쁜 상태: 20% 이상이면 TPM 한도에 계속 부딪히는 중 — 2026-08-31 STT 43건 중 429 21회 재발. 그때 뭘 보나: 2행 429 비율(kind별)로 어느 호출이 원인인지, 3행 재시도/s로 우리 쪽 증폭 확인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.0001 },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "(sum(increase(opicnic_external_call_seconds_count{provider=\"groq\", outcome=\"429\"}[5m])) / (sum(increase(opicnic_external_call_seconds_count{provider=\"groq\"}[5m])) > 0)) or vector(0)",
+          "legendFormat": "429 비율"
+        }
+      ]
+    },
+    {
+      "id": 101,
+      "type": "row",
+      "title": "사용자가 겪는 것 — 앱 골든 시그널",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "요청/s (상위 5 uri + 기타)",
+      "description": "무엇: uri별 요청 처리량. 정적 리소스(actuator/static/css/js)는 제외하고 트래픽 상위 5개 uri만 보이고 나머지는 '기타'로 합쳤다. 나쁜 상태: 특정 uri가 급증/급감하면 그 기능만 장애일 수 있다. 그때 뭘 보나: 그 uri가 제출 경로면 HTTP p95(제출) 패널로.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "topk(5, sum by (uri) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*|/static.*|/css.*|/js.*\"}[1m])))",
+          "legendFormat": "{{uri}}"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri!~\"/actuator.*|/static.*|/css.*|/js.*\"}[1m])) - sum(topk(5, sum by (uri) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*|/static.*|/css.*|/js.*\"}[1m]))))",
+          "legendFormat": "기타"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "5xx 비율",
+      "description": "무엇: 전체 HTTP 요청 중 5xx 비율, 임계선 1%. 나쁜 상태: 선을 넘으면 서버가 요청을 못 받아내고 있는 것. 그때 뭘 보나: 요청/s에서 어느 uri가 5xx를 내는지 확인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
           },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.01 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "(sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / (sum(rate(http_server_requests_seconds_count[5m])) > 0)) or vector(0)",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "HTTP p95 — 제출 경로만",
+      "description": "무엇: /api/practice-attempts/* 제출 경로만의 p95, 임계선 500ms(SLO: 접수 응답 p95 < 500ms). 전체 평균(옆 패널)은 정적 라우트에 희석돼 여기서 따로 본다. 나쁜 상태: 선을 넘으면 접수 SLO 위반. 그때 뭘 보나: 0행 접수 p95 stat과 3행 힙/HikariCP.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{uri=~\"/api/practice-attempts/.*\"}[5m])))",
+          "legendFormat": "제출 p95"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "HTTP p95 — 전체 (참고)",
+      "description": "무엇: 전체 uri 합산 p95, 참고용. 나쁜 상태: 단독으로 판단하지 말 것 — 정적 라우트에 희석되어 제출 경로 지연을 가릴 수 있다. 그때 뭘 보나: 이 패널이 튀면 반드시 '제출 경로만' 패널과 같이 본다.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket[5m])))",
+          "legendFormat": "전체 p95"
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "type": "row",
+      "title": "의존하는 것 — Groq가 살아 있나",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "호출/s (kind별)",
+      "description": "무엇: Groq 호출 처리량, stt/score/tag 분리. 나쁜 상태: 특정 kind가 0으로 떨어지면 그 기능이 멈춘 것(요청/s는 안 빠지는데 이것만 0이면 조용히 죽은 것). 그때 뭘 보나: 실패율/429 패널에서 같은 kind 확인.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 15 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
           "expr": "sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\"}[1m]))",
           "legendFormat": "{{kind}}"
@@ -255,100 +470,338 @@
       ]
     },
     {
-      "id": 6,
+      "id": 21,
       "type": "timeseries",
-      "title": "의존성 실패율 (429 별도)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 8
-      },
+      "title": "실패율 (kind별)",
+      "description": "무엇: kind별 Groq 호출 실패율(outcome≠ok), 임계선 50% — ScoringFailureRateHigh 알림과 같은 기준(score, 5분 창 50%, 2분 지속). 나쁜 상태: 선을 넘으면 알림이 곧 온다(또는 이미 왔다). 429는 따로 다음 패널에서 — 의미가 달라 겹치면 혼란.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 15 },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
-          "expr": "sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\", outcome!=\"ok\"}[5m])) / sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\"}[5m]))",
+          "expr": "(sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\", outcome!=\"ok\"}[5m])) / (sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\"}[5m])) > 0)) or vector(0)",
           "legendFormat": "{{kind}} 실패율"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "B",
-          "expr": "sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\", outcome=\"429\"}[5m])) / sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\"}[5m]))",
-          "legendFormat": "{{kind}} 429"
         }
-      ],
-      "description": "알림 ScoringFailureRateHigh는 score 실패율 ≥ 50%(5분 창, 3건 이상)에서 울린다"
+      ]
     },
     {
-      "id": 7,
+      "id": 22,
       "type": "timeseries",
-      "title": "의존성 호출 p95 (Groq)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 8
-      },
+      "title": "429 비율 (kind별)",
+      "description": "무엇: kind별 rate-limit(429) 비율. 실패율과 단위는 같지만 의미가 다르다(429는 우리 요청량 문제, 5xx/timeout은 Groq 쪽 문제) — 그래서 분리했다. 나쁜 상태: 계속 0보다 크면 TPM 한도에 상시로 부딪히는 중. 그때 뭘 보나: 3행 재시도/s — 429가 재시도를 유발해 증폭되는지.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 15 },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "(sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\", outcome=\"429\"}[5m])) / (sum by (kind) (rate(opicnic_external_call_seconds_count{provider=\"groq\"}[5m])) > 0)) or vector(0)",
+          "legendFormat": "{{kind}} 429"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "호출 p95 (kind별)",
+      "description": "무엇: kind별 Groq 호출 지연 p95. 임계선은 kind마다 다르다 — stt 5s, score 10s (실측: stt ~3s, score effort=low ~3.5s에 여유). 나쁜 상태: 선을 넘으면 그 kind 응답이 느려지는 중, 재시도·타임아웃 전조. 그때 뭘 보나: 실패율/429가 같이 오르는지.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 15 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
           },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "score" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "red", "value": 10 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "refId": "A",
           "expr": "histogram_quantile(0.95, sum by (kind, le) (rate(opicnic_external_call_seconds_bucket{provider=\"groq\"}[5m])))",
           "legendFormat": "{{kind}}"
         }
       ]
+    },
+    {
+      "id": 103,
+      "type": "row",
+      "title": "우리가 폭주하지 않는가 — 재시도·포화",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "재시도/s (kind, reason별)",
+      "description": "무엇: opicnic_retry_total — STT/LLM 재시도율, 실제 사고(2026-08-31 STT 43건, 429 21회)의 지표. 지금까지 계측만 하고 대시보드에 없었다. 나쁜 상태: 429 비율이 오를 때 이게 같이 튀면 재시도가 증폭 중(SLO: 실패 30% 주입 시 호출 증폭 ≤1.5배). 그때 뭘 보나: 2행 429 비율(kind별)과 같이.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "sum by (kind, reason) (rate(opicnic_retry_total[5m]))",
+          "legendFormat": "{{kind}}/{{reason}}"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "힙 사용률",
+      "description": "무엇: JVM 힙 사용량 / 최대 힙. 임계선 70%(주의)/90%(위험). 나쁜 상태: 90% 근처에서 계속 머물면 Full GC·OOM 전조(2026-09-11 Full GC 3회/30초). 그때 뭘 보나: 요청/s·재시도/s와 같이 봐서 트래픽 때문인지 누수인지 구분.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / (sum(jvm_memory_max_bytes{area=\"heap\"}) > 0)",
+          "legendFormat": "힙 사용률"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "HikariCP (active / pending / idle)",
+      "description": "무엇: DB 커넥션 풀 상태, 셋 다 개수라 한 패널. 임계선은 pending=1. 나쁜 상태: pending이 0보다 크면 요청이 커넥션을 못 받아 줄서는 중 — 접수 p95 지연의 직접 원인. 그때 뭘 보나: 0행 접수 p95, 1행 HTTP p95(제출).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "pending" },
+            "properties": [
+              {
+                "id": "custom.thresholdsStyle",
+                "value": { "mode": "line" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "red", "value": 1 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "sum(hikaricp_connections_active)",
+          "legendFormat": "active"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "B",
+          "expr": "sum(hikaricp_connections_pending)",
+          "legendFormat": "pending"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "C",
+          "expr": "sum(hikaricp_connections_idle)",
+          "legendFormat": "idle"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "프로세스 CPU",
+      "description": "무엇: 앱 프로세스 CPU 사용률. 나쁜 상태: 지속적으로 100% 근처면 처리 지연·타임아웃 원인일 수 있다. 그때 뭘 보나: 요청/s·재시도/s가 같이 오르는지 — 트래픽 증가인지 폭주인지 구분.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "spanNulls": true,
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "refId": "A",
+          "expr": "process_cpu_usage",
+          "legendFormat": "프로세스 CPU"
+        }
+      ]
+    },
+    {
+      "id": 104,
+      "type": "row",
+      "title": "이 대시보드 읽는 법",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "text",
+      "title": "런북 최소 버전",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 33 },
+      "options": {
+        "mode": "markdown",
+        "content": "**읽는 순서: 위에서 아래로.** 0행이 지금 통과/미달을 색으로 말한다 — 전부 초록이면 여기서 끝, 하나라도 빨강이면 아래로 내려간다.\n\n- **0행 (지금 상태)** — 통과/미달 한눈에. 색만 봐도 됨.\n- **1행 (사용자가 겪는 것)** — 요청/s, 5xx, HTTP p95(제출/전체). \"사용자가 지금 뭘 겪고 있나\"에 답한다.\n- **2행 (의존하는 것)** — Groq 호출/실패율/429/p95, kind별(stt/score/tag). \"외부 의존성이 살아 있나\"에 답한다. **모델 소멸 같은 장애는 여기서만 보인다** — JVM·HTTP 지표는 정상으로 나온다 (2026-07-31, 08-31 실제 사례).\n- **3행 (우리가 폭주하지 않는가)** — 재시도/s, 힙, HikariCP, CPU. \"우리 쪽이 장애에 과잉반응해서 스스로 무너지고 있진 않나\"에 답한다.\n\n**알림이 왔을 때 어느 패널부터 보나 (ScoringFailureRateHigh 기준):**\n\n1. 0행 '채점 실패율' — 얼마나 심한지 확인\n2. 2행 '실패율(kind별)'·'429 비율(kind별)' — 429(우리 쪽 요청량)인지 5xx/timeout(Groq 쪽)인지 구분\n3. `GET https://api.groq.com/openai/v1/models` — 모델 생존 확인 (PROJECT.md)\n4. 3행 '재시도/s' — 우리가 재시도로 증폭시키고 있는지\n5. 0행 '힙 사용률'·3행 HikariCP — 부수 피해로 서버 자체가 죽어가는지\n\n**SLO 출처:** `docs/performance/slo.md` (접수 p95 < 500ms 등), 알림 임계값은 `docker/prometheus/rules.yml`의 `ScoringFailureRateHigh` (score 실패율 ≥50%, 5분 창, 2분 지속)."
+      }
     }
   ]
 }
