@@ -22,11 +22,4 @@ server {
         proxy_read_timeout 120s;
     }
 
-    location /grafana/ {
-        # 끝에 / 를 붙이지 않는다 — Grafana가 GF_SERVER_SERVE_FROM_SUB_PATH=true 라 /grafana/ 접두사를
-        # 그대로 받아야 한다. / 를 붙이면 접두사가 떼여 Grafana가 /grafana/ 로 되돌리고 무한 리다이렉트.
-        proxy_pass http://opicnic_grafana:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
 }
