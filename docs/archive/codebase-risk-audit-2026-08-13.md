@@ -5,7 +5,7 @@
 > 범위: 백엔드 소스, 설정, 배포, 테스트, 문서  
 > 원칙: **발견과 근거 기록만 수행했다. 애플리케이션 코드는 수정하지 않았다.**
 >
-> **2026-08-13~19 후속 수정**: `CORE-01`, `DOMAIN-01`, `ADMIN-01`, `SEC-03`, `SCORE-01`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07`, `API-02`, `DATA-02`, `PERF-01`, `DOC-01` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료했다. 상세 이력은 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고.
+> **2026-08-13~19 후속 수정**: `CORE-01`, `DOMAIN-01`, `ADMIN-01`, `SEC-03`, `SCORE-01`, `CACHE-01`, `SEC-04`, `SEC-01`, `SEC-05`, `SEC-06`, `SEC-07`, `API-02`, `DATA-02`, `PERF-01`, `DOC-01` 완료. `SEC-02`, `COST-01`은 즉시 가능한 부분만 완료했다. 상세 이력은 [`docs/CHANGELOG.md`](../CHANGELOG.md) 참고.
 >
 > **2026-08-20 재리뷰**: `DATA-01`, `SCORE-02`, `API-01`, `ADMIN-02`, `AI-01`은 부분 완료, `TEST-02`는 실행 경로는 복구됐지만 dev rate limit 때문에 성능 threshold가 실패하는 상태로 판정했다. 후속 구현의 source of truth는 [`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md)다.
 >
@@ -1027,8 +1027,8 @@ README의 `제출 p95 20.5s → 3.73s` 개선을 인메모리 캐시 적용 성�
 
 - 이 문서: API·보안·데이터·운영·테스트 리스크의 근거와 기술 완료 조건
 - [`product-contract-audit-2026-08-13.md`](product-contract-audit-2026-08-13.md): 사용자 여정, 화면 약속, 통계 단위, 제품 결정과 제품 acceptance criteria
-- 루트 [`DOMAIN.md`](../DOMAIN.md): 바꾸기 전에 사람 확인이 필요한 OPIc 시험 규칙
-- 루트 [`PROJECT.md`](../PROJECT.md): 현재 코드 지도. 감사 finding의 해결 상태를 대신하지 않음
+- 루트 [`DOMAIN.md`](../../DOMAIN.md): 바꾸기 전에 사람 확인이 필요한 OPIc 시험 규칙
+- 루트 [`PROJECT.md`](../../PROJECT.md): 현재 코드 지도. 감사 finding의 해결 상태를 대신하지 않음
 - `docs/local/`: 과거 개인 조사 기록. 후속 작업 지시서나 현재 source of truth가 아님
 
 이 목록은 침투 테스트 결과가 아니라 현재 커밋의 정적 감사 결과다. 각 항목을 수정할 때는 먼저 해당 최소 재현을 자동 테스트로 고정한 뒤 변경해야 한다.

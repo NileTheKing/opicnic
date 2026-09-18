@@ -9,7 +9,7 @@
 ## 1. 배경
 
 STT/LLM 재시도 기능 때문에 `InputStream` 릴레이 구조를 `byte[]` 버퍼링으로 되돌린 뒤
-(`docs/multipart-bytearray-cleanup-spec-2026-08-21.md`), 4월 벤치마크(`RPS 96→652`,
+(`docs/archive/multipart-bytearray-cleanup-spec-2026-08-21.md`), 4월 벤치마크(`RPS 96→652`,
 `virtual-threads-benchmarking.md`)와 같은 조건에서 지금 코드가 여전히 그 수치를 내는지 확인 필요.
 
 Git SHA: `8e70a543fd3f0a371e99e1779fa3bab11a4214b3` (테스트 중 코드/설정 무수정)

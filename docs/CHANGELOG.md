@@ -21,7 +21,7 @@
 - 유형별 연습 모드(`/practice/type`)가 이미 구현·동작 중이었다는 게 뒤늦게 확인됨 — `docs/hold.md`/`docs/backlog.md`에 "미구현"으로 잘못 남아있던 걸 정정 (2026-07-15)
 - 학습관리 재설계: `/today`(오늘 할 일) 신규 화면 — 오늘 콤보 진행률(attemptId 기반 정확 집계), 이번 주 과제 자기신고 체크박스, D-day 연동 회피 감지. 홈/학습분석에 코칭 티저 위젯 추가 (2026-07-15)
 - Groq에서 내려간 `llama-4-scout-17b-16e-instruct`(404) → `llama-3.3-70b-versatile`로 교체. 태깅 콜(`extractFeedbackTags`)은 채점보다 가벼운 닫힌 분류 작업이라 `llama-3.1-8b-instant`로 분리해 무거운 모델의 일일 토큰 한도를 아낌 (2026-07-31)
-- `docs/codebase-risk-audit-2026-08-13.md` / `docs/product-contract-audit-2026-08-13.md` 1단계(데모를 막는 확정 기능 오류) 8건 수정 + 회귀 테스트 추가 (2026-08-13)
+- `docs/archive/codebase-risk-audit-2026-08-13.md` / `docs/archive/product-contract-audit-2026-08-13.md` 1단계(데모를 막는 확정 기능 오류) 8건 수정 + 회귀 테스트 추가 (2026-08-13)
   - PC-01/CORE-01: 모의고사 자기소개(questionType=null) 답변 시 NPE로 finalize가 막히던 문제. 자기소개는 실제 시험에서도 채점 문항으로 취급되지 않으므로 채점/태깅 LLM 호출 없이 완료 처리하고 DB에도 저장하지 않음(FeedbackResult 미생성) — "총 문항 수"/"최근 기록"/"코칭 열람 조건" 등 문항 개수 기반 통계에 섞이지 않도록 함. `typeLabel(null)` null-safe 처리
   - PC-02/DOMAIN-01: "돌발로 하기"가 일반 배경설문 주제까지 섞어 내던 문제 → `TopicCatalog.surpriseTopics()` 전용 풀만 사용
   - PC-03: 유형별 연습이 전체 지원 주제에서 뽑던 문제 → 사용자가 선택한 배경설문 주제 교집합에서만 출제
@@ -30,7 +30,7 @@
   - PC-10: 현재 문항 녹음이 "다음"을 누르기 전까지는 이탈 경고 대상이 아니었던 문제 수정
   - PC-11: 마이페이지의 "12개 이상 + 그룹별 최소" 규칙이 서버에 없어 0개 저장/toggle로 회피 가능했던 문제 → `SurveyTopicPolicy`로 온보딩과 마이페이지가 같은 규칙 공유. 1차 수정에선 서버 검증만 추가하고 화면엔 실패 이유를 안 보여줘서 "저장 버튼 눌러도 조용히 실패하는" 상태였는데, 후속 수정으로 마이페이지/온보딩 주제선택 화면에 `?error=invalidTopics` 배너 추가
   - PC-21: 온보딩을 두 탭에서 완료하면 두 번째 요청이 500이 나던 문제 → 기존 profile 존재 시 멱등 리다이렉트 + unique 제약 위반 방어
-- `docs/codebase-risk-audit-2026-08-13.md` 중 준비도 READY이고 범위가 작은 5건 수정 + 회귀 테스트 추가 (2026-08-13)
+- `docs/archive/codebase-risk-audit-2026-08-13.md` 중 준비도 READY이고 범위가 작은 5건 수정 + 회귀 테스트 추가 (2026-08-13)
   - ADMIN-01: `/admin/question-sets`가 `QuestionSet`에 없는 `difficulty` 필드를 템플릿에서 참조해 세트가 1개라도 있으면 500이 나던 문제 → 난이도 컬럼 자체 제거(QuestionSet은 애초에 난이도 개념이 없음)
   - SEC-03: `.dockerignore` 부재로 `.env`/`.git`이 Docker build context로 전송되던 문제 → `.dockerignore` 추가, 실제 build context에 두 파일이 안 들어가는 것을 더미 Dockerfile로 직접 검증
   - SCORE-01: `ExamPlanService.weightedAvg()`/`weightedAvgList()`의 지수 감쇠 가중치 방향이 반대였던 문제(최신순 리스트인데 가장 오래된 값에 가중치 1.0) → `alpha^i`로 수정해 index 0(최신)이 가장 큰 가중치를 갖도록 함
@@ -55,7 +55,7 @@
 - DATA-02: OAuth 신규가입 시 `NotificationSetting`의 FK 소유 쪽(member)을 안 채워서 매번 `member_id=null` orphan row가 생기던 문제, `(provider, providerId)`에 DB unique 제약이 없어 동시 콜백이 중복 회원을 만들 수 있던 문제 → 양쪽 다 수정. `CustomOAuth2UserService.loadUser()`에서 `@Transactional`을 제거해(전체를 하나로 묶으면 유니크 제약 위반을 잡아도 커밋 시점에 `UnexpectedRollbackException`이 남) 유니크 제약 위반 시 이미 생성된 회원으로 재조회해 수렴하도록 함. 테스트: `CustomOAuth2UserServiceMemberCreationTest` (2026-08-19)
 - PERF-01: 홈/학습분석/오늘/시험계획 화면이 점수·등급 같은 요약 정보만 쓰면서 TEXT 컬럼 15개짜리 `FeedbackResult` 전체를 무제한 로드하던 문제 → `FeedbackResultRepository.findSummaryByMemberId()`(JPQL constructor expression으로 요약 필드만 SELECT) 추가해 4개 컨트롤러 교체. `HistoryController`는 이미 페이징 중이라 대상 아니었음. 실제 MySQL(Testcontainers)로 필드 매핑과 TEXT 컬럼 미포함을 검증. 테스트: `FeedbackResultRepositorySummaryTest` (2026-08-19)
 - DOC-01: 완료 문서 3개 claim 재검증 → README의 rate limiter 수치를 COST-01 이후 실제 동작(시간당 15문항)에 맞게 수정, PROJECT.md의 "Docker만 없어서 테스트 실패" 설명이 거짓이었음을 확인(`QuestionSetAdminIntegrationTest`가 존재하지 않는 옛 form 경로를 인증/CSRF 없이 호출하고 있었음 — 현재 REST API + ADMIN 인증 + CSRF로 재작성해 통과) 후 문구 정정. CHANGELOG는 append-only 원칙상 과거 항목을 안 고치고 API-01/02 새 항목으로 간극을 메움 (2026-08-19)
-- `docs/codebase-risk-audit-2026-08-13.md` 재리뷰([`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md))에서 DATA-01/SCORE-02/TEST-02/API-01/ADMIN-02/AI-01이 "완료 표시했지만 실제로는 부분 완료"로 재판정됨. 그중 FU-02/03/04/06 4건을 실패 재현 테스트부터 완료 (2026-08-20)
+- `docs/archive/codebase-risk-audit-2026-08-13.md` 재리뷰([`audit-followup-spec-2026-08-20.md`](archive/audit-followup-spec-2026-08-20.md))에서 DATA-01/SCORE-02/TEST-02/API-01/ADMIN-02/AI-01이 "완료 표시했지만 실제로는 부분 완료"로 재판정됨. 그중 FU-02/03/04/06 4건을 실패 재현 테스트부터 완료 (2026-08-20)
   - FU-02(SCORE-02 잔여): 5단어 미만 무응답 조기 반환(`noResponseDto()`)이 questionType을 안 보고 `mainPointScore=1`을 항상 넣어, 롤플레이(TYPE_5~7)의 짧거나 빈 답변만 "평가 제외" 규칙을 우회해 다시 핵심전달 표본으로 쌓이던 문제 → 정상 길이 응답과 같은 `isRoleplayType()` 규칙을 공유하도록 수정. 테스트: `FeedbackServiceRoleplayMainPointTest`(TYPE_5~7 × 빈 문자열/1~4단어 파라미터라이즈드 + 비롤플레이 대조군)
   - FU-03(TEST-02 잔여): dev의 모든 익명 k6 attempt가 "dev-loadtest"라는 또 다른 유한 버킷(시간당 15문항)을 공유해 20~100 VU 부하테스트가 곧 대량 429가 되던 문제 → `RateLimiterService.tryConsume(cost, attemptMemberId)`로 계약 변경, dev 프로파일 + `attemptMemberId==null` 조합만 소비 자체를 건너뜀(dev 로그인 회원·production 익명은 기존 한도 유지). 프로파일 판정을 `Environment.acceptsProfiles(Profiles.of("dev"))`로 바꿔 `spring.profiles.default=dev`(활성 프로파일 미지정) 케이스도 인식. 테스트: `RateLimiterServiceDevProfileTest`
   - FU-04(API-01 잔여): DispatcherServlet이 handler를 찾기 전(eager multipart parsing)에 던지는 예외는 `@RestController` selector가 있는 `ApiExceptionHandler`가 적용되지 않아 공통 413/400이 아니라 기본 에러 페이지로 새던 문제 → selector 없는 `MultipartExceptionHandler`를 신설해 이 예외들만 전담. 실제 `MultipartResolver`가 `resolveMultipart()` 단계에서 던지는 상황을 MockMvc로 재현해 검증. 재리뷰로 추가 발견: handler가 이미 확정된 뒤(컨트롤러 내부) 같은 예외를 던지면 두 advice가 모두 적용 가능해져 order 없이는 `ApiExceptionHandler`의 catch-all이 먼저 걸려 413 대신 500이 났음 → `MultipartExceptionHandler`에 `@Order(Ordered.HIGHEST_PRECEDENCE)` 추가. 테스트: `MultipartFrameworkExceptionIntegrationTest`, `ApiExceptionHandlerMultipartTest`
@@ -75,3 +75,4 @@
 - Grafana 대시보드를 장애 대응용으로 재구성: Grafana 공식 best practices(general→specific, one row per service, thresholds, normalize axes, descriptions, no stacking)를 SLO·알림 규칙에 대입. 현재 상태(stat 6) → 애플리케이션 → 외부 API(Groq) → 재시도/리소스 → 가이드 5행 24패널. 재시도 지표를 처음 노출. 출처 없는 임계값은 넣지 않음. JVM 내부는 커뮤니티 대시보드 4701을 그대로 프로비저닝 (2026-09-18)
 
 - S1 측정 스크립트 `scripts/s1.sh` + 전환 전 모의고사 15문항 실측 7.6s(mock 3s+4.5s, 병렬). 이 숫자로 비동기 근거 ①("모의고사가 분 단위") 폐기 — Groq 무료 티어 현상이었음. 근거를 "접수 후 작업의 주인이 누구냐(재시도·재처리·완료 보장을 서버가)"로 교체, `slo.md` 전/후 표 "전" 열을 SLO 판정이 아닌 현상 기록으로 재정의 (2026-09-18)
+- 문서 구조 재편: 문서에 "태어나는 규칙"만 있고 "은퇴 규칙"이 없어 8월 감사 2개(2,250줄, 전체의 45%)·끝난 명세·안 갱신된 체크리스트가 활성 위치에 남아 있었다. `docs/adr/`(결정 기록, 상태 필드로 은퇴) + `docs/archive/`(닫힌 시점 문서) 도입, 설계 문서를 ADR-0001로, backlog는 열린 항목만(357→47줄), `AGENTS.md` Documentation Checkpoint에 은퇴 규칙 추가. 이동은 `git mv`, 참조 경로 전부 교체, 깨진 링크 0 확인 (2026-09-18)

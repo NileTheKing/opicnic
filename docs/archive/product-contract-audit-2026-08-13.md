@@ -8,7 +8,7 @@
 >
 > **2026-08-13 후속 수정**: 권장 구현 순서 1단계(PC-01, PC-02, PC-03, PC-04, PC-05, PC-10, PC-11, PC-21) 완료.
 > PC-04/PC-11은 1차 수정에서 백엔드만 막고 화면에 실패 이유를 안 보여줘 "조용히 안 되는" 상태였던 걸 재검토 후 화면(에러 배너, 미지원 콤보 숨김)까지 마저 수정.
-> 각 코드 변경에 회귀 테스트 추가(`src/test/java/.../controller`, `.../service`), 상세는 [`docs/CHANGELOG.md`](CHANGELOG.md) 참고. 나머지 항목(PC-06~09, PC-12~20, PC-22~24)은 미착수.
+> 각 코드 변경에 회귀 테스트 추가(`src/test/java/.../controller`, `.../service`), 상세는 [`docs/CHANGELOG.md`](../CHANGELOG.md) 참고. 나머지 항목(PC-06~09, PC-12~20, PC-22~24)은 미착수.
 
 ## 0. 이 문서를 사용하는 방법
 
@@ -1210,7 +1210,7 @@ PC-23의 신뢰 문구만 추가해서 끝나지 않는다. 실제 retention/del
 ## 12. 중복 문서와 source of truth
 
 - API·보안·동시성·배포 리스크의 상세 근거는 [`codebase-risk-audit-2026-08-13.md`](codebase-risk-audit-2026-08-13.md)가 source of truth다.
-- OPIc 문제 유형, 콤보, 배경설문, 모의고사 규칙은 루트 [`DOMAIN.md`](../DOMAIN.md)가 source of truth다.
-- 현재 클래스·라우트 지도는 루트 [`PROJECT.md`](../PROJECT.md)를 본다.
+- OPIc 문제 유형, 콤보, 배경설문, 모의고사 규칙은 루트 [`DOMAIN.md`](../../DOMAIN.md)가 source of truth다.
+- 현재 클래스·라우트 지도는 루트 [`PROJECT.md`](../../PROJECT.md)를 본다.
 - `docs/local/`은 과거 조사 기록이며 현재 제품 계약이나 구현 지시로 사용하지 않는다.
 - 이 문서는 제품 화면과 사용자 여정의 현재 불일치 및 후속 작업 완료 조건의 source of truth다.

@@ -66,7 +66,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **작업을 끝냈다고 선언하기 전에, 아래 중 해당하는 걸 갱신했는지 확인한다.** 문서 계층(`docs/README.md` 참고)이 있어도 갱신을 깜빡하면 금방 다시 썩는다.
 
 - 기능을 완료/삭제/큰 변경했다 → `docs/CHANGELOG.md`에 한 줄 추가
-- 진행 중이던 작업의 상태가 바뀌었다 → `docs/backlog.md`의 Done/Next 갱신
+- 진행 중이던 작업의 상태가 바뀌었다 → `docs/backlog.md` 갱신. **끝난 항목은 지운다** — Done 목록을 backlog에 쌓지 않는다(CHANGELOG가 그 역할)
+- 아키텍처 결정을 했거나 뒤집었다 → `docs/adr/`에 새 ADR. 뒤집은 거면 옛 ADR의 상태만 `Superseded by`로 바꾸고 본문은 안 고침
+- 어떤 작업이 완전히 끝났다 → 그 작업용 시점 문서(감사·명세·체크리스트)가 `docs/`에 남아 있으면 `docs/archive/`로 옮기고 `docs/README.md` archive 표에 한 줄
 - OPIc 도메인 규칙 자체가 바뀌었다 (드묾) → `DOMAIN.md` 갱신
 - 컨트롤러/서비스가 추가·삭제·역할 변경됐다 → `PROJECT.md`의 코드베이스 지도 갱신
 - 배포/인프라 구조가 바뀌었다 → `docs/deployment.md` 갱신

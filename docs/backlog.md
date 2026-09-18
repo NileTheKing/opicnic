@@ -1,357 +1,47 @@
-# Feature Backlog
+# Backlog
 
-구현 예정이거나 고도화할 기능 목록.
+**열린 작업만 둔다.** 끝난 건 `CHANGELOG.md`에 한 줄 적고 여기서 지운다 — Done 목록을 여기 쌓지 않는다(2026-09-18 전까지 그렇게 쌓여서 357줄이 됐다). 결정의 근거는 `adr/`, 검증 기준은 `performance/slo.md`.
 
----
+## 지금 — R2 + 비동기 전환 (ADR-0001)
 
-## Audit Re-review Follow-up (2026-08-20)
+순서대로. "전" 측정은 SLO 판정이 아니라 현상 기록이다(`slo.md` 전/후 표 참고).
 
-실행 명세: [`audit-followup-spec-2026-08-20.md`](audit-followup-spec-2026-08-20.md)
+- [x] S1 스크립트 + 전환 전 S1 — `scripts/s1.sh`, 7.6s (`performance/2026-09-18/s1-before.txt`)
+- [ ] 전환 전 S2(실패 주입, 콤보 50건)·S3(동시 30) — 지금 코드로. 호출 증폭은 `opicnic_external_call_seconds_count` 비율로
+- [ ] **R2 + 비동기 1단계 구현** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
+  - 이때 같이: dev attempt(memberId=null)도 DB에 저장되게 — 안 그러면 S1의 kill/restart → DB 검증이 성립 안 함
+  - VM `.env`에 R2 키 4개 넣기 (로컬 `.env`에만 있음)
+- [ ] 전환 후 S1(kill·restart 포함)~S4 → `slo.md` 전/후 표 완성
+- [ ] 블로그 초안 — "빠른 것과 안전한 것은 다르다"(S1 7.6s인데 완료율 0%)
+- [ ] 2단계: 콤보도 같은 경로로, 동기 경로 제거
 
-### Done (재리뷰로 종료 확인)
+## 운영 — 외부 LLM 제공자
 
-- POST + CSRF 로그아웃
-- 온보딩/마이페이지 설문 주제 중복 거부
-- 관리자 QuestionSet create/update/delete 후 `PracticeAttemptService` DTO 캐시 제거
+- [ ] **모델 소멸 감지 장치가 없다.** 7/31, 8/31 두 번 다 우연히 발견. 응답 시간·힙·에러율 전부 정상이고 사용자만 실패 카드를 본다. 기동 시 모델 존재 확인이나 채점 실패율 알림 중 하나는 필요 (`ScoringFailureRateHigh` 알림이 9/18 생겼으니 그걸로 잡히는지 확인)
+- [ ] 답변 제출 경로에 동시 요청 수 상한이 없다 — 8/31 500VU OOM 87회의 근본 원인. 허용치는 부하테스트로 산정, 구현 방식(세마포어 등)은 그 다음. 비동기 전환 후엔 워커 동시성으로 대체될 수 있음
+- [ ] (별건) axon 프로젝트 `axon-grafana`가 `0.0.0.0:3000` 바인딩. `127.0.0.1:`로 — 그쪽에 전달
 
-### Done (FU 후속 완료, 2026-08-20)
+## 감사 후속 (archive/audit-followup-spec-2026-08-20.md 잔여)
 
-- FU-02 / SCORE-02: 5단어 미만 TYPE_5~7도 `mainPointScore=null` — `noResponseDto()`가 questionType 확인하도록 수정
-- FU-03 / TEST-02: dev 전용 null-member k6 attempt만 rate limit 우회 — `tryConsume(cost, attemptMemberId)` 계약 변경
-- FU-04 / API-01: handler 탐색 전 multipart 실패도 공통 413/400 응답 — selector 없는 `MultipartExceptionHandler`(+`@Order(HIGHEST_PRECEDENCE)`) 신설
-- FU-06 / AI-01: 답변별 tag distinct와 coaching의 feedback ID 기준 집계 — `addTags()` distinct 처리 + `CoachingService` occurrence를 `Set<feedbackResultId>` 기준으로 변경
-
-### Next
-
-- [ ] FU-01 / DATA-01: DB finalization marker를 source of truth로 둔 finalize 멱등성
+- [ ] FU-01 / DATA-01: DB finalization marker를 source of truth로 둔 finalize 멱등성 — **비동기 전환하면 finalize 자체가 없어지므로 그때 자연 해소. 먼저 하지 말 것**
 - [ ] FU-05 / ADMIN-02: 모든 연습 진입점에서 pattern 조립 가능한 topic만 선택
 
-### 이번 묶음에서 제외
-
-- TEST-01(보류)
-- API-03, OPS-01, DB-01, DESIGN-01(기존 P3 미착수)
-- 캐시 적용 성능 수치와 제거된 캐시 애노테이션 과정
-
----
-
-## Practice Attempt / Feedback Retry
-
-### Done
-
-- `PracticeAttempt` 도입
-- Caffeine 기반 `PracticeAttemptStore` 구현
-- `attemptId -> questionIds/memberId/mode/status/expiresAt` 저장
-- 제출/재시도 시 클라이언트가 보낸 question content를 신뢰하지 않고 `attemptId`로 서버에서 문제 복원
-- 서버의 동일 `InputStream` 자동 재시도 제거
-- 실패 문항만 브라우저가 보관 중인 녹음 Blob으로 재제출
-- 제출 API 분리
-- 재시도 API 분리
-- finalize API 분리
-- 결과 페이지 이동 전 `beforeunload` 이탈 경고 추가
-- 지수 백오프 + Jitter 서버 자동 재시도 (max 3회, VirtualThread park 활용) — 2026-06-06
-- dev/prod 프로파일 분리 — `/start`, `/sequential-benchmark`를 `@Profile("dev")` 전용 컨트롤러로 분리 — 2026-06-06
-- 모바일 반응형 — 사이드바 `hidden md:flex`, 하단 bottom nav 추가 — 2026-06-06
-- `restoreQuestionsForIndexes` ConcurrentHashMap 캐싱 + `@Transactional(readOnly=true)` 제거 — start p95 16.69s→20ms, answers p95 20.5s→3.73s — 2026-06-11
-- Feedback 점수 필드 6개 (vocabularyScore~overallGrade) + 한국어 전용 프롬프트 + 테스트 7개 — 2026-06-11
-- 주제탐색 카테고리화 (전체/내주제 카테고리별 섹션, 토글 DOM 즉시 반영) — 2026-06-12
-- `POST /mypage/topics/toggle` API — 2026-06-12
-- 온보딩 "전체 선택" 버튼 — 2026-06-12
-
-### Current Shape
-
-```text
-문제 시작:
-GET /practice/combo
-GET /practice/mock
--> Thymeleaf Controller가 questions + attemptId 생성
--> question.html 렌더링
-
-답변 제출:
-POST /api/practice-attempts/{attemptId}/answers
-
-실패 문항 재제출:
-POST /api/practice-attempts/{attemptId}/answers/retry
-
-결과 확정:
-POST /api/practice-attempts/{attemptId}/finalize
-
-결과 화면:
-GET /practice/feedback/result
-```
-
-현재 구조는 `시작/결과 화면 = Thymeleaf`, `제출/재시도/finalize = API`인 중간 단계다. attemptId는 URL 경로로 승격, 응답은 타입 있는 DTO(`SubmissionResponseDto` 등)로 정리 완료 — 2026-07-14.
-
-### Next
-
-- `restoreQuestionsForIndexes` 캐싱 — 500 VU 부하테스트에서 발견된 병목. 매 제출마다 DB 조회 → ConcurrentHashMap 캐싱으로 해소 예정
-- `HttpServletRequest#getParameter`, `getParts` 직접 파싱 제거
-- 결과 누적용 session 제거 여부 결정
-- `resultId` 기반 결과 조회 구조 검토
-- IndexedDB에 녹음 Blob 임시 저장
-- React 전환 시 `POST /api/practice-attempts` 시작 API 연결
-- Caffeine store를 Redis store로 교체 가능한 구조 유지
-
----
-
-## OPIc Mock Exam
-
-### Done
-
-- 난이도별 런타임 `ComboPattern` 적용
-- Level 3~4: `[123] [123] [134] [674] [15]`
-- Level 5~6: `[123] [134] [134] [678] [910]`
-- 선택 주제 3개 + 돌발 후보 2개 배치
-- 돌발 슬롯 랜덤화
-- `ComboPattern.order` 제거
-- 지원 주제/주제 그룹 `TopicCatalog` 공통화
-- DB에 `QuestionSet`이 있는 주제만 후보로 사용
-- 후보 부족 시 같은 주제를 반복하지 않고 모의고사 시작 차단
-
-### Done (추가)
-
-- 돌발 전용 풀 분리 — `TopicCatalog.surpriseTopics()` 23개 (5그룹) — 2026-06-12
-- 돌발 주제 QuestionSet DataInitializer V1(10개)/V2(9개)/V3(4개) = 23개 삽입 — 2026-06-12
-- `MockExamService` 배경설문 fallback 완전 제거, 돌발 전용 풀 사용 — 2026-06-12
-
-### Next
-
-- 기존 `Combo` 엔티티/전략 계열 제거 여부 결정
-- `QuestionSet`이 `TYPE_1~TYPE_10`을 모두 갖는지 관리자 저장 시점 또는 테스트에서 검증
-- 잘못된 topic/difficulty URL 파라미터 예외 처리
-
----
-
-## Feedback Scoring & Analytics
-
-### 배경
-
-현재 `FeedbackResult`의 vocabulary, grammar, fluency 등 모든 항목이 자유 텍스트로 저장된다.
-집계/분석이 불가능한 구조라 취약 유형 추천, 학습 이력 시각화를 할 수 없다.
-
-### 계획
-
-**1. 프롬프트 개선 — 점수 필드 추가**
-
-LLM에게 텍스트 평가와 함께 1~5 정수 점수를 요청한다.
-
-```json
-{
-  "vocabulary": "평가 설명",
-  "vocabularyScore": 3,
-  "grammar": "평가 설명",
-  "grammarScore": 4,
-  "fluency": "평가 설명",
-  "fluencyScore": 2,
-  "content": "평가 설명",
-  "contentScore": 3,
-  "mainPoint": "평가 설명",
-  "mainPointScore": 3,
-  "overall": "평가 설명",
-  "overallGrade": "IM2"
-}
-```
-
-**2. LLM 출력 결정론적 제어**
-
-LLM 점수는 본질적으로 확률적이지만 다음 세 가지를 조합해 실용적으로 가둔다.
-
-- `temperature: 0` — 같은 입력에 일관된 출력
-- JSON Schema 강제 — integer 타입 + minimum/maximum 범위 선언
-- 앱 레벨 클램핑 — 파싱 시 범위 벗어난 값 강제 보정 (`Math.clamp(score, 1, 5)`)
-
-**3. FeedbackResult 스키마 변경**
-
-`vocabularyScore`, `grammarScore`, `fluencyScore`, `contentScore`, `mainPointScore` (INT),
-`overallGrade` (VARCHAR) 컬럼 추가.
-
-**4. 취약 유형 분석 쿼리 예시**
-
-```sql
-SELECT questionType, AVG(grammarScore), AVG(fluencyScore)
-FROM feedback_result
-WHERE member_id = ?
-GROUP BY questionType
-ORDER BY AVG(grammarScore) ASC;
-```
-
-→ "TYPE_3 문제에서 문법 점수 낮음 → C1/C2 패턴 집중 추천"
-
-### Done (추가)
-
-- 프롬프트 + temperature 수정 (한국어 전용, temperature:0) — 2026-06-11
-- JSON Schema 기반 structured output (Groq) — 2026-06-11
-- FeedbackResult 스키마 마이그레이션 (6개 score 컬럼) — 2026-06-11
-- FeedbackDTO 점수 필드 추가 — 2026-06-11
-
-### Done (추가)
-
-- LLM 응답 품질 검증 완료 (score 필드 정상 동작, 주제 관련성 채점 검증) — 2026-06-12
-- 학습분석 탭 (/analytics) + 사이드바 탭 추가 — 2026-06-12
-- 학습분석 UI 개선 (2컬럼 레이아웃, 동점 복수 강조, 미연습 유형 전체 표시, 타입 레이블 병기) — 2026-06-12
-- 스터디 게시판 비활성화 (`@Profile("dev")` 3개 컨트롤러 + 사이드바 링크 제거) — 2026-06-12
-
-### Done (추가)
-
-- 유형별 연습 모드 (`/practice/type?type=TYPE_N`, `PracticeTypeController`) — 문서에 "미구현"으로 잘못 남아있었으나 실제로는 이미 구현·동작 확인함, 문서만 뒤늦게 반영 (2026-07-15)
-
-### Next
-
-(없음 — 아래 "유형별 연습 모드" 섹션도 참고, 완료됨)
-
----
-
-## Learning Analytics & Recommendation
-
-### Done
-
-- 학습분석 탭: 항목별 평균 점수, 주제별 현황, 문제 유형별 점수 — 2026-06-12
-- UI 개선: 2컬럼 레이아웃, 동점 복수 강조(weakestKeys), 미연습 유형 전체 표시, 레이블 병기 — 2026-06-12
-- 유형별 연습 엔드포인트(`/practice/type`) → 학습분석/오늘 할 일 "연습" 버튼 연결 확인 (2026-07-15)
-
----
-
-## 학습관리 재설계 — A(현황판)/B(오늘 할 일)/C(설정) 재배치
-
-### 배경
-
-기존에 "학습관리"를 4번째 화면(축)으로 만들려다, 약점 노출이 시험일정/학습분석/코칭에 이미 3중으로 흩어져 있어 보류됨. 기능 출처가 아니라 정보 종류로 재배치하는 방향으로 재설계 — 상세 설계 결정은 커밋 히스토리의 계획 문서 참고.
-
-### Done
-
-- `TodayController` (`GET /today`, `POST /today/task-done`) 신규 — B(오늘 할 일) 화면 — 2026-07-15
-- `FeedbackResult.attemptId` 컬럼 추가 + `saveFeedbackResults()`에서 채움 → `COUNT(DISTINCT attemptId)`로 오늘 완료 콤보 개수 정확히 집계(답변 개수 아님)
-- `CoachingReport.thisWeekTaskDone` 필드 추가 — 이번 주 과제 자기신고 체크박스, 새 리포트 생성 시 기본 false로 자동 리셋
-- 회피 감지 2단계: D-day 구간별 임계값(D-4=2일/D-7=3일/D-14=5일/그 이상=7일 캡)로 방치된 유형 감지 → 그 중 약점 유형(상위 3)이면 우선순위 높게 표시
-- `CoachingService.parseReport()` — `CoachingController`의 private 메서드를 public으로 승격, 코칭 리포트 JSON 파싱 로직 중복 제거
-- `CoachingService.buildTeaser()` — 홈/`/analytics`/`/today` 공통 코칭 티저 문구 생성(리포트 있음/조건 충족/미충족 3가지 상태)
-- 홈(`/`)에 B 요약 위젯 + 코칭 티저 위젯 2개 추가 (기존 보조카드 grid 아래, 새 nav 탭은 추가 안 함)
-- `/analytics`(A)에 코칭 티저 카드 추가
-
-### Next
-
-- [ ] `/today` 회피 감지에 "얼마나 오래 미연습했는지"뿐 아니라 완전 미연습 유형도 포함할지 결정 (현재는 최소 1회 연습한 유형만 대상)
-
----
-
-## 개별 연습 기록 조회 (History)
-
-### 배경
-
-과거에 제출한 개별 답변 피드백을 다시 볼 방법이 앱에 없었음 — `PracticeFeedbackController`는 세션 데이터에만 의존해서 제출 직후 결과 화면을 벗어나면 DB엔 남아있어도 다시 못 봄. "기록" 탭(`/analytics`, A)도 집계 통계만 있었지 개별 기록은 없었음.
-
-### Done
-
-- `HistoryController` (`GET /analytics/history` 목록, `GET /analytics/history/{id}` 상세) 신규 — 2026-07-15
-- `FeedbackResultRepository.findByIdAndMemberId` 추가 (소유권 체크, `CoachingReportRepository`와 동일 패턴)
-- `ExamPlanService.typeLabel()` public으로 승격해 유형 라벨 재사용
-- `/analytics`(A)에 최근 기록 미리보기(5개) + "전체 보기" 링크 추가
-- 홈(`/`)에 5번째 카드 "최근 기록" 추가
-
-### Next
-
-- [ ] 페이지네이션 (지금은 최근 20개만, UI 없음)
-
----
-
-## 채점 항목별 집중 연습 모드 (Focus Mode)
-
-### 배경
-
-현재 연습은 항상 전체 5개 항목(어휘/문법/메인포인트/유창성/내용)을 동시에 평가한다.
-하지만 OPIc 등급 향상을 위해 특정 항목에 집중하는 연습이 더 효과적인 경우가 있다.
-
-### 항목별 의미 (OPIc 등급 관점)
-- **mainPoint + content**: 핵심 포인트를 정했는지, 그걸 중심으로 전체 흐름을 끌고 가는지 — IL→IM 핵심
-- **vocabulary**: 형용사, 감정 표현, 비유, 묘사 등 표현의 풍부함 — IM→IH 핵심
-- **fluency**: 끊기지 않고 문단 단위로 이어가는 능력 — 별도 모드 효과 의문, 보류
-- **grammar**: 시제 일관성, 문장 구조 다양성 — 나중에 검토
-
-### 계획
-1. **메인포인트 집중 모드** (우선순위 1)
-   - 프롬프트: mainPoint + content만 평가, 나머지 생략
-   - 피드백: "포인트가 있었나요? 전체 흐름이 일관적였나요?"
-   - UI: 답변 후 mainPoint/content 2개 점수 + 코칭 메시지만 표시
-
-2. **어휘/표현 집중 모드** (우선순위 2)
-   - 프롬프트: vocabulary만 평가 — 형용사, 감정, 비유 사용 여부 중심
-   - 피드백: "이 문장을 더 풍부하게 바꾸면?" 제안 포함
-   - UI: vocabularyScore + 개선 예시 표시
-
-3. **문법 모드** (보류 — 나중에 결정)
-
-### 진입점
-- 메인 홈화면: "집중 연습" 섹션 (유형별 연습과 함께)
-- 학습분석 화면: 약점 항목 옆 "집중 연습하기" 버튼
-
----
-
-## 유형별 연습 모드 (Type-Based Practice)
-
-**구현 완료** (`PracticeTypeController`, `/practice/type?type=TYPE_N`) — 아래는 당시 계획 기록.
-
-### 배경
-
-OPIc에서 유형(묘사/경험/롤플레이 등)에 익숙해지면 주제가 바뀌어도 답변 패턴 재활용 가능.
-현재 연습은 주제 기준이고 유형을 선택할 수 없다.
-
-문제 유형 정의는 `DOMAIN.md` 참고.
-
-### 계획
-- 특정 유형의 문제만 뽑아 연습하는 엔드포인트
-- 주제는 랜덤 (유형 고정, 주제 랜덤)
-- 피드백은 기존 전체 평가 사용
-
-### 진입점
-- 메인 홈화면: "유형별 연습" 섹션
-- 학습분석 화면: 문제 유형별 점수 옆 "연습하기" 버튼
-
----
-
-## 업로드/부하 방어선 (2026-08-31)
-
-### Done
-
-- 멀티파트 상한 축소 + 브라우저 120초 자동 정지 (4겹 방어 — CHANGELOG 2026-08-31 참고)
-
-### Next
-
-- [ ] 답변 제출 경로에 동시 요청 수 상한이 없다. 2026-08-31 500VU 재현 테스트에서 관측된 OOM 87회의 근본 원인 — 파일 크기 상한은 요청 1건의 최대치만 정하고, 동시에 몇 건까지 받을지는 아무도 안 정하고 있다. 적정 허용치는 추측으로 정하지 말고 부하테스트로 산정할 것 (세마포어 등 구현 방식은 그 다음 결정)
-- [ ] 모의고사 15문항을 한 요청에 담는 제출 구조가 힙 노출의 실질 증폭기다. 콤보 단위로 쪼개면 요청당 파일 3개로 줄고 `max-request-size`도 함께 낮출 수 있지만, 재시도(`/answers/retry`의 questionIndexes 매핑)와 finalize(전 문항 완료 판정) 플로우까지 걸리는 구조 변경이라 별도 설계가 필요
-
----
-
-## 외부 LLM 제공자 대응 (2026-09-09)
-
-### Done
-
-- Groq이 내린 모델 2종 교체 + 태깅 모델 설정값 분리 + `reasoningEffort("low")` (CHANGELOG 2026-08-31 참고)
-- 운영 Prometheus 앱 메트릭 수집 복구 (CHANGELOG 2026-09-09 참고)
-- **재시도 범위가 너무 넓던 문제.** LLM만 실패해도 재시도 루프가 STT부터 다시 돌아 8/31 측정에서 STT 호출 43건 중 22건만 성공(429 21회)했던 것을, `speechText`를 재시도 루프 밖으로 꺼내 성공한 STT 결과를 재사용하도록 고침 (CHANGELOG 2026-09-09 참고)
-
-### Next
-
-- [ ] **모델 소멸 감지 장치가 없다.** 같은 사고가 두 번(7/31, 8/31) 났는데 둘 다 다른 작업 중에 우연히 발견했다. 이 실패는 서버 지표에 안 잡힌다 — 응답 시간·힙·에러율 모두 정상이고 사용자만 실패 카드를 본다. 부하테스트로도 못 잡는 종류다. 기동 시 모델 존재 확인이나 채점 실패율 알림 중 하나는 필요
-- [ ] **모의고사 15문항 일괄 제출 실측을 다시 해야 한다.** 8/31 측정은 모델 404 때문에 무효였고(측정된 14.7초는 재시도·429 대기의 합), `ManualMockExamMeasurementTest`는 그대로 쓸 수 있다. 단 TPM 8K 기준으로 15문항 채점은 한 번에 통과할 수 없다는 게 계산으로 이미 나와 있어, 재측정 목적은 "되는지"가 아니라 "얼마나 걸리는지"다
-- [x] **동기/비동기 결정 완료 (2026-09-17)** — R2 + 비동기, 2단계 이행(모의고사 먼저, 콤보 나중). 근거·구조·연쇄 변경·제외한 대안은 [`async-r2-design-2026-09-17.md`](async-r2-design-2026-09-17.md). 다음 작업은 그 문서의 1단계
-
----
-
-## 관측성 + R2 준비 (2026-09-18)
-
-### Done
-
-- 의존성 RED 계측(`opicnic_external_call_seconds`, `opicnic_retry_total`), HTTP 지연 분위수, attemptId MDC(가상 스레드 fork에 복사 전파), `ScoringFailureRateHigh` 알림 → Alertmanager → Discord(실제 수신 확인), Grafana 프로비저닝 — 배포됨
-- 실제 LLM 429가 긴 백오프를 못 타던 버그 수정 — 계측 작업 중 발견, 배포됨
-- R2 버킷·CORS·라이프사이클 `scripts/r2/setup.sh` — 생성 완료. 앱용 S3 키 `.env`에
-- Grafana 공개 경로 제거, SSH 터널로만. 대시보드 장애 대응용 재구성 + JVM 커뮤니티 4701
-- 합성 모니터링은 소재로 억지라 제외. 필요해지면 STT만 10분 간격(Groq 채점 TPD와 경쟁)
-
-### Next — 순서대로
-
-- [x] **S1용 셸 스크립트** — `scripts/s1.sh`, 전환 전 실측 7.6s 기록(`performance/2026-09-18/s1-before.txt`). kill/restart·DB 검증은 전환 전엔 결과가 구조상 정해져 있고 dev attempt(memberId=null)는 DB 저장이 안 돼 성립하지 않음 → 전환 후 구현 때 dev attempt 저장 경로를 붙이고 나서 추가
-- [ ] **전환 전 S2·S3 측정** — 지금 코드로. 구현 **전에** 해야 전/후 비교가 성립. 호출 증폭은 `opicnic_external_call_seconds_count` 비율로. "전" 값은 SLO 판정이 아니라 현상 기록(`slo.md` 전/후 표 참고)
-- [ ] **R2 + 비동기 1단계 구현** — `docs/async-r2-design-2026-09-17.md` 4절. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
-- [ ] **전환 후 S1~S4 측정** → `slo.md` 전/후 표 완성
-- [ ] 블로그 초안 — 위가 끝난 뒤
-- [ ] (별건) axon 프로젝트 `axon-grafana`가 `0.0.0.0:3000`으로 바인딩. 지금은 Oracle 방화벽이 막지만 `127.0.0.1:`로 바꿔야 함 — 그쪽 에이전트에 전달
-
+## 제품 — 작은 것
+
+- [ ] `/analytics/history` 페이지네이션 (최근 20개만, UI 없음)
+- [ ] `/today` 회피 감지에 완전 미연습 유형도 포함할지 (현재는 1회 이상 연습한 유형만)
+- [ ] `QuestionSet`이 `TYPE_1~10`을 다 갖는지 관리자 저장 시점 또는 테스트에서 검증
+- [ ] 잘못된 topic/difficulty URL 파라미터 예외 처리
+- [ ] 기존 `Combo` 엔티티/전략 계열 제거 여부 — 출제 source of truth가 아님(`PROJECT.md`)
+
+## 제품 — 구상 단계 (착수 안 함)
+
+### 집중 연습 모드 (`PracticeFocusController` 자리만 있음)
+전체 5항목 대신 하나에 집중. 등급 관점: IL→IM은 mainPoint+content, IM→IH는 expression.
+1. 메인포인트 집중 — 프롬프트는 mainPoint+content만, 결과도 그 둘 + 코칭 문장만
+2. 어휘/표현 집중 — expression만, "이 문장을 더 풍부하게" 제안 포함
+3. 문법/유창성 — 별도 모드 효과 의문, 보류
+진입점: 홈 "집중 연습" 섹션, 학습분석 약점 항목 옆 버튼.
+
+### React 전환 시
+- `POST /api/practice-attempts` 시작 API 연결, `HttpServletRequest#getParts` 직접 파싱 제거, 결과 누적용 session 제거, `resultId` 기반 결과 조회, IndexedDB 녹음 Blob 임시 저장 — 비동기 전환과 겹치는 부분이 많아 ADR-0001 구현 후 다시 본다
