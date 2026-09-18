@@ -8,7 +8,8 @@
 
 - [x] S1 스크립트 + 전환 전 S1 — `scripts/s1.sh`, 7.6s (`performance/2026-09-18/s1-before.txt`)
 - [x] 전환 전 S2·S3 — 증폭 1.50배(SLO 1.65), 동시 30에서 p95 7.56s로 1명과 동일 (`performance/2026-09-18/`). 동기의 문제는 속도가 아니라 유실·실패 시 사용자 재제출로 확정
-- [ ] **R2 + 비동기 1단계 구현** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
+- [x] 1단계 (1/4): 잡 테이블 `ScoringJob`/`ScoringJobItem` + `AudioStorage`(R2/인메모리) — 2026-09-18
+- [ ] **R2 + 비동기 구현 (나머지)** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. 대화에서 정한 구현 결정: dev 테스터 회원(nullable 대신) / 워커 동시 상한 설정값 30 / 숏폴링 2초, SSE는 후속 / submit 시 R2 HEAD 안 함 / URL 발급은 녹음 후(서명에 크기 포함) / 경로 `/api/scoring-jobs`. 순서: API 3개 → 워커 → 화면 → 정리. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
   - 이때 같이: dev attempt(memberId=null)도 DB에 저장되게 — 안 그러면 S1의 kill/restart → DB 검증이 성립 안 함
   - VM `.env`에 R2 키 4개 넣기 (로컬 `.env`에만 있음)
 - [ ] 전환 후 S1(kill·restart 포함)~S4 → `slo.md` 전/후 표 완성
@@ -19,7 +20,7 @@
 
 - [ ] **모델 소멸 감지 장치가 없다.** 7/31, 8/31 두 번 다 우연히 발견. 응답 시간·힙·에러율 전부 정상이고 사용자만 실패 카드를 본다. 기동 시 모델 존재 확인이나 채점 실패율 알림 중 하나는 필요 (`ScoringFailureRateHigh` 알림이 9/18 생겼으니 그걸로 잡히는지 확인)
 - [ ] 답변 제출 경로에 동시 요청 수 상한이 없다 — 8/31 500VU OOM 87회의 근본 원인. 허용치는 부하테스트로 산정, 구현 방식(세마포어 등)은 그 다음. 비동기 전환 후엔 워커 동시성으로 대체될 수 있음
-- [ ] (별건) axon 프로젝트 `axon-grafana`가 `0.0.0.0:3000` 바인딩. `127.0.0.1:`로 — 그쪽에 전달
+- [ ] (별건) axon 프로젝트 `axon-grafana`가 `0.0.0.0:3000`, `axon-mysql`이 `0.0.0.0:3306` 바인딩. 7/15 랜섬웨어와 같은 설정. 둘 다 `127.0.0.1:`로 — 그쪽에 전달
 
 ## 감사 후속 (archive/audit-followup-spec-2026-08-20.md 잔여)
 
