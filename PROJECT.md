@@ -106,6 +106,11 @@ HomeController (/practice/mock)
 | `CoachingReport` | 생성된 코칭 리포트. `thisWeekTaskDone`으로 `/today`의 이번주 과제 자기신고 체크 상태 저장(새 리포트 생성 시 기본 false로 리셋) |
 | `ExamSchedule` | 시험 준비 학습 스케줄 |
 | `NotificationSetting` | 알림 설정 |
+| `job/ScoringJob` / `ScoringJobItem` | 비동기 채점 잡 테이블(ADR-0001). attempt 1행 + 문항별 행(상태·시도 횟수·R2 키·결과 ID). 저장·재시도·실패의 단위가 문항이다. 1단계에서는 모의고사만 이 경로, 콤보는 Caffeine `PracticeAttempt` 유지. 워커 집기는 `ScoringJobItemRepository.claim()`(UPDATE WHERE status=QUEUED) |
+
+## 오디오 저장소 (`storage/`)
+
+`AudioStorage` 인터페이스 — `R2AudioStorage`(운영, AWS S3 SDK + R2 엔드포인트)와 `InMemoryAudioStorage`(테스트, R2 키 없는 로컬). `config/StorageConfig`가 `R2_ACCOUNT_ID` 유무로 고른다. presigned PUT은 서명에 `Content-Length`·`Content-Type`을 넣어 다른 크기·타입의 업로드를 R2가 403으로 거절하게 한다(`R2AudioStorageLiveTest`로 실제 확인). presign은 네트워크 호출이 아니라 로컬 서명이다.
 
 ## PracticeAttempt / attemptId 설계 배경
 

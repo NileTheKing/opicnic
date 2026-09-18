@@ -50,6 +50,9 @@ dependencies {
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'com.bucket4j:bucket4j-core:8.10.1'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+	// R2는 S3 API 호환 — 전용 SDK 없이 AWS S3 SDK에 엔드포인트만 R2로 (config/StorageConfig)
+	implementation platform('software.amazon.awssdk:bom:2.29.52')
+	implementation 'software.amazon.awssdk:s3'
 
 	// Spring AI dependencies deprecated in favor of Google AI Studio Gemini
 	//implementation "org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter:${springAiVersion}"
