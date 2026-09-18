@@ -35,7 +35,7 @@ class ExternalCallMetricsTest {
     @DisplayName("STT mock 429 주입이면 kind=stt outcome=429 타이머 count가 1 증가한다")
     void sttMock429_recordsOutcome429() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0,
+        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, 0.0,
                 new ObjectMapper(), registry);
 
         assertThatThrownBy(() -> sttService.sendStreamToStt(new byte[]{1}, "a.webm")).isNotNull();
@@ -48,7 +48,7 @@ class ExternalCallMetricsTest {
     @DisplayName("STT mock 정상 반환이면 kind=stt outcome=ok 타이머 count가 1 증가한다")
     void sttMockOk_recordsOutcomeOk() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 0.0, 0.0,
+        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 0.0, 0.0, 0.0,
                 new ObjectMapper(), registry);
 
         sttService.sendStreamToStt(new byte[]{1}, "a.webm");

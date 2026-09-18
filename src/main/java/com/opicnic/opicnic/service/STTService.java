@@ -13,8 +13,10 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -38,6 +40,7 @@ public class STTService {
     private final long mockDelayMs;
     private final double mock429Rate;
     private final double mock5xxRate;
+    private final double mockTimeoutRate;
 
     public STTService(RestClient.Builder restClientBuilder,
                       @Value("${spring.ai.stt.api-key}") String apiKey,
@@ -45,6 +48,7 @@ public class STTService {
                       @Value("${STT_MOCK_DELAY_MS:0}") long mockDelayMs,
                       @Value("${STT_MOCK_429_RATE:0}") double mock429Rate,
                       @Value("${STT_MOCK_5XX_RATE:0}") double mock5xxRate,
+                      @Value("${STT_MOCK_TIMEOUT_RATE:0}") double mockTimeoutRate,
                       ObjectMapper objectMapper,
                       MeterRegistry meterRegistry) {
         // restClientBuilder는 Spring Boot가 spring.http.client.* 타임아웃 설정을 적용해 관리하는 빈이다.
@@ -56,6 +60,7 @@ public class STTService {
         this.mockDelayMs = mockDelayMs;
         this.mock429Rate = mock429Rate;
         this.mock5xxRate = mock5xxRate;
+        this.mockTimeoutRate = mockTimeoutRate;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
     }
@@ -70,7 +75,7 @@ public class STTService {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
-            // S2 측정용 실패 주입 — STT_MOCK_429_RATE/STT_MOCK_5XX_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
+            // S2 측정용 실패 주입 — STT_MOCK_429_RATE/STT_MOCK_5XX_RATE/STT_MOCK_TIMEOUT_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
             double roll = ThreadLocalRandom.current().nextDouble();
             if (roll < mock429Rate) {
                 log.info("[MOCK] STT 실패 주입 (429)");
@@ -81,6 +86,14 @@ public class STTService {
                 log.info("[MOCK] STT 실패 주입 (503)");
                 throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable",
                         HttpHeaders.EMPTY, MOCK_5XX_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            }
+            if (roll < mock429Rate + mock5xxRate + mockTimeoutRate) {
+                // RestClient read-timeout이 실제로 던지는 형태(ResourceAccessException ← SocketTimeoutException).
+                // 실제라면 read-timeout(60s)만큼 기다린 뒤 나지만, 여기서는 mockDelayMs만 쓰고 바로 던진다 —
+                // S2가 재는 건 호출 횟수(증폭)이지 대기 시간이 아니다.
+                log.info("[MOCK] STT 실패 주입 (timeout)");
+                throw new ResourceAccessException("I/O error on POST request for \"" + GROQ_STT_URL + "\": Read timed out",
+                        new SocketTimeoutException("Read timed out"));
             }
             log.info("[MOCK] STT 스킵, 고정 텍스트 반환 (delay={}ms)", mockDelayMs);
             return "I went to the beautiful park yesterday and had a great time with my best friends.";

@@ -7,17 +7,22 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// S2 측정용 실패 주입 스위치(STT_MOCK_429_RATE/STT_MOCK_5XX_RATE) 회귀 테스트.
+// S2 측정용 실패 주입 스위치(STT_MOCK_429_RATE/STT_MOCK_5XX_RATE/STT_MOCK_TIMEOUT_RATE) 회귀 테스트.
 // enabled=false(mock) 경로에만 있는 로직이라 실제 Groq 호출 없이 STTService를 직접 생성해서 검증한다.
 class STTServiceMockFailureInjectionTest {
 
     private STTService newMockSttService(double rate429, double rate5xx) {
-        return new STTService(RestClient.builder(), "dummy-key", false, 0L, rate429, rate5xx, new ObjectMapper(), new SimpleMeterRegistry());
+        return newMockSttService(rate429, rate5xx, 0.0);
+    }
+
+    private STTService newMockSttService(double rate429, double rate5xx, double rateTimeout) {
+        return new STTService(RestClient.builder(), "dummy-key", false, 0L, rate429, rate5xx, rateTimeout, new ObjectMapper(), new SimpleMeterRegistry());
     }
 
     @Test
@@ -40,6 +45,16 @@ class STTServiceMockFailureInjectionTest {
                 .isInstanceOf(HttpServerErrorException.class)
                 .satisfies(e -> assertThat(((HttpServerErrorException) e).getStatusCode())
                         .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
+    }
+
+    @Test
+    @DisplayName("STT_MOCK_TIMEOUT_RATE=1.0이면 항상 read-timeout 형태(ResourceAccessException ← SocketTimeoutException)를 던진다")
+    void rateTimeoutOne_alwaysThrowsTimeout() {
+        STTService sttService = newMockSttService(0.0, 0.0, 1.0);
+
+        assertThatThrownBy(() -> sttService.sendStreamToStt(new byte[]{1}, "a.webm"))
+                .isInstanceOf(ResourceAccessException.class)
+                .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
     }
 
     @Test

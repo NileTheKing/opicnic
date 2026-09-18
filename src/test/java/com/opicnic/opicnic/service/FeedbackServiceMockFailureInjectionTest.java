@@ -37,7 +37,7 @@ class FeedbackServiceMockFailureInjectionTest {
     @Test
     @DisplayName("STT mock 429 주입 예외가 FeedbackService.isRateLimited()를 true로 만든다")
     void sttMock429Exception_isDetectedAsRateLimited() throws Exception {
-        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, new ObjectMapper(), new SimpleMeterRegistry());
+        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, 0.0, new ObjectMapper(), new SimpleMeterRegistry());
 
         Throwable thrown = null;
         try {
@@ -76,7 +76,7 @@ class FeedbackServiceMockFailureInjectionTest {
     @Test
     @DisplayName("STT가 항상 429를 던지면 3회 재시도 후 실패 카드가 되고, rate-limit 백오프(긴 대기)가 적용된다")
     void sttAlwaysRateLimited_retriesThenFailsWithRateLimitBackoff() {
-        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, new ObjectMapper(), new SimpleMeterRegistry());
+        STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, 0.0, new ObjectMapper(), new SimpleMeterRegistry());
         GroqService groqService = Mockito.mock(GroqService.class); // STT 단계에서 항상 실패하므로 호출되지 않아야 함
         FeedbackService feedbackService = new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
 

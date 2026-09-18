@@ -21,7 +21,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,9 @@ public class GroqService {
 
     @Value("${LLM_MOCK_5XX_RATE:0}")
     private double mock5xxRate;
+
+    @Value("${LLM_MOCK_TIMEOUT_RATE:0}")
+    private double mockTimeoutRate;
 
     @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
     private String taggingModel;
@@ -184,7 +189,7 @@ public class GroqService {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
-            // S2 측정용 실패 주입 — LLM_MOCK_429_RATE/LLM_MOCK_5XX_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
+            // S2 측정용 실패 주입 — LLM_MOCK_429_RATE/LLM_MOCK_5XX_RATE/LLM_MOCK_TIMEOUT_RATE가 0이면(기본값) 기존과 동일하게 항상 성공.
             double roll = ThreadLocalRandom.current().nextDouble();
             if (roll < mock429Rate) {
                 log.info("[MOCK] LLM 실패 주입 (429)");
@@ -195,6 +200,12 @@ public class GroqService {
                 log.info("[MOCK] LLM 실패 주입 (503)");
                 throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable",
                         HttpHeaders.EMPTY, MOCK_5XX_BODY.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            }
+            if (roll < mock429Rate + mock5xxRate + mockTimeoutRate) {
+                // read-timeout이 실제로 던지는 형태. 대기 시간은 흉내내지 않는다 — STTService의 같은 분기 주석 참고.
+                log.info("[MOCK] LLM 실패 주입 (timeout)");
+                throw new ResourceAccessException("I/O error on POST request for \"https://api.groq.com/openai/v1/chat/completions\": Read timed out",
+                        new SocketTimeoutException("Read timed out"));
             }
             log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환 (delay={}ms)", mockDelayMs);
             String mock = "{\"mainPoint\":\"메인포인트가 명확합니다.\",\"mainPointScore\":3,\"mainPointQuote\":\"\",\"mainPointFix\":\"\"," +
