@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    # compose 서비스 이름. container_name(opicnic_prometheus)은 쓰지 않는다 — docs/deployment.md Monitoring 참고.
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.when;
 class FeedbackServiceScoreValidationTest {
 
     private FeedbackService newService(GroqService groqService, STTService sttService) {
-        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper());
+        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
     }
 
     private String emptyTagsJson() {

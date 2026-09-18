@@ -7,8 +7,10 @@ import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.dto.QuestionDto;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -17,6 +19,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.ThreadLocalRandom;
@@ -30,6 +33,7 @@ public class FeedbackService {
     private final STTService sttService;
     private final GroqService groqService;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
         return comboPracticeService.getComboQuestions(topic, difficulty);
@@ -46,6 +50,10 @@ public class FeedbackService {
         log.info("[Structured Concurrency] 피드백 분석 시작 ({}개)", audioBuffers.size());
         long start = System.currentTimeMillis();
 
+        // MDC(attemptId 등)는 스레드 로컬이라 fork된 가상 스레드에 자동으로 안 넘어간다.
+        // 요청 스레드의 컨텍스트를 복사해 각 subtask 시작 시 넣어야 [Subtask-N] 로그에도 attemptId가 붙는다.
+        Map<String, String> mdc = MDC.getCopyOfContextMap();
+
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             List<StructuredTaskScope.Subtask<FeedbackDTO>> subtasks = new ArrayList<>();
 
@@ -56,7 +64,7 @@ public class FeedbackService {
                 final byte[] audioBuffer = audioBuffers.get(i);
                 final QuestionDto question = questions.get(i);
 
-                subtasks.add(scope.fork(() -> {
+                subtasks.add(scope.fork(withMdc(mdc, () -> {
                     long subtaskStart = System.currentTimeMillis();
                     log.info("[Subtask-{}] STT & LLM 처리 시작 (Thread: {})", idx, Thread.currentThread());
 
@@ -79,6 +87,10 @@ public class FeedbackService {
                                         : (1000L << (attempt - 1)) + ThreadLocalRandom.current().nextLong(300);
                                 log.warn("[Subtask-{}] 재시도 {}/{}, {}ms 대기{}", idx, attempt, maxAttempts - 1, delay,
                                         lastWasRateLimited ? " (rate limit 감지, 대기 연장)" : "");
+                                // 재시도 횟수만 센다(S2 호출 증폭 관측용). speechText가 없으면 STT부터 다시 부르는 재시도다.
+                                meterRegistry.counter("opicnic.retry",
+                                        "kind", speechText == null ? "stt" : "llm",
+                                        "reason", lastWasRateLimited ? "429" : "other").increment();
                                 Thread.sleep(delay);
                             }
 
@@ -185,7 +197,7 @@ public class FeedbackService {
                             .failed(true)
                             .errorMessage(lastException.getMessage())
                             .build();
-                }));
+                })));
             }
 
             scope.joinUntil(Instant.now().plus(Duration.ofSeconds(90)));
@@ -207,6 +219,17 @@ public class FeedbackService {
             log.error("병렬 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("피드백 분석 중 오류가 발생했습니다.", e);
         }
+    }
+
+    private static <T> Callable<T> withMdc(Map<String, String> mdc, Callable<T> task) {
+        return () -> {
+            if (mdc != null) MDC.setContextMap(mdc);
+            try {
+                return task.call();
+            } finally {
+                MDC.clear();
+            }
+        };
     }
 
     // STT/LLM 콜은 각각 다른 예외 스택(RestClient 직접 호출 vs Spring AI ChatModel 경유)으로 실패할 수 있어

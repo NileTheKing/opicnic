@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,7 @@ class GroqServiceMockFailureInjectionTest {
     private final QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
 
     private GroqService newMockGroqService(double rate429, double rate5xx) {
-        GroqService groqService = new GroqService(mock(ChatModel.class), new ObjectMapper());
+        GroqService groqService = new GroqService(mock(ChatModel.class), new ObjectMapper(), new SimpleMeterRegistry());
         ReflectionTestUtils.setField(groqService, "aiEnabled", false);
         ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
         ReflectionTestUtils.setField(groqService, "mock429Rate", rate429);

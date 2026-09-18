@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ class FeedbackServiceSelfIntroTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
 
         when(sttService.sendStreamToStt(any(), any()))
                 .thenReturn("My name is Yang and I am a software engineer who enjoys jogging on weekends.");

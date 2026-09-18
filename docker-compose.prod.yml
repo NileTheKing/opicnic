@@ -59,7 +59,18 @@ services:
     container_name: opicnic_prometheus
     volumes:
       - ./docker/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - prometheus_data:/prometheus
+    networks:
+      - opicnic_network
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: opicnic_alertmanager
+    volumes:
+      # deploy.sh가 alertmanager.yml.template에서 생성 (Discord 웹훅 URL 포함, .gitignore 대상)
+      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     networks:
       - opicnic_network
     restart: unless-stopped
@@ -72,6 +83,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD가 .env에 설정되어야 합니다}
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
     networks:

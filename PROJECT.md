@@ -25,6 +25,8 @@ PracticeAttemptApiController (/api/practice-attempts/{attemptId}/...)
 
 실패 문항 재시도(`/{attemptId}/answers/retry`)도 같은 `FeedbackService` 경로를 재사용한다 — attemptId로 원본 questionIds를 복원해서 재매핑.
 
+`config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 하고, `FeedbackService`는 fork한 subtask에 그 MDC를 복사한다(스레드 로컬이라 자동 전파 안 됨). Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`) — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
+
 ### 2. 코칭 리포트 생성
 
 ```

@@ -1,0 +1,14 @@
+# Alertmanager는 설정 파일에서 환경변수를 치환하지 못한다. nginx.conf.template과 같은 방식으로
+# deploy.sh가 ${DISCORD_WEBHOOK_URL}을 .env 값으로 sed 치환해 alertmanager.yml을 생성한다(.gitignore 대상).
+route:
+  receiver: discord
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url: '${DISCORD_WEBHOOK_URL}'
+        send_resolved: true

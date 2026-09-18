@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,7 @@ class GroqServiceTest {
 
     @BeforeEach
     void setUp() {
-        groqService = new GroqService(mock(ChatModel.class), objectMapper);
+        groqService = new GroqService(mock(ChatModel.class), objectMapper, new SimpleMeterRegistry());
         ReflectionTestUtils.setField(groqService, "aiEnabled", false);
         ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
     }

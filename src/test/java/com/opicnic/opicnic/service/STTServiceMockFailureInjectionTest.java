@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class STTServiceMockFailureInjectionTest {
 
     private STTService newMockSttService(double rate429, double rate5xx) {
-        return new STTService(RestClient.builder(), "dummy-key", false, 0L, rate429, rate5xx, new ObjectMapper());
+        return new STTService(RestClient.builder(), "dummy-key", false, 0L, rate429, rate5xx, new ObjectMapper(), new SimpleMeterRegistry());
     }
 
     @Test

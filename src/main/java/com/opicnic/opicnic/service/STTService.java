@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -32,6 +33,7 @@ public class STTService {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
     private final boolean enabled;
     private final long mockDelayMs;
     private final double mock429Rate;
@@ -43,7 +45,8 @@ public class STTService {
                       @Value("${STT_MOCK_DELAY_MS:0}") long mockDelayMs,
                       @Value("${STT_MOCK_429_RATE:0}") double mock429Rate,
                       @Value("${STT_MOCK_5XX_RATE:0}") double mock5xxRate,
-                      ObjectMapper objectMapper) {
+                      ObjectMapper objectMapper,
+                      MeterRegistry meterRegistry) {
         // restClientBuilder는 Spring Boot가 spring.http.client.* 타임아웃 설정을 적용해 관리하는 빈이다.
         // RestClient.builder()를 직접 호출하면 이 전역 타임아웃을 상속받지 못한다.
         this.restClient = restClientBuilder
@@ -54,9 +57,15 @@ public class STTService {
         this.mock429Rate = mock429Rate;
         this.mock5xxRate = mock5xxRate;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
     public String sendStreamToStt(byte[] audioBytes, String filename) {
+        // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
+        return ExternalCallMetrics.record(meterRegistry, "stt", () -> callStt(audioBytes, filename));
+    }
+
+    private String callStt(byte[] audioBytes, String filename) {
         if (!enabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }

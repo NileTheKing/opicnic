@@ -88,11 +88,21 @@ management:
     web:
       exposure:
         include: prometheus, health, info
+  metrics:
+    distribution:
+      percentiles-histogram:
+        # count/sum만으로는 p95가 안 나온다. SLO 버킷을 함께 지정해 카디널리티를 제한한다.
+        http.server.requests: true
+      slo:
+        http.server.requests: 100ms,500ms,1s,5s
 opicnic:
   coaching:
     min-count: 3
 
 logging:
+  # 콘솔/파일 기본 패턴의 ${LOG_CORRELATION_PATTERN} 자리에 들어간다 — AttemptIdMdcFilter가 넣는 attemptId.
+  pattern:
+    correlation: "[attempt=%X{attemptId:-}] "
   level:
     com.zaxxer.hikari: INFO
     org.hibernate.SQL: INFO

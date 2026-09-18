@@ -115,6 +115,48 @@ docker restart opicnic_prometheus
 docker exec opicnic_prometheus wget -qO- 'http://localhost:9090/api/v1/targets?state=any'
 ```
 
+같은 규칙이 Prometheus → Alertmanager(`alertmanager:9093`)와 Grafana 데이터소스(`http://prometheus:9090`)에도 적용된다. 어디든 컨테이너를 이름으로 부르는 곳엔 compose 서비스 이름을 쓴다.
+
+### 의존성 지표와 알림
+
+2026-07-31·08-31 외부 LLM 모델 소멸로 채점이 100% 실패했을 때 JVM·HTTP·HikariCP 지표는 전부 정상이었다 — 외부 호출을 세는 지표가 없어서다. 그래서 앱이 Groq 호출마다 Timer 하나를 기록한다.
+
+```
+opicnic_external_call_seconds{provider="groq", kind="stt|score|tag", outcome="ok|429|5xx|timeout|error"}
+opicnic_retry_total{kind="stt|llm", reason="429|other"}
+```
+
+**알림 규칙은 하나뿐이다** (`docker/prometheus/rules.yml`). 원인 지표(CPU·힙)엔 걸지 않는다 — 위 장애 때 그 지표들은 다 정상이었다.
+
+| 알림 | 조건 | 지속 |
+|---|---|---|
+| `ScoringFailureRateHigh` | 5분 창에서 `kind="score"` 호출 3건 이상이고 `outcome!="ok"` 비율 ≥ 50% | 2m |
+
+울리면 먼저 `GET https://api.groq.com/openai/v1/models`로 모델 생존을 확인한다(`PROJECT.md` 참고).
+
+**Alertmanager → Discord.** `alertmanager` 서비스(`prom/alertmanager`, `docker-compose.prod.yml`)가 규칙 발화를 Discord 웹훅으로 보낸다. Alertmanager 설정은 환경변수 치환이 안 되므로 nginx와 같은 방식 — `docker/alertmanager/alertmanager.yml.template`의 `${DISCORD_WEBHOOK_URL}`을 `deploy.sh`가 `.env` 값으로 `sed` 치환해 `alertmanager.yml`을 생성한다. 생성된 파일은 웹훅 URL이 들어가므로 `.gitignore` 대상이다.
+
+설정 절차:
+
+1. Discord 채널 설정 → 연동 → 웹훅 만들기 → URL 복사
+2. `.env`에 `DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...` 추가 (`.env.example` 참고). 비어 있으면 `deploy.sh`가 중단한다
+3. `./deploy.sh`
+
+규칙·설정 문법 검사(배포 전, 로컬):
+
+```bash
+docker run --rm --entrypoint promtool -v "$PWD/docker/prometheus:/etc/prometheus" prom/prometheus check rules /etc/prometheus/rules.yml
+docker run --rm --entrypoint amtool -v "$PWD/docker/alertmanager:/etc/alertmanager" prom/alertmanager check-config /etc/alertmanager/alertmanager.yml
+```
+
+규칙 파일도 바인드 마운트라 바꾸면 `docker restart opicnic_prometheus`, Alertmanager 설정을 바꾸면 `./deploy.sh`(재생성) 후 `docker restart opicnic_alertmanager`.
+
+### Grafana 프로비저닝
+
+`docker/grafana/provisioning/`이 grafana 컨테이너의 `/etc/grafana/provisioning`에 마운트된다. 데이터소스(`datasources/prometheus.yml`, uid `prometheus`)와 대시보드(`dashboards/opicnic-overview.json`)가 기동 시 자동 등록되며 UI에서 수정해도 저장되지 않는다(`allowUiUpdates: false`) — 바꾸려면 JSON을 고치고 30초 기다리거나 재시작.
+
+대시보드는 2행 7패널: 1행 앱 골든 시그널(요청/s, 5xx 비율, HTTP p95, 포화 = 힙 사용률·HikariCP pending·프로세스 CPU), 2행 Groq 의존성 RED(호출/s, 실패율 + 429 별도, 호출 p95, 전부 stt/score/tag 라인 분리). 모델 소멸 장애는 2행에서만 보인다.
+
 ## Deployment Notes
 
 ### First-Time VM Setup

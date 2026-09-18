@@ -1,6 +1,7 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -29,7 +30,7 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
 
         // fluencyScore가 4점(90단어 이상)이 나오도록 충분히 긴 답변을 준다 — 짧으면 fluency 자체가
         // 평균을 끌어내려 이 테스트가 검증하려는 MP 제외 효과와 뒤섞인다.
@@ -80,7 +81,7 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(sttText);
 
@@ -106,7 +107,7 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn("no idea");
 

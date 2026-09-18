@@ -3,6 +3,7 @@ package com.opicnic.opicnic.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -33,6 +34,7 @@ public class GroqService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     @Value("${spring.ai.openai.enabled:true}")
     private boolean aiEnabled;
@@ -173,6 +175,11 @@ public class GroqService {
                     "}";
 
     public Map<String, Object> getOpicFeedback(String speechText, QuestionDto question) {
+        // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
+        return ExternalCallMetrics.record(meterRegistry, "score", () -> callOpicFeedback(speechText, question));
+    }
+
+    private Map<String, Object> callOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -251,6 +258,11 @@ public class GroqService {
 
     // 개별 피드백 텍스트 1건에서 카테고리별 태그를 추출 (Call1을 대체할 대상 — 향후엔 getOpicFeedback 호출 시점에 함께 추출)
     public String extractFeedbackTags(String questionType, String mainPoint, String expression, String accuracy, String content) {
+        return ExternalCallMetrics.record(meterRegistry, "tag",
+                () -> callFeedbackTags(questionType, mainPoint, expression, accuracy, content));
+    }
+
+    private String callFeedbackTags(String questionType, String mainPoint, String expression, String accuracy, String content) {
         if (!aiEnabled) {
             return "{\"mainPoint\":[],\"expression\":{\"vocab\":[\"VOCAB_BASIC\"],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}";
         }

@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +59,7 @@ public class ManualScoringTokenMeasurementTest {
                 .openAiApi(api)
                 .defaultOptions(OpenAiChatOptions.builder().model("openai/gpt-oss-120b").build())
                 .build();
-        GroqService service = new GroqService(chatModel, new ObjectMapper());
+        GroqService service = new GroqService(chatModel, new ObjectMapper(), new SimpleMeterRegistry());
         ReflectionTestUtils.setField(service, "aiEnabled", true);
         ReflectionTestUtils.setField(service, "mockDelayMs", 0L);
         ReflectionTestUtils.setField(service, "taggingModel", "openai/gpt-oss-20b");

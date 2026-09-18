@@ -13,6 +13,13 @@ source .env
 mkdir -p docker/nginx
 sed "s/\${DOMAIN}/$DOMAIN/g" docker/nginx/nginx.conf.template > docker/nginx/nginx.conf
 
+# alertmanager.yml의 ${DISCORD_WEBHOOK_URL} 치환 (URL에 '/'가 있어 구분자로 '|' 사용)
+if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+  echo "ERROR: DISCORD_WEBHOOK_URL이 .env에 설정되어야 합니다."
+  exit 1
+fi
+sed "s|\${DISCORD_WEBHOOK_URL}|$DISCORD_WEBHOOK_URL|g" docker/alertmanager/alertmanager.yml.template > docker/alertmanager/alertmanager.yml
+
 # 빌드 & 배포
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d --build

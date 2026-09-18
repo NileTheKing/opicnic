@@ -38,6 +38,8 @@ out/
 
 # Docker runtime data (generated nginx.conf은 제외)
 docker/nginx/nginx.conf
+# deploy.sh가 생성 — Discord 웹훅 URL이 들어가므로 커밋 금지
+docker/alertmanager/alertmanager.yml
 package-lock.json
 
 # Environment variables
