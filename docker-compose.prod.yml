@@ -79,7 +79,7 @@ services:
     image: grafana/grafana:latest
     container_name: opicnic_grafana
     # 인터넷에 안 연다. VM 루프백에만 열고 SSH 터널로 본다:
-    #   ssh -i ~/.ssh/oci_arm_key -L 3001:127.0.0.1:3000 ubuntu@<VM>  →  http://localhost:3001
+    #   ssh -i ~/.ssh/oci_arm_key -L 3001:127.0.0.1:3001 ubuntu@<VM>  →  http://localhost:3001
     ports:
       - "127.0.0.1:3001:3000"
     environment:

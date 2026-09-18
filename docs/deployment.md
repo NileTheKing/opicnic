@@ -103,7 +103,7 @@ docker exec opicnic_app sh -c 'java -XX:+PrintFlagsFinal -version | grep MaxHeap
 내부 도구(Grafana·Prometheus·Alertmanager)는 공개하지 않는다. Grafana는 VM 루프백 `127.0.0.1:3001`(3000은 같은 VM의 다른 프로젝트가 점유)에만 열려 있고 SSH 터널로 본다.
 
 ```bash
-ssh -i ~/.ssh/oci_arm_key -N -L 3001:127.0.0.1:3000 ubuntu@134.185.100.15
+ssh -i ~/.ssh/oci_arm_key -N -L 3001:127.0.0.1:3001 ubuntu@134.185.100.15
 # 브라우저: http://localhost:3001  (admin / .env의 GRAFANA_PASSWORD)
 ```
 
