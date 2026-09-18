@@ -69,3 +69,6 @@ docker/mysql/data/
 docs/local/
 scripts/*.webm
 !scripts/test_audio.webm
+
+# Claude 앱 로컬 서버 기동 설정 (개인 편의, 임시 포트 등 박힘)
+.claude/launch.json
