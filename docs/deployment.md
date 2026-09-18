@@ -100,11 +100,11 @@ docker exec opicnic_app sh -c 'java -XX:+PrintFlagsFinal -version | grep MaxHeap
 
 ### Grafana 접근 — 인터넷에 안 연다
 
-내부 도구(Grafana·Prometheus·Alertmanager)는 공개하지 않는다. Grafana는 VM 루프백 `127.0.0.1:3000`에만 열려 있고 SSH 터널로 본다.
+내부 도구(Grafana·Prometheus·Alertmanager)는 공개하지 않는다. Grafana는 VM 루프백 `127.0.0.1:3001`(3000은 같은 VM의 다른 프로젝트가 점유)에만 열려 있고 SSH 터널로 본다.
 
 ```bash
-ssh -i ~/.ssh/oci_arm_key -N -L 3000:127.0.0.1:3000 ubuntu@134.185.100.15
-# 브라우저: http://localhost:3000  (admin / .env의 GRAFANA_PASSWORD)
+ssh -i ~/.ssh/oci_arm_key -N -L 3001:127.0.0.1:3000 ubuntu@134.185.100.15
+# 브라우저: http://localhost:3001  (admin / .env의 GRAFANA_PASSWORD)
 ```
 
 2026-09-18에 `/grafana/` 공개 경로를 뺐다. 서브패스로 열었을 때 (1) Grafana가 접두사를 몰라 `/login`으로 튕겨 Spring→카카오→404, (2) 고치니 `proxy_pass` 끝 `/`가 접두사를 떼서 무한 리다이렉트 — 두 번 겪고 나서 "애초에 안 여는 게 맞다"로 정리. 데모는 스크린샷으로 대체. 공개해야 하면 Cloudflare Access 같은 SSO 게이트를 앞에 둔다.
