@@ -334,3 +334,24 @@ OPIc에서 유형(묘사/경험/롤플레이 등)에 익숙해지면 주제가 �
 - [ ] **모의고사 15문항 일괄 제출 실측을 다시 해야 한다.** 8/31 측정은 모델 404 때문에 무효였고(측정된 14.7초는 재시도·429 대기의 합), `ManualMockExamMeasurementTest`는 그대로 쓸 수 있다. 단 TPM 8K 기준으로 15문항 채점은 한 번에 통과할 수 없다는 게 계산으로 이미 나와 있어, 재측정 목적은 "되는지"가 아니라 "얼마나 걸리는지"다
 - [x] **동기/비동기 결정 완료 (2026-09-17)** — R2 + 비동기, 2단계 이행(모의고사 먼저, 콤보 나중). 근거·구조·연쇄 변경·제외한 대안은 [`async-r2-design-2026-09-17.md`](async-r2-design-2026-09-17.md). 다음 작업은 그 문서의 1단계
 
+---
+
+## 관측성 + R2 준비 (2026-09-18)
+
+### Done
+
+- 의존성 RED 계측(`opicnic_external_call_seconds`, `opicnic_retry_total`), HTTP 지연 분위수, attemptId MDC(가상 스레드 fork에 복사 전파), `ScoringFailureRateHigh` 알림 → Alertmanager → Discord(실제 수신 확인), Grafana 프로비저닝 — 배포됨
+- 실제 LLM 429가 긴 백오프를 못 타던 버그 수정 — 계측 작업 중 발견, 배포됨
+- R2 버킷·CORS·라이프사이클 `scripts/r2/setup.sh` — 생성 완료. 앱용 S3 키 `.env`에
+- Grafana 공개 경로 제거, SSH 터널로만. 대시보드 장애 대응용 재구성 + JVM 커뮤니티 4701
+- 합성 모니터링은 소재로 억지라 제외. 필요해지면 STT만 10분 간격(Groq 채점 TPD와 경쟁)
+
+### Next — 순서대로
+
+- [ ] **S1용 셸 스크립트** — 모의고사 제출 → 처리 중 클라이언트 kill / 서버 restart → DB에서 15문항 완료 확인. `slo.md` 전제 작업 중 유일하게 남은 것
+- [ ] **전환 전 S1~S3 측정** — 지금 코드로. 구현 **전에** 해야 전/후 비교가 성립. 호출 증폭은 `opicnic_external_call_seconds_count` 비율로
+- [ ] **R2 + 비동기 1단계 구현** — `docs/async-r2-design-2026-09-17.md` 4절. presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
+- [ ] **전환 후 S1~S4 측정** → `slo.md` 전/후 표 완성
+- [ ] 블로그 초안 — 위가 끝난 뒤
+- [ ] (별건) axon 프로젝트 `axon-grafana`가 `0.0.0.0:3000`으로 바인딩. 지금은 Oracle 방화벽이 막지만 `127.0.0.1:`로 바꿔야 함 — 그쪽 에이전트에 전달
+
