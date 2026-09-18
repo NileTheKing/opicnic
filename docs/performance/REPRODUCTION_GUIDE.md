@@ -5,7 +5,7 @@ OPIcnic 백엔드의 성능 벤치마크를 동일한 환경에서 수행하기 
 ---
 
 ## 1. 사전 준비
-- **인프라**: `docker-compose up -d`를 통해 MySQL 및 STT Worker가 실행 중이어야 함
+- **인프라**: MySQL만 있으면 된다 (STT/LLM은 mock. 2026-04에 쓰던 Python STT 워커는 이후 Groq Whisper로 대체됨). 로컬 3306이 다른 프로젝트에 점유돼 있으면 3307 임시 컨테이너 + `SPRING_DATASOURCE_URL` 환경변수
 - **데이터**: `DataInitializer.java`를 통해 `MOVIE_WATCHING` / `LEVEL_3` 데이터가 적재되어 있어야 함
 
 ## 2. 서버 실행

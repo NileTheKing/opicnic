@@ -126,10 +126,10 @@ graph LR
         Cache["QuestionSet Cache\n(ConcurrentHashMap)"]
         SC["StructuredTaskScope\n병렬 처리"]
         STT["Groq Whisper\n(STT)"]
-        LLM["Groq Llama-3.3-70B (채점)\n+ Llama-3.1-8B (태깅)"]
+        LLM["Groq gpt-oss-120b (채점)\n+ gpt-oss-20b (태깅)"]
         DB["FeedbackResult\n+ FeedbackTag 저장"]
         Coach["CoachingService\n태그 집계 (요소별·유형별)"]
-        CoachLLM["Groq Llama-3.3-70B\n(코칭 리포트 작성)"]
+        CoachLLM["Groq gpt-oss-120b\n(코칭 리포트 작성)"]
     end
 
     MySQL[("MySQL 8.0")]
@@ -158,10 +158,10 @@ graph LR
 
 ## 주요 문제 해결
 
-- **디스크 I/O 병목 제거**: DB pool 확장·VT pinning 가설을 1KB 격리 실험과 JFR로 기각/특정한 뒤 톰캣 멀티파트 임시파일 쓰기가 원인임을 확인, InputStream 직접 릴레이로 전환 — **RPS 96→652(+580%), Avg Latency 1,100ms→249ms(77%↓)**
+- **디스크 I/O 병목 제거**: DB pool 확장·VT pinning 가설을 1KB 격리 실험과 JFR로 기각/특정한 뒤 톰캣 멀티파트 임시파일 쓰기가 원인임을 확인, 멀티파트 임계치를 올려 디스크 쓰기를 제거 — **RPS 96→652, Avg Latency 1,100ms→249ms** (2026-04, Mock STT/LLM, 단일 실행). 당시 함께 넣은 InputStream 릴레이는 6월 재시도 요구사항으로 되돌림 — 아래 접기 참고
 
   <details>
-  <summary>InputStream 릴레이 전후 구조</summary>
+  <summary>2026-04 당시 전후 구조 (릴레이는 이후 되돌림)</summary>
 
   ```mermaid
   flowchart LR
@@ -175,6 +175,8 @@ graph LR
       end
       BEFORE -.->|"Avg 1,100ms → 249ms · RPS 96 → 652"| AFTER
   ```
+
+  4월엔 (1) `file-size-threshold: 2MB`로 톰캣 임시파일 쓰기 제거, (2) `InputStream` 릴레이로 힙 복사 제거 두 개를 같이 넣었다. 6월에 STT/LLM 자동 재시도가 필요해지면서 스트림을 다시 읽을 수 없어 `byte[]` 버퍼링으로 되돌렸고(`docs/local/2026-06-06`), 8월에 타입까지 정리했다. **지금 코드에 남은 건 (1)뿐이다.** 그 힙 적재의 비용은 2026-09 부하테스트에서 GC 압박으로 측정됐고, 오브젝트 스토리지 직접 업로드로 전환하는 근거가 됐다(`docs/async-r2-design-2026-09-17.md`).
 
   </details>
 - **외부 API 장애 대응**: 외부 STT/LLM 일시 장애로 인한 녹음 유실을, 서버 지수 백오프 3회 재시도 + 실패 문항만 재전송하는 구조로 방지 (문제 본문은 서버가 통제해 재전송 시에도 LLM 입력을 신뢰)
@@ -191,7 +193,7 @@ graph LR
 |---|---|
 | **Language / Runtime** | Java 21, Virtual Threads |
 | **Framework** | Spring Boot 3.4, Spring AI, Spring Security OAuth2 |
-| **AI / STT** | Groq Whisper (STT), Groq Llama-3.3-70B-Versatile (채점/코칭 작성), Groq Llama-3.1-8B-Instant (태깅) |
+| **AI / STT** | Groq Whisper (STT), Groq gpt-oss-120b (채점/코칭 작성), Groq gpt-oss-20b (태깅) — 모델 ID는 제공자 사정으로 세 번 바뀜, 설정값으로 분리 |
 | **Database** | MySQL 8.0, Spring Data JPA |
 | **Cache** | Caffeine (세션), ConcurrentHashMap (QuestionSet) |
 | **Rate Limiting** | Bucket4j (사용자별 시간당 15문항, 검증 통과 후 실제 채점 문항 수만큼 소비) |

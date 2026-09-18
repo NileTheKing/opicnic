@@ -69,9 +69,11 @@ HomeController (/practice/mock)
 | `AnalyticsController` | `/analytics` | View | 학습분석 탭 (현황판, A) |
 | `TodayController` | `/today` | View | 오늘 할 일 (B) — 콤보 진행률, 이번주 과제 자기신고, 회피 감지. 홈 위젯을 통해서만 진입(별도 nav 탭 없음) |
 | `CoachingController` | `/analytics/coaching` | View | 코칭 리포트 목록/상세/생성 |
+| `HistoryController` | `/analytics/history` | View | 개별 연습 기록 목록/상세 (최근 20개, 페이지네이션 없음) |
 | `AdminController` | `/admin` | View | 질문 세트 관리 화면(뷰만, CRUD는 아래 API) |
 | `AdminQuestionSetApiController` | `/api/admin/question-sets` | **REST API** | 질문 세트 생성/수정/삭제. `/api/admin/**`은 인증 필요(`SecurityConfig`에서 `/api/**` permitAll 예외 처리됨) |
 | `EnumController` | `/api/enums` | **REST API** | 지역/주제/난이도 enum 목록 |
+| `DevPracticeController` | `/api/practice-attempts/csrf`, `/start`, `/start-mock` | **REST API, dev 전용** | 로그인 없이 attempt 생성 — k6·수동 측정용. `@Profile("dev")` |
 
 ## 서비스 → 역할
 
