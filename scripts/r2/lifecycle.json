@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "id": "expire-audio-30d",
+      "enabled": true,
+      "conditions": { "prefix": "attempts/" },
+      "deleteObjectsTransition": { "condition": { "type": "Age", "maxAge": 2592000 } }
+    },
+    {
+      "id": "expire-unsubmitted-1d",
+      "enabled": true,
+      "conditions": { "prefix": "pending/" },
+      "deleteObjectsTransition": { "condition": { "type": "Age", "maxAge": 86400 } }
+    },
+    {
+      "id": "abort-incomplete-multipart-1d",
+      "enabled": true,
+      "conditions": { "prefix": "" },
+      "abortMultipartUploadsTransition": { "condition": { "type": "Age", "maxAge": 86400 } }
+    }
+  ]
+}

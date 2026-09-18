@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://opicnic.xyz",
+          "https://www.opicnic.xyz",
+          "http://localhost:8080"
+        ],
+        "methods": [
+          "PUT",
+          "GET",
+          "HEAD"
+        ],
+        "headers": [
+          "Content-Type",
+          "Content-Length"
+        ]
+      },
+      "exposeHeaders": [
+        "ETag"
+      ],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}
