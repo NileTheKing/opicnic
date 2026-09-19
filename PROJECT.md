@@ -74,6 +74,7 @@ HomeController (/practice/mock)
 | `AdminQuestionSetApiController` | `/api/admin/question-sets` | **REST API** | 질문 세트 생성/수정/삭제. `/api/admin/**`은 인증 필요(`SecurityConfig`에서 `/api/**` permitAll 예외 처리됨) |
 | `EnumController` | `/api/enums` | **REST API** | 지역/주제/난이도 enum 목록 |
 | `DevPracticeController` | `/api/practice-attempts/csrf`, `/start`, `/start-mock` | **REST API, dev 전용** | 로그인 없이 attempt 생성 — k6·수동 측정용. `@Profile("dev")` |
+| `ScoringJobApiController` | `/api/practice-attempts/{id}/upload-urls`, `/api/scoring-jobs` | **REST API** | 비동기 채점(ADR-0001, 1단계 모의고사만). URL 발급(녹음 후, 크기가 서명에 박힘) → `POST /api/scoring-jobs {attemptId}` = 접수(잡 생성, **202 + Location**, DB만 씀, 멱등) → `GET /api/scoring-jobs/{id}` 폴링. 제출 전 리소스는 practice-attempts(Caffeine), 제출 후는 scoring-jobs(DB) |
 
 ## 서비스 → 역할
 
@@ -92,6 +93,8 @@ HomeController (/practice/mock)
 | `ExamPlanService` | 학습 이력 기반 시험 준비 계획/약점 유형 진단 |
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
+| `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 동기 경로 차단). R2 확인·외부 호출 없음 |
+| `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |
 
 ## 도메인 엔티티
 
