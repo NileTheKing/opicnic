@@ -60,10 +60,6 @@ public class ScoringJobItem {
         this.questionIndex = questionIndex;
         this.questionId = questionId;
         this.audioKey = audioKey;
-        this.status = ScoringJobItemStatus.PENDING_UPLOAD;
-    }
-
-    void markQueued() {
         this.status = ScoringJobItemStatus.QUEUED;
     }
 

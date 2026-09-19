@@ -106,7 +106,7 @@ HomeController (/practice/mock)
 | `CoachingReport` | 생성된 코칭 리포트. `thisWeekTaskDone`으로 `/today`의 이번주 과제 자기신고 체크 상태 저장(새 리포트 생성 시 기본 false로 리셋) |
 | `ExamSchedule` | 시험 준비 학습 스케줄 |
 | `NotificationSetting` | 알림 설정 |
-| `job/ScoringJob` / `ScoringJobItem` | 비동기 채점 잡 테이블(ADR-0001). attempt 1행 + 문항별 행(상태·시도 횟수·R2 키·결과 ID). 저장·재시도·실패의 단위가 문항이다. 1단계에서는 모의고사만 이 경로, 콤보는 Caffeine `PracticeAttempt` 유지. 워커 집기는 `ScoringJobItemRepository.claim()`(UPDATE WHERE status=QUEUED) |
+| `job/ScoringJob` / `ScoringJobItem` | 비동기 채점 잡 테이블(ADR-0001). **submit 시점에** attempt 1행 + 문항별 행(상태·시도 횟수·R2 키·결과 ID)이 QUEUED로 생긴다 — 202 = DB에 있음 = 약속 시작. 그 전(조립·녹음·업로드)은 Caffeine `PracticeAttempt`가 들고 있고 DB에 남지 않는다. 저장·재시도·실패의 단위는 문항. 1단계에서는 모의고사만 이 경로. 워커 집기는 `ScoringJobItemRepository.claim()`(UPDATE WHERE status=QUEUED) |
 
 ## 오디오 저장소 (`storage/`)
 

@@ -54,7 +54,6 @@ class ScoringJobRepositoryTest {
                 .provider("kakao").providerId("p-" + UUID.randomUUID()).nickname("n").role(Role.USER).build());
         ScoringJob job = new ScoringJob(UUID.randomUUID().toString(), member, PracticeMode.MOCK_EXAM);
         for (int i = 0; i < items; i++) job.addItem(i, i == 0 ? null : (long) i, "pending/" + job.getId() + "/q" + i + ".webm");
-        job.markQueued();
         jobRepository.saveAndFlush(job);
         em.clear();
         return job;

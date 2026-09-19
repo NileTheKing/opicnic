@@ -12,9 +12,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// ADR-0001의 "잡 테이블". 비동기 채점 접수 하나 = 행 하나. Caffeine PracticeAttempt를 대체한다 —
-// 202 약속을 서버 재시작 후에도 지키려면 접수 사실이 프로세스 밖에 있어야 한다.
-// 1단계에서는 모의고사(MOCK_EXAM)만 이 경로를 탄다. 콤보는 동기 경로(PracticeAttempt) 유지.
+// ADR-0001의 "잡 테이블". 비동기 채점 접수 하나 = 행 하나. submit 시점에 QUEUED로 생성된다 —
+// 202 약속을 서버 재시작 후에도 지키려면 접수 사실이 프로세스 밖에 있어야 한다. submit 전(문제 조립·
+// 녹음·업로드)은 약속 전이므로 Caffeine PracticeAttempt가 들고 있고, 여기 남지 않는다.
+// 1단계에서는 모의고사(MOCK_EXAM)만 이 경로를 탄다. 콤보는 동기 경로 유지.
 @Entity
 @Table(name = "scoring_job", indexes = {
         @Index(name = "idx_scoring_job_member_created", columnList = "member_id, created_at")
@@ -44,30 +45,25 @@ public class ScoringJob {
     @OrderBy("questionIndex ASC")
     private List<ScoringJobItem> items = new ArrayList<>();
 
+    // = submit 시각. 행이 submit에서 생기므로 별도 submittedAt이 없다
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private LocalDateTime submittedAt;
     private LocalDateTime completedAt;
 
+    // id는 Caffeine PracticeAttempt의 attemptId를 그대로 쓴다 — 클라이언트가 submit 전후로 같은 id로 대화한다
     public ScoringJob(String id, Member member, PracticeMode mode) {
         this.id = id;
         this.member = member;
         this.mode = mode;
-        this.status = ScoringJobStatus.CREATED;
+        this.status = ScoringJobStatus.QUEUED;
     }
 
     public ScoringJobItem addItem(int questionIndex, Long questionId, String audioKey) {
         ScoringJobItem item = new ScoringJobItem(this, questionIndex, questionId, audioKey);
         items.add(item);
         return item;
-    }
-
-    public void markQueued() {
-        this.status = ScoringJobStatus.QUEUED;
-        this.submittedAt = LocalDateTime.now();
-        items.forEach(ScoringJobItem::markQueued);
     }
 
     public void markProcessing() {
