@@ -3,7 +3,10 @@ package com.opicnic.opicnic;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 @SpringBootApplication
+@EnableScheduling   // ScoringWorker.poll() (ADR-0001 워커)
 public class OpicnicApplication {
 
 	public static void main(String[] args) {

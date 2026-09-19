@@ -48,6 +48,15 @@ public class ScoringJobItem {
     @Column(length = 500)
     private String lastError;
 
+    // STT 성공분. 채점만 실패해 다시 집혔을 때 STT를 다시 부르지 않는다 — 동기 경로의 speechText 재사용을
+    // DB에 옮긴 것이라 재시작 후에도 유지된다 (2026-08-31 STT 자가 429의 워커 버전 방지)
+    @Column(columnDefinition = "TEXT")
+    private String sttText;
+
+    // 이 시각 전에는 워커가 집지 않는다 — 재시도 백오프. 동기 경로의 Thread.sleep을 DB로 옮긴 것.
+    // null이면 즉시 가능
+    private LocalDateTime nextAttemptAt;
+
     // DONE이면 저장된 FeedbackResult. 자기소개는 채점 안 하므로 DONE이어도 null
     private Long feedbackResultId;
 
@@ -69,10 +78,24 @@ public class ScoringJobItem {
         this.lastError = null;
     }
 
-    // 실패 시: 시도가 남았으면 QUEUED로 되돌려 다음 폴링에 다시 집히게, 소진했으면 FAILED 확정
-    public void markFailed(String error) {
+    public void rememberSpeech(String sttText) {
+        this.sttText = sttText;
+    }
+
+    // 실패 시: 시도가 남았으면 QUEUED로 되돌려 backoff 뒤에 다시 집히게, 소진했으면 FAILED 확정
+    public void markFailed(String error, java.time.Duration backoff) {
         this.lastError = error == null ? null : error.substring(0, Math.min(error.length(), 500));
-        this.status = attempts >= MAX_ATTEMPTS ? ScoringJobItemStatus.FAILED : ScoringJobItemStatus.QUEUED;
+        if (attempts >= MAX_ATTEMPTS) {
+            this.status = ScoringJobItemStatus.FAILED;
+            this.nextAttemptAt = null;
+        } else {
+            this.status = ScoringJobItemStatus.QUEUED;
+            this.nextAttemptAt = LocalDateTime.now().plus(backoff);
+        }
+    }
+
+    public void markFailed(String error) {
+        markFailed(error, java.time.Duration.ZERO);
     }
 
     public boolean isFinished() {

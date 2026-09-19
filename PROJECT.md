@@ -27,6 +27,24 @@ PracticeAttemptApiController (/api/practice-attempts/{attemptId}/...)
 
 `config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 하고, `FeedbackService`는 fork한 subtask에 그 MDC를 복사한다(스레드 로컬이라 자동 전파 안 됨). Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`) — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
 
+### 1-b. 모의고사 비동기 채점 (ADR-0001, 1단계)
+
+```
+HomeController (/practice/mock) → PracticeAttemptService.createAttempt()   // Caffeine, 지금과 동일
+  (브라우저 녹음)
+ScoringJobApiController
+  POST /api/practice-attempts/{id}/upload-urls  → ScoringJobService.issueUploadUrls()  // 크기가 서명에 박힌 presigned PUT
+  (브라우저 → R2 직접 PUT)
+  POST /api/scoring-jobs {attemptId}            → ScoringJobService.submit()           // DB에 ScoringJob + Item(QUEUED), 202 + Location
+  GET  /api/scoring-jobs/{id}                   → 폴링. 매번 DB를 읽어 상태를 센다
+ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값)
+  claim(UPDATE WHERE QUEUED) → AudioStorage.read → FeedbackService.transcribe(성공분 item.sttText에 저장)
+  → FeedbackService.gradeWithSpeech → [FeedbackPersistenceService.saveOne + item DONE + job 마무리] 한 트랜잭션(잡 행 락)
+  실패 → item.markFailed(backoff) → QUEUED(다시 집힘) 또는 3회째 FAILED. 기동 시·5분 스윕으로 PROCESSING 고아 회수. 실패율 서킷
+```
+
+서버·워커·폴링은 서로 대화하지 않고 DB로만 만난다 — 그래서 재시작에도 이어진다. 전 구간 검증은 `scripts/s1-async.sh`(normal / client-kill / server-restart).
+
 ### 2. 코칭 리포트 생성
 
 ```
@@ -86,7 +104,7 @@ HomeController (/practice/mock)
 | `QuestionAssemblyService` | `QuestionSet + ComboPattern` → `QuestionDto` 리스트 변환 |
 | `ComboQuestionStrategy` / `FixedComboQuestionStrategy` / `OpicStandardComboSelectionStrategy` | 콤보 내 문제 선택 전략 |
 | `TopicCatalog` | 배경설문 주제(22개)/돌발 주제(23개) 카탈로그 |
-| `FeedbackService` | 답변 제출 처리 — STT/LLM 병렬 호출(`StructuredTaskScope`), 429 분리 백오프, 재시도 로직 |
+| `FeedbackService` | 답변 제출 처리 — STT/LLM 병렬 호출(`StructuredTaskScope`), 429 분리 백오프, 재시도 로직. `transcribe()`/`gradeWithSpeech()`는 워커용 단일 문항 경로(재시도 없음 — 워커가 소유) |
 | `GroqService` | Groq API 호출 — `getOpicFeedback`(채점), `extractFeedbackTags`(태깅), `getCoachingReport`(코칭 리포트 문장화) |
 | `STTService` | Groq Whisper STT 호출 |
 | `CoachingService` | 저장된 `FeedbackTag`를 요소별·유형별로 집계해 코칭 리포트 생성 (태그 아키텍처 — 클래스 상단 주석 참고). `parseReport()`/`buildTeaser()`로 리포트 JSON 파싱과 홈·A·B 공통 코칭 티저 문구도 제공 |
@@ -94,6 +112,7 @@ HomeController (/practice/mock)
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
 | `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 동기 경로 차단). R2 확인·외부 호출 없음 |
+| `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
 | `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |
 
 ## 도메인 엔티티

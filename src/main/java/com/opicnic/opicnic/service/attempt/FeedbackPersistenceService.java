@@ -47,40 +47,7 @@ public class FeedbackPersistenceService {
                 .filter(fb -> fb.getQuestion().getQuestionType() != null)
                 .toList();
         List<FeedbackResult> toSave = validFeedback.stream()
-                .map(fb -> FeedbackResult.builder()
-                        .member(member)
-                        .attemptId(attempt.attemptId())
-                        .questionId(fb.getQuestion().getId())
-                        .questionType(fb.getQuestion().getQuestionType())
-                        .surveyTopicName(fb.getQuestion().getSurveyTopicName())
-                        .comboPatternKey(attempt.comboPatternKey())
-                        .comboCategory(attempt.comboCategory())
-                        .questionContent(fb.getQuestion().getContent())
-                        .sttText(fb.getSttText())
-                        .expression(fb.getExpression())
-                        .expressionScore(fb.getExpressionScore())
-                        .expressionQuote(fb.getExpressionQuote())
-                        .expressionFix(fb.getExpressionFix())
-                        .accuracy(fb.getAccuracy())
-                        .accuracyScore(fb.getAccuracyScore())
-                        .accuracyQuote(fb.getAccuracyQuote())
-                        .accuracyFix(fb.getAccuracyFix())
-                        .mainPoint(fb.getMainPoint())
-                        .mainPointScore(fb.getMainPointScore())
-                        .mainPointQuote(fb.getMainPointQuote())
-                        .mainPointFix(fb.getMainPointFix())
-                        .fluency(fb.getFluency())
-                        .fluencyScore(fb.getFluencyScore())
-                        .content(fb.getContent())
-                        .contentScore(fb.getContentScore())
-                        .contentQuote(fb.getContentQuote())
-                        .contentFix(fb.getContentFix())
-                        .overall(fb.getOverall())
-                        .overallGrade(fb.getOverallGrade())
-                        .improvements(fb.getImprovements())
-                        .modelAnswer(fb.getModelAnswer())
-                        .modelAnswerComment(fb.getModelAnswerComment())
-                        .build())
+                .map(fb -> toEntity(fb, member, attempt.attemptId(), attempt.comboPatternKey(), attempt.comboCategory()))
                 .toList();
 
         List<FeedbackResult> saved = feedbackResultRepository.saveAll(toSave);
@@ -101,5 +68,60 @@ public class FeedbackPersistenceService {
 
         log.info("[DB 저장] 피드백 {}건, 태그 {}건 (member: {}, combo: {})",
                 saved.size(), tagsToSave.size(), member.getId(), attempt.comboCategory());
+    }
+
+    // 비동기 워커용: 문항 하나를 태그까지 한 트랜잭션으로 저장하고 저장된 엔티티를 돌려준다.
+    // 문항 상태(DONE)와 결과 행이 같은 DB에 있어 워커가 "상태 갱신 + 결과 저장"을 한 트랜잭션에 묶을 수 있다 —
+    // 큐를 DB로 두는 진짜 이득(불일치 없음). 자기소개(questionType null)는 저장하지 않고 null을 돌려준다.
+    @Transactional
+    public FeedbackResult saveOne(FeedbackDTO fb, Member member, String attemptId) {
+        if (fb.isFailed() || fb.getQuestion().getQuestionType() == null) return null;
+        FeedbackResult saved = feedbackResultRepository.save(toEntity(fb, member, attemptId, null, null));
+        List<FeedbackTag> tags = new ArrayList<>();
+        if (fb.getTags() != null) {
+            for (var t : fb.getTags()) {
+                tags.add(FeedbackTag.builder().feedbackResult(saved).category(t.category()).tag(t.tag()).build());
+            }
+        }
+        feedbackTagRepository.saveAll(tags);
+        return saved;
+    }
+
+    private static FeedbackResult toEntity(FeedbackDTO fb, Member member, String attemptId,
+                                           String comboPatternKey, String comboCategory) {
+        return FeedbackResult.builder()
+                .member(member)
+                .attemptId(attemptId)
+                .questionId(fb.getQuestion().getId())
+                .questionType(fb.getQuestion().getQuestionType())
+                .surveyTopicName(fb.getQuestion().getSurveyTopicName())
+                .comboPatternKey(comboPatternKey)
+                .comboCategory(comboCategory)
+                .questionContent(fb.getQuestion().getContent())
+                .sttText(fb.getSttText())
+                .expression(fb.getExpression())
+                .expressionScore(fb.getExpressionScore())
+                .expressionQuote(fb.getExpressionQuote())
+                .expressionFix(fb.getExpressionFix())
+                .accuracy(fb.getAccuracy())
+                .accuracyScore(fb.getAccuracyScore())
+                .accuracyQuote(fb.getAccuracyQuote())
+                .accuracyFix(fb.getAccuracyFix())
+                .mainPoint(fb.getMainPoint())
+                .mainPointScore(fb.getMainPointScore())
+                .mainPointQuote(fb.getMainPointQuote())
+                .mainPointFix(fb.getMainPointFix())
+                .fluency(fb.getFluency())
+                .fluencyScore(fb.getFluencyScore())
+                .content(fb.getContent())
+                .contentScore(fb.getContentScore())
+                .contentQuote(fb.getContentQuote())
+                .contentFix(fb.getContentFix())
+                .overall(fb.getOverall())
+                .overallGrade(fb.getOverallGrade())
+                .improvements(fb.getImprovements())
+                .modelAnswer(fb.getModelAnswer())
+                .modelAnswerComment(fb.getModelAnswerComment())
+                .build();
     }
 }

@@ -1,0 +1,6 @@
+# S1-async smoke-kill mode=client-kill — 2026-09-19 22:11:18
+# base=http://localhost:8080 audio=scripts/test_audio.webm runs=1
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+run  attemptId                             submit_http  submit_s  upload_s  complete_s  job_status               done  failed  feedback_rows
+1    9cac3d55-6e36-48b4-8eda-f33ed5b0bf13  202          0.040504  6.38      30.1        COMPLETED                15    0       14

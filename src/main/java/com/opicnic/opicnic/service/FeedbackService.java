@@ -112,73 +112,13 @@ public class FeedbackService {
                                 subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
                                 return selfIntroductionDto(question, speechText);
                             }
-                            var feedbackMap = groqService.getOpicFeedback(speechText, question);
-
-                            String mainPointDiag = str(feedbackMap, "mainPoint");
-                            String expressionDiag = str(feedbackMap, "expression");
-                            String accuracyDiag = str(feedbackMap, "accuracy");
-                            String contentDiag = str(feedbackMap, "content");
-
-                            String tagsJson = groqService.extractFeedbackTags(
-                                    question.getQuestionType().name(),
-                                    mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
-                            List<FeedbackTagDto> tags = parseTags(tagsJson, question.getQuestionType().name());
+                            FeedbackDTO dto = gradeWithSpeech(speechText, question);
 
                             long subtaskMs = System.currentTimeMillis() - subtaskStart;
                             subtaskDurations.add(subtaskMs);
                             log.info("[Subtask-{}] 완료: {}ms{}", idx, subtaskMs,
                                     attempt > 0 ? " (재시도 " + attempt + "회)" : "");
-
-                            int fluencyScore = computeFluencyScore(speechText);
-                            // TYPE_5~7(롤플레이)은 MP를 "평가 제외"로 0 고정 반환하도록 프롬프트에 지시했다.
-                            // 이 0을 다른 4개 점수와 그대로 평균 내면 롤플레이를 연습할수록 등급이 구조적으로
-                            // 낮아진다 (SCORE-02). null로 바꿔두면 computeGrade/computeOverallText/
-                            // ExamPlanService.weightedAvg가 이미 null을 평균 분모에서 제외하므로 자동으로 해결된다.
-                            boolean mpExcluded = isRoleplayType(question.getQuestionType());
-                            Integer mpScore = mpExcluded ? null : score(feedbackMap, "mainPointScore");
-                            int exScore    = score(feedbackMap, "expressionScore");
-                            int acScore    = score(feedbackMap, "accuracyScore");
-                            int ctScore    = score(feedbackMap, "contentScore");
-                            String grade   = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
-
-                            String mainPointQuote = str(feedbackMap, "mainPointQuote");
-                            String mainPointFix = str(feedbackMap, "mainPointFix");
-                            String expressionQuote = str(feedbackMap, "expressionQuote");
-                            String expressionFix = str(feedbackMap, "expressionFix");
-                            String accuracyQuote = str(feedbackMap, "accuracyQuote");
-                            String accuracyFix = str(feedbackMap, "accuracyFix");
-                            String contentQuote = str(feedbackMap, "contentQuote");
-                            String contentFix = str(feedbackMap, "contentFix");
-
-                            return FeedbackDTO.builder()
-                                    .question(question)
-                                    .sttText(speechText)
-                                    .mainPoint(reassemble(mainPointDiag, mainPointQuote, mainPointFix))
-                                    .mainPointScore(mpScore)
-                                    .mainPointQuote(mainPointQuote)
-                                    .mainPointFix(mainPointFix)
-                                    .expression(reassemble(expressionDiag, expressionQuote, expressionFix))
-                                    .expressionScore(exScore)
-                                    .expressionQuote(expressionQuote)
-                                    .expressionFix(expressionFix)
-                                    .accuracy(reassemble(accuracyDiag, accuracyQuote, accuracyFix))
-                                    .accuracyScore(acScore)
-                                    .accuracyQuote(accuracyQuote)
-                                    .accuracyFix(accuracyFix)
-                                    .fluency(computeFluencyText(speechText, fluencyScore))
-                                    .fluencyScore(fluencyScore)
-                                    .content(reassemble(contentDiag, contentQuote, contentFix))
-                                    .contentScore(ctScore)
-                                    .contentQuote(contentQuote)
-                                    .contentFix(contentFix)
-                                    .overall(computeOverallText(grade, mpScore, exScore, acScore, fluencyScore, ctScore))
-                                    .overallGrade(grade)
-                                    .improvements(reassemble(str(feedbackMap, "improvements"),
-                                            str(feedbackMap, "improvementsQuote"), str(feedbackMap, "improvementsFix")))
-                                    .modelAnswer(str(feedbackMap, "modelAnswer"))
-                                    .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
-                                    .tags(tags)
-                                    .build();
+                            return dto;
 
                         } catch (Exception e) {
                             lastException = e;
@@ -221,6 +161,86 @@ public class FeedbackService {
         }
     }
 
+    // 비동기 워커용 단일 문항 채점 (ADR-0001). 동기 경로(getComboFeedbackStreaming)와 같은 규칙을 쓰되
+    // 재시도 루프가 없다 — 재시도는 워커가 문항을 다시 집는 것(ScoringJobItem.attempts)으로 소유한다.
+    // 여기서 내부 재시도까지 하면 3×3=9회가 된다. speechText가 있으면 STT를 건너뛴다 — 워커는 STT 성공분을
+    // DB(ScoringJobItem.sttText)에 남겨 재시도·재시작 후에도 STT를 다시 부르지 않는다(2026-08-31 자가 429 재발 방지).
+    public String transcribe(byte[] audio, String filename) {
+        return sttService.sendStreamToStt(audio, filename);
+    }
+
+    public FeedbackDTO gradeWithSpeech(String speechText, QuestionDto question) {
+        if (speechText == null || speechText.trim().split("\\s+").length < 5) {
+            return noResponseDto(question, speechText);
+        }
+        if (question.getQuestionType() == null) {
+            return selfIntroductionDto(question, speechText);
+        }
+        var feedbackMap = groqService.getOpicFeedback(speechText, question);
+
+        String mainPointDiag = str(feedbackMap, "mainPoint");
+        String expressionDiag = str(feedbackMap, "expression");
+        String accuracyDiag = str(feedbackMap, "accuracy");
+        String contentDiag = str(feedbackMap, "content");
+
+        String tagsJson = groqService.extractFeedbackTags(
+                question.getQuestionType().name(),
+                mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
+        List<FeedbackTagDto> tags = parseTags(tagsJson, question.getQuestionType().name());
+
+        int fluencyScore = computeFluencyScore(speechText);
+        // TYPE_5~7(롤플레이)은 MP를 "평가 제외"로 0 고정 반환하도록 프롬프트에 지시했다.
+        // 이 0을 다른 4개 점수와 그대로 평균 내면 롤플레이를 연습할수록 등급이 구조적으로
+        // 낮아진다 (SCORE-02). null로 바꿔두면 computeGrade/computeOverallText/
+        // ExamPlanService.weightedAvg가 이미 null을 평균 분모에서 제외하므로 자동으로 해결된다.
+        boolean mpExcluded = isRoleplayType(question.getQuestionType());
+        Integer mpScore = mpExcluded ? null : score(feedbackMap, "mainPointScore");
+        int exScore    = score(feedbackMap, "expressionScore");
+        int acScore    = score(feedbackMap, "accuracyScore");
+        int ctScore    = score(feedbackMap, "contentScore");
+        String grade   = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
+
+        String mainPointQuote = str(feedbackMap, "mainPointQuote");
+        String mainPointFix = str(feedbackMap, "mainPointFix");
+        String expressionQuote = str(feedbackMap, "expressionQuote");
+        String expressionFix = str(feedbackMap, "expressionFix");
+        String accuracyQuote = str(feedbackMap, "accuracyQuote");
+        String accuracyFix = str(feedbackMap, "accuracyFix");
+        String contentQuote = str(feedbackMap, "contentQuote");
+        String contentFix = str(feedbackMap, "contentFix");
+
+        return FeedbackDTO.builder()
+                .question(question)
+                .sttText(speechText)
+                .mainPoint(reassemble(mainPointDiag, mainPointQuote, mainPointFix))
+                .mainPointScore(mpScore)
+                .mainPointQuote(mainPointQuote)
+                .mainPointFix(mainPointFix)
+                .expression(reassemble(expressionDiag, expressionQuote, expressionFix))
+                .expressionScore(exScore)
+                .expressionQuote(expressionQuote)
+                .expressionFix(expressionFix)
+                .accuracy(reassemble(accuracyDiag, accuracyQuote, accuracyFix))
+                .accuracyScore(acScore)
+                .accuracyQuote(accuracyQuote)
+                .accuracyFix(accuracyFix)
+                .fluency(computeFluencyText(speechText, fluencyScore))
+                .fluencyScore(fluencyScore)
+                .content(reassemble(contentDiag, contentQuote, contentFix))
+                .contentScore(ctScore)
+                .contentQuote(contentQuote)
+                .contentFix(contentFix)
+                .overall(computeOverallText(grade, mpScore, exScore, acScore, fluencyScore, ctScore))
+                .overallGrade(grade)
+                .improvements(reassemble(str(feedbackMap, "improvements"),
+                        str(feedbackMap, "improvementsQuote"), str(feedbackMap, "improvementsFix")))
+                .modelAnswer(str(feedbackMap, "modelAnswer"))
+                .modelAnswerComment(str(feedbackMap, "modelAnswerComment"))
+                .tags(tags)
+                .build();
+
+    }
+
     private static <T> Callable<T> withMdc(Map<String, String> mdc, Callable<T> task) {
         return () -> {
             if (mdc != null) MDC.setContextMap(mdc);
@@ -236,7 +256,7 @@ public class FeedbackService {
     // 거치면서 NonTransientAiException("429 - …")으로 바뀌고 원인 체인이 없다. 예외 타입만 보면
     // 실제 LLM 429가 rate-limit 분기(긴 백오프)를 못 타고 일반 백오프로 떨어진다 — 2026-09-18 계측
     // 작업 중 발견. ExternalCallMetrics.outcomeOf()가 두 경로를 다 판정하므로 그걸 재사용한다.
-    private static boolean isRateLimited(Throwable e) {
+    public static boolean isRateLimited(Throwable e) {
         return "429".equals(ExternalCallMetrics.outcomeOf(e));
     }
 

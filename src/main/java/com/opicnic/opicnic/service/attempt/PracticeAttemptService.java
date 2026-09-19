@@ -7,6 +7,7 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -70,6 +71,17 @@ public class PracticeAttemptService {
         return targetIds.stream()
                 .map(id -> id == null ? selfIntroDto() : requireQuestion(questionCache, id))
                 .toList();
+    }
+
+    // 비동기 워커용. ScoringJobItem.questionId(null = 자기소개) → QuestionDto. 같은 캐시를 쓴다.
+    // 워커 스레드엔 웹 요청의 OSIV가 없어 QuestionDto.from()의 questionSet(LAZY) 접근이 세션 밖이 된다 — 트랜잭션 필요
+    @Transactional(readOnly = true)
+    public QuestionDto questionById(Long questionId) {
+        if (questionId == null) return selfIntroDto();
+        QuestionDto cached = questionCache.get(questionId);
+        if (cached != null) return cached;
+        questionRepository.findById(questionId).ifPresent(q -> questionCache.put(q.getId(), QuestionDto.from(q)));
+        return requireQuestion(questionCache, questionId);
     }
 
     // REVIEW-01: 동시 finalize 요청 중 정확히 하나만 IN_PROGRESS -> FINALIZING 전이에 성공해

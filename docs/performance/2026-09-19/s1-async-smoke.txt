@@ -1,0 +1,6 @@
+# S1-async smoke mode=normal — 2026-09-19 22:10:40
+# base=http://localhost:8080 audio=scripts/test_audio.webm runs=1
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+run  attemptId                             submit_http  submit_s  upload_s  complete_s  job_status               done  failed  feedback_rows
+1    86ff929e-afe9-409f-be92-be92a618a543  202          0.166000  8.05      14.5        COMPLETED                15    0       14
