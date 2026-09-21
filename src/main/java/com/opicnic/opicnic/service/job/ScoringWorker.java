@@ -140,18 +140,27 @@ public class ScoringWorker {
         try {
             QuestionDto question = attemptService.questionById(ctx.questionId());
 
+            // 단계별 시간 — "내구성의 비용이 어디서 얼마"를 재기 위해. 동기 경로엔 없는 단계는 read(R2)와 save(중간 저장)뿐
+            long tRead = 0, tStt = 0, tGrade, tSave;
             String speech = ctx.sttText();
             if (speech == null) {
+                long t0 = System.currentTimeMillis();
                 byte[] audio = audioStorage.read(ctx.audioKey());
+                tRead = System.currentTimeMillis() - t0;
+                t0 = System.currentTimeMillis();
                 speech = feedbackService.transcribe(audio, "audio_" + ctx.questionIndex() + ".webm");
+                tStt = System.currentTimeMillis() - t0;
                 final String spoken = speech;
                 // STT 성공분을 즉시 남긴다 — 이후 채점이 실패해 다시 집혀도 STT는 다시 안 부른다
                 tx.executeWithoutResult(s -> itemRepository.findById(itemId).ifPresent(i -> i.rememberSpeech(spoken)));
             }
 
+            long t1 = System.currentTimeMillis();
             FeedbackDTO feedback = feedbackService.gradeWithSpeech(speech, question);
+            tGrade = System.currentTimeMillis() - t1;
             if (feedback.isFailed()) throw new IllegalStateException(feedback.getErrorMessage());
 
+            long t2 = System.currentTimeMillis();
             tx.executeWithoutResult(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();   // 마무리 직렬화
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
@@ -159,9 +168,11 @@ public class ScoringWorker {
                 item.markDone(saved == null ? null : saved.getId());
                 job.refreshCompletion();
             });
+            tSave = System.currentTimeMillis() - t2;
             circuit.record(true);
             meterRegistry.counter("opicnic.worker.items", "outcome", "done").increment();
-            log.info("[Worker] 문항 {} DONE ({}ms, 시도 {})", ctx.questionIndex(), System.currentTimeMillis() - start, ctx.attempts());
+            log.info("[Worker] 문항 {} DONE ({}ms = read {} + stt {} + grade {} + save {}, 시도 {})", ctx.questionIndex(),
+                    System.currentTimeMillis() - start, tRead, tStt, tGrade, tSave, ctx.attempts());
         } catch (Exception e) {
             boolean rateLimited = FeedbackService.isRateLimited(e);
             Duration backoff = backoff(ctx.attempts(), rateLimited);

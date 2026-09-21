@@ -1,0 +1,13 @@
+# S1-async timing mode=normal kill_delay=0 — 2026-09-21 18:04:05
+# base=http://localhost:8080 audio=scripts/test_audio.webm runs=3
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   SPRING_PROFILES_ACTIVE=dev STT_ENABLED=false LLM_ENABLED=false STT_MOCK_DELAY_MS=3000 LLM_MOCK_DELAY_MS=4500 JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g" ./gradlew bootRun + 실제 R2 (집 네트워크, MySQL 3307)
+# 워커 단계별 시간 (문항 45개, 서버 로그 '[Worker] 문항 N DONE (... = read + stt + grade + save)'):
+#   평균 8,659ms = R2 읽기 1,402 (856~2,099) + STT 3,004 + 채점·태깅 4,205 + 저장 30 (최대 61)
+#   → 동기 대비 문항당 +1.4s(최대 +2.1s), 전부 R2 읽기(1MB × 15 동시 다운로드, 집 회선). 저장 직렬화(잡 행 락)는 30ms로 무시 가능
+#   → 접수→완료 10.3~12.4s = 가장 느린 문항 9.7s + 워커가 집을 때까지 ≤1s(폴링 1s) + 스크립트가 알아채기까지 ≤2s(폴링 2s)
+#   → 9/19의 14.5~19.6s는 재시작 실험·DevTools 리스타트가 섞인 값. 깨끗한 값은 이 파일
+run  attemptId                             submit_http  submit_s  upload_s  complete_s  job_status               done  failed  feedback_rows
+1    004aef49-1425-4bdd-92a5-55d88ecab913  202          0.052807  7.11      12.4        COMPLETED                15    0       14
+2    97da6650-fa03-4ddd-888c-3711a9e0eafe  202          0.036044  6.54      10.3        COMPLETED                15    0       14
+3    c4dc703a-9633-49fe-a2e9-d4206b09479c  202          0.038798  5.89      10.4        COMPLETED                15    0       14
