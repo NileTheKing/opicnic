@@ -30,13 +30,14 @@ PracticeAttemptApiController (/api/practice-attempts/{attemptId}/...)
 ### 1-b. 모의고사 비동기 채점 (ADR-0001, 1단계)
 
 ```
-HomeController (/practice/mock) → PracticeAttemptService.createAttempt()   // Caffeine, 지금과 동일
-  (브라우저 녹음)
+HomeController (/practice/mock) → PracticeAttemptService.createAttempt()   // Caffeine, 지금과 동일. 모델에 asyncScoring=true
+  (브라우저 녹음 — question.html은 asyncScoring이면 submitAsync(): 아래 ①②③ 후 /practice/mock/result/{id}로 이동)
 ScoringJobApiController
   POST /api/practice-attempts/{id}/upload-urls  → ScoringJobService.issueUploadUrls()  // 크기가 서명에 박힌 presigned PUT
   (브라우저 → R2 직접 PUT)
   POST /api/scoring-jobs {attemptId}            → ScoringJobService.submit()           // DB에 ScoringJob + Item(QUEUED), 202 + Location
   GET  /api/scoring-jobs/{id}                   → 폴링. 매번 DB를 읽어 상태를 센다
+ScoringJobViewController GET /practice/mock/result/{id} → 처리 중: mock-progress.html(폴링) / 완료: feedback.html(DB)
 ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값)
   claim(UPDATE WHERE QUEUED) → AudioStorage.read → FeedbackService.transcribe(성공분 item.sttText에 저장)
   → FeedbackService.gradeWithSpeech → [FeedbackPersistenceService.saveOne + item DONE + job 마무리] 한 트랜잭션(잡 행 락)
@@ -92,6 +93,8 @@ HomeController (/practice/mock)
 | `AdminQuestionSetApiController` | `/api/admin/question-sets` | **REST API** | 질문 세트 생성/수정/삭제. `/api/admin/**`은 인증 필요(`SecurityConfig`에서 `/api/**` permitAll 예외 처리됨) |
 | `EnumController` | `/api/enums` | **REST API** | 지역/주제/난이도 enum 목록 |
 | `DevPracticeController` | `/api/practice-attempts/csrf`, `/start`, `/start-mock` | **REST API, dev 전용** | 로그인 없이 attempt 생성 — k6·수동 측정용. `@Profile("dev")` |
+| `DevPracticeViewController` | `/dev/practice/mock` | **View, dev 전용** | 로그인 없이 모의고사 화면(question.html, asyncScoring=true) — 브라우저에서 비동기 제출 흐름 확인용 |
+| `ScoringJobViewController` | `/practice/mock/result/{jobId}` | View | 비동기 모의고사 결과. 처리 중이면 `mock-progress.html`(2초 폴링, 끝나면 새로고침), 끝났으면 DB `FeedbackResult`를 `FeedbackDTO.from()`으로 바꿔 기존 `feedback.html`에. 세션 무관 — 탭 닫았다 와도, 재시작돼도 같은 URL |
 | `ScoringJobApiController` | `/api/practice-attempts/{id}/upload-urls`, `/api/scoring-jobs` | **REST API** | 비동기 채점(ADR-0001, 1단계 모의고사만). URL 발급(녹음 후, 크기가 서명에 박힘) → `POST /api/scoring-jobs {attemptId}` = 접수(잡 생성, **202 + Location**, DB만 씀, 멱등) → `GET /api/scoring-jobs/{id}` 폴링. 제출 전 리소스는 practice-attempts(Caffeine), 제출 후는 scoring-jobs(DB) |
 
 ## 서비스 → 역할

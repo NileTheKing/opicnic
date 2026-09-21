@@ -147,6 +147,9 @@
 <script th:inline="javascript">
     const questions = /*[[${questions}]]*/ [];
     const attemptId = /*[[${attemptId}]]*/ null;
+    // 모의고사(HomeController./practice/mock)만 true. 비동기 경로: R2 직접 업로드 → POST /api/scoring-jobs → 결과 URL로 이동.
+    // 콤보는 기존 동기 경로(/answers → finalize) 그대로 (ADR-0001 1단계).
+    const asyncScoring = /*[[${asyncScoring} ?: false]]*/ false;
 
     const questionNumber    = document.getElementById('questionNumber');
     const topicBadge        = document.getElementById('topicBadge');
@@ -242,7 +245,41 @@
         if (recordedAudioBlob) recordings[currentQuestionIndex] = recordedAudioBlob;
         if (!hasAllRecordings()) { showError('모든 문제를 녹음해주세요.'); return; }
         const indexes = questions.map((_, i) => i);
+        if (asyncScoring) { await submitAsync(indexes); return; }
         await submitRecordings(`/api/practice-attempts/${encodeURIComponent(attemptId)}/answers`, indexes);
+    }
+
+    // 비동기 제출: ① 서버에 크기를 알려 문항별 서명 URL 받기 → ② R2에 직접 PUT (서버 안 거침, 병렬)
+    // → ③ 접수(잡 생성, 202) → ④ 결과 URL로. 접수 뒤엔 이 탭을 닫아도 서버가 끝까지 채점한다.
+    async function submitAsync(indexes) {
+        document.getElementById('loading').classList.remove('hidden');
+        document.querySelector('#loading p').textContent = '답변을 올리는 중입니다...';
+        submitButton.disabled = true;
+        try {
+            const files = indexes.map(index => ({ index, size: recordings[index].size, contentType: 'audio/webm' }));
+            const urlRes = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/upload-urls`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken }, body: JSON.stringify(files) });
+            if (!urlRes.ok) throw new Error((await urlRes.json().catch(() => ({}))).message || '업로드 준비에 실패했습니다.');
+            const urls = await urlRes.json();
+
+            await Promise.all(urls.map(async ({ index, url }) => {
+                // 서명에 박힌 크기·타입과 정확히 같아야 한다 — Blob 그대로, Content-Type 그대로
+                const put = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'audio/webm' }, body: recordings[index] });
+                if (!put.ok) throw new Error(`Q${index + 1} 업로드에 실패했습니다. (${put.status})`);
+            }));
+
+            document.querySelector('#loading p').textContent = '접수 중...';
+            const jobRes = await fetch('/api/scoring-jobs', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken }, body: JSON.stringify({ attemptId }) });
+            if (jobRes.status !== 202) throw new Error((await jobRes.json().catch(() => ({}))).message || '접수에 실패했습니다.');
+            const job = await jobRes.json();
+            submissionComplete = true;
+            window.location.href = `/practice/mock/result/${encodeURIComponent(job.id)}`;
+        } catch (err) {
+            document.getElementById('loading').classList.add('hidden');
+            submitButton.disabled = false;
+            showError(err.message || '제출 중 오류가 발생했습니다.');
+        }
     }
 
     async function retryFailedRecordings() {

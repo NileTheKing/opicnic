@@ -31,6 +31,9 @@ public class SecurityConfig {
                         // 여기서 hasAuthority("ADMIN")만 걸면 된다. 뷰 라우트(/admin/**)도 API와 동일하게 보호한다.
                         .requestMatchers("/admin/**", "/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/", "/auth/**", "/api/**", "/actuator/**", "/css/**", "/js/**").permitAll()
+                        // 비동기 모의고사 결과 화면: 소유권은 ScoringJobViewController가 직접 확인한다(dev 테스터 잡만 익명 허용).
+                        // /dev/**는 dev 프로파일 컨트롤러 전용 — 운영엔 핸들러가 없어 404
+                        .requestMatchers("/practice/mock/result/**", "/dev/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

@@ -11,7 +11,8 @@
 - [x] 1단계: 잡 테이블 `ScoringJob`/`ScoringJobItem` + `AudioStorage`(R2/인메모리) — 2026-09-18
 - [x] 2단계: 접수 API 3개 (`upload-urls` / `POST /api/scoring-jobs` 202 / `GET` 폴링) — 2026-09-19
 - [x] 3단계: `ScoringWorker` — 이탈·재시작(접수 직후/처리 중) 완료율 100% 확인 (`scripts/s1-async.sh`) — 2026-09-19
-- [ ] **R2 + 비동기 구현 (나머지)** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. 대화에서 정한 구현 결정: dev 테스터 회원(nullable 대신) / 워커 동시 상한 설정값 30 / 숏폴링 2초, SSE는 후속 / submit 시 R2 HEAD 안 함 / URL 발급은 녹음 후(서명에 크기 포함) / **잡 행은 submit에서 생성**(화면 열 때 아님 — 약속 전엔 Caffeine) / 경로 `/api/scoring-jobs`. 남은 순서: **화면**(question.html 모의고사 분기 R2 직접 업로드 + 폴링 결과 화면) → 정리(모의고사 경로에서 finalize·세션·beforeunload 제거, PROJECT.md·ADR 결과 절) → 전환 후 S1~S4 측정.
+- [x] 4단계: 화면 — question.html 모의고사 분기(R2 직접 업로드 → 접수), `mock-progress.html` 폴링, 결과는 기존 feedback.html에 DB로. 브라우저로 전 구간 확인 — 2026-09-21
+- [ ] **R2 + 비동기 구현 (나머지)** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. 대화에서 정한 구현 결정: dev 테스터 회원(nullable 대신) / 워커 동시 상한 설정값 30 / 숏폴링 2초, SSE는 후속 / submit 시 R2 HEAD 안 함 / URL 발급은 녹음 후(서명에 크기 포함) / **잡 행은 submit에서 생성**(화면 열 때 아님 — 약속 전엔 Caffeine) / 경로 `/api/scoring-jobs`. 남은 순서: 정리(ADR-0001 결과 절에 구현 결정 반영, Grafana에 워커 패널 — 큐 깊이·처리 중·완료/실패·서킷) → 전환 후 S1~S4 측정 → 운영 배포(VM `.env`에 R2 키). 콤보 동기 경로의 finalize·세션·beforeunload는 2단계(콤보 이전) 때 제거.
   - 후속(1단계 범위 밖): 처리 후 오디오 `pending/`→`attempts/` 복사(30일 보관, ADR 3절). 지금은 pending/ 라이프사이클 1일로 지워짐
   - 후속: `COMPLETED_WITH_FAILURES` 문항의 사용자 재시도 API (`POST /api/scoring-jobs/{id}/items/{index}/retries`) presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷. 콤보는 1단계에서 동기 유지, 업로드만 R2로
   - 이때 같이: dev attempt(memberId=null)도 DB에 저장되게 — 안 그러면 S1의 kill/restart → DB 검증이 성립 안 함

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채점 중 - OPIcnic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { brand: {
+            50:'#f0f5fb',100:'#d8e6f3',200:'#b0cce7',300:'#7dacd5',400:'#528db8',500:'#3a729f',600:'#2e5c86',700:'#234870',800:'#17325a',900:'#0e2040' } } } } }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<!-- 비동기 모의고사 진행 화면. 접수는 끝났고 서버가 뒤에서 채점 중이다 — 이 탭을 닫아도 채점은 계속되고,
+     같은 URL로 돌아오면 결과가 있다. 2초마다 상태를 묻고, 끝나면 이 URL을 새로고침해 결과(feedback.html)를 받는다. -->
+<div class="max-w-xl mx-auto px-4 py-6 pb-16">
+    <div class="flex items-center justify-between mb-6">
+        <a href="/" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            <i class="fa-solid fa-chevron-left text-xs"></i><span>홈</span>
+        </a>
+        <span class="text-sm font-semibold text-gray-900">모의고사 채점 중</span>
+        <div class="w-10"></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-6 text-center">
+        <svg class="animate-spin h-10 w-10 text-brand-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+        <p class="text-brand-700 font-semibold mb-1">답변을 접수했어요. 채점 중입니다.</p>
+        <p class="text-sm text-gray-500 mb-5">이 화면을 닫아도 채점은 계속돼요. 나중에 <span class="font-medium">기록</span>에서 볼 수 있어요.</p>
+        <p class="text-sm text-gray-700 mb-3"><span id="done">0</span> / <span th:text="${total}">15</span> 문항 완료</p>
+        <div id="items" class="flex flex-wrap justify-center gap-1.5"></div>
+        <p id="error" class="hidden text-xs text-red-500 mt-4"></p>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const jobId = /*[[${jobId}]]*/ null;
+    const total = /*[[${total}]]*/ 0;
+    const itemsEl = document.getElementById('items');
+    const doneEl = document.getElementById('done');
+    const errorEl = document.getElementById('error');
+    const chips = [];
+    for (let i = 0; i < total; i++) {
+        const c = document.createElement('span');
+        c.className = 'w-7 h-7 rounded-full text-xs flex items-center justify-center bg-gray-100 text-gray-400';
+        c.textContent = i + 1;
+        itemsEl.appendChild(c); chips.push(c);
+    }
+    const styles = {
+        QUEUED:     'bg-gray-100 text-gray-400',
+        PROCESSING: 'bg-brand-100 text-brand-700 animate-pulse',
+        DONE:       'bg-green-100 text-green-700',
+        FAILED:     'bg-red-100 text-red-600',
+    };
+    let failures = 0;
+    async function poll() {
+        try {
+            const res = await fetch(`/api/scoring-jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error('상태 조회 실패 (' + res.status + ')');
+            const job = await res.json();
+            failures = 0; errorEl.classList.add('hidden');
+            doneEl.textContent = job.done + job.failed;
+            job.items.forEach(it => {
+                chips[it.index].className = 'w-7 h-7 rounded-full text-xs flex items-center justify-center ' + (styles[it.status] || styles.QUEUED);
+            });
+            if (job.status === 'COMPLETED' || job.status === 'COMPLETED_WITH_FAILURES') {
+                window.location.reload();   // 같은 URL → 서버가 이제 feedback.html을 준다
+                return;
+            }
+        } catch (e) {
+            // 서버 재시작 중이면 몇 번 실패한다 — 계속 묻는다. 채점은 DB·워커가 이어가고 있다
+            if (++failures >= 5) { errorEl.textContent = '서버와 연결이 잠시 끊겼어요. 계속 확인 중입니다…'; errorEl.classList.remove('hidden'); }
+        }
+        setTimeout(poll, 2000);
+    }
+    poll();
+</script>
+</body>
+</html>

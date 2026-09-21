@@ -28,4 +28,7 @@ public interface FeedbackResultRepository extends JpaRepository<FeedbackResult, 
     long countByMemberId(Long memberId);
     List<FeedbackResult> findByMemberIdAndCreatedAtAfter(Long memberId, LocalDateTime since);
     Optional<FeedbackResult> findByIdAndMemberId(Long id, Long memberId);
+
+    // 비동기 모의고사 결과 화면(ScoringJobViewController): attemptId = ScoringJob.id
+    List<FeedbackResult> findAllByAttemptId(String attemptId);
 }
