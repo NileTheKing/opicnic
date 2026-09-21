@@ -76,6 +76,7 @@ public class PracticeTypeController {
 
             model.addAttribute("questions", List.of(question));
             model.addAttribute("attemptId", attempt.attemptId());
+            model.addAttribute("asyncScoring", true);   // ADR-0001 2단계
             return "practice/question";
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("유형별 연습 시작 불가: {}", e.getMessage());

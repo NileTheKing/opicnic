@@ -82,12 +82,24 @@ class ScoringJobServiceTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("너무 큽니다");
         assertThatThrownBy(() -> service.issueUploadUrls("att-1", List.of(new UploadUrlRequest(1, 10, "audio/mp4"))))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("형식");
+    }
 
+    @Test
+    @DisplayName("submit(콤보): 모드와 콤보 패턴/카테고리가 잡에 복사된다 — 워커가 결과 행에 그대로 붙인다")
+    void submit_combo_copiesComboMetadata() {
         PracticeAttempt combo = new PracticeAttempt("combo-1", List.of(1L, 2L, 3L), 7L,
-                PracticeMode.COMBO, "C1", "C1", Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS);
+                PracticeMode.COMBO, "C1", "DESCRIBE", Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS);
         when(attemptService.requireValidAttempt("combo-1")).thenReturn(combo);
-        assertThatThrownBy(() -> service.issueUploadUrls("combo-1", List.of(new UploadUrlRequest(0, 10, "audio/webm"))))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("모의고사");
+        when(jobRepository.findById("combo-1")).thenReturn(Optional.empty());
+        when(attemptService.tryStartFinalizing("combo-1")).thenReturn(true);
+
+        ScoringJob job = service.submit("combo-1", null);
+
+        assertThat(job.getMode()).isEqualTo(PracticeMode.COMBO);
+        assertThat(job.getComboPatternKey()).isEqualTo("C1");
+        assertThat(job.getComboCategory()).isEqualTo("DESCRIBE");
+        assertThat(job.getItems()).hasSize(3);
+        verify(rateLimiter).tryConsume(eq(3), eq(7L));
     }
 
     @Test

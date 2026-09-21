@@ -148,7 +148,6 @@
     const questions = /*[[${questions}]]*/ [];
     const attemptId = /*[[${attemptId}]]*/ null;
     // 모의고사(HomeController./practice/mock)만 true. 비동기 경로: R2 직접 업로드 → POST /api/scoring-jobs → 결과 URL로 이동.
-    // 콤보는 기존 동기 경로(/answers → finalize) 그대로 (ADR-0001 1단계).
     const asyncScoring = /*[[${asyncScoring} ?: false]]*/ false;
 
     const questionNumber    = document.getElementById('questionNumber');
@@ -274,7 +273,7 @@
             if (jobRes.status !== 202) throw new Error((await jobRes.json().catch(() => ({}))).message || '접수에 실패했습니다.');
             const job = await jobRes.json();
             submissionComplete = true;
-            window.location.href = `/practice/mock/result/${encodeURIComponent(job.id)}`;
+            window.location.href = `/practice/result/${encodeURIComponent(job.id)}`;
         } catch (err) {
             document.getElementById('loading').classList.add('hidden');
             submitButton.disabled = false;

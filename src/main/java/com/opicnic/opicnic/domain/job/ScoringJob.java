@@ -15,7 +15,8 @@ import java.util.List;
 // ADR-0001의 "잡 테이블". 비동기 채점 접수 하나 = 행 하나. submit 시점에 QUEUED로 생성된다 —
 // 202 약속을 서버 재시작 후에도 지키려면 접수 사실이 프로세스 밖에 있어야 한다. submit 전(문제 조립·
 // 녹음·업로드)은 약속 전이므로 Caffeine PracticeAttempt가 들고 있고, 여기 남지 않는다.
-// 1단계에서는 모의고사(MOCK_EXAM)만 이 경로를 탄다. 콤보는 동기 경로 유지.
+// 모의고사·콤보(유형별 포함) 모두 이 경로를 탄다(ADR-0001 2단계). 콤보의 패턴/카테고리는 결과 행에 붙어야
+// 학습분석(콤보↔유형 사이클)이 성립하므로, Caffeine attempt가 사라져도 남도록 submit 시 여기에 복사한다.
 @Entity
 @Table(name = "scoring_job", indexes = {
         @Index(name = "idx_scoring_job_member_created", columnList = "member_id, created_at")
@@ -37,6 +38,13 @@ public class ScoringJob {
     @Column(nullable = false, length = 20)
     private PracticeMode mode;
 
+    // 콤보 전용 메타(FeedbackResult에 그대로 복사). 모의고사·유형별 연습은 null
+    @Column(length = 100)
+    private String comboPatternKey;
+
+    @Column(length = 50)
+    private String comboCategory;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ScoringJobStatus status;
@@ -54,9 +62,15 @@ public class ScoringJob {
 
     // id는 Caffeine PracticeAttempt의 attemptId를 그대로 쓴다 — 클라이언트가 submit 전후로 같은 id로 대화한다
     public ScoringJob(String id, Member member, PracticeMode mode) {
+        this(id, member, mode, null, null);
+    }
+
+    public ScoringJob(String id, Member member, PracticeMode mode, String comboPatternKey, String comboCategory) {
         this.id = id;
         this.member = member;
         this.mode = mode;
+        this.comboPatternKey = comboPatternKey;
+        this.comboCategory = comboCategory;
         this.status = ScoringJobStatus.QUEUED;
     }
 

@@ -164,7 +164,7 @@ public class ScoringWorker {
             tx.executeWithoutResult(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();   // 마무리 직렬화
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
-                FeedbackResult saved = persistence.saveOne(feedback, job.getMember(), ctx.jobId());
+                FeedbackResult saved = persistence.saveOne(feedback, job);
                 item.markDone(saved == null ? null : saved.getId());
                 job.refreshCompletion();
             });

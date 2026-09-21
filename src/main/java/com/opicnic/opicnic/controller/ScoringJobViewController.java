@@ -38,7 +38,7 @@ public class ScoringJobViewController {
     private final PracticeAttemptService attemptService;
     private final MemberRepository memberRepository;
 
-    @GetMapping("/practice/mock/result/{jobId}")
+    @GetMapping("/practice/result/{jobId}")
     @Transactional(readOnly = true)
     public String result(@PathVariable String jobId, @AuthenticationPrincipal OAuth2User user, Model model) {
         ScoringJob job = scoringJobService.find(jobId).orElse(null);
@@ -47,7 +47,8 @@ public class ScoringJobViewController {
         if (!job.isFinished()) {
             model.addAttribute("jobId", jobId);
             model.addAttribute("total", job.getItems().size());
-            return "practice/mock-progress";
+            model.addAttribute("mode", job.getMode());
+            return "practice/progress";
         }
 
         Map<Long, FeedbackResult> results = feedbackResultRepository.findAllByAttemptId(jobId).stream()

@@ -12,14 +12,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="bg-gray-50 min-h-screen">
-<!-- 비동기 모의고사 진행 화면. 접수는 끝났고 서버가 뒤에서 채점 중이다 — 이 탭을 닫아도 채점은 계속되고,
+<!-- 비동기 채점 진행 화면(모의고사·콤보 공용). 접수는 끝났고 서버가 뒤에서 채점 중이다 — 이 탭을 닫아도 채점은 계속되고,
      같은 URL로 돌아오면 결과가 있다. 2초마다 상태를 묻고, 끝나면 이 URL을 새로고침해 결과(feedback.html)를 받는다. -->
 <div class="max-w-xl mx-auto px-4 py-6 pb-16">
     <div class="flex items-center justify-between mb-6">
         <a href="/" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
             <i class="fa-solid fa-chevron-left text-xs"></i><span>홈</span>
         </a>
-        <span class="text-sm font-semibold text-gray-900">모의고사 채점 중</span>
+        <span class="text-sm font-semibold text-gray-900" th:text="${mode != null and mode.name() == 'MOCK_EXAM'} ? '모의고사 채점 중' : '채점 중'">채점 중</span>
         <div class="w-10"></div>
     </div>
 

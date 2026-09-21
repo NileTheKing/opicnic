@@ -4,6 +4,7 @@ import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.FeedbackTag;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
+import com.opicnic.opicnic.domain.job.ScoringJob;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
@@ -74,9 +75,10 @@ public class FeedbackPersistenceService {
     // 문항 상태(DONE)와 결과 행이 같은 DB에 있어 워커가 "상태 갱신 + 결과 저장"을 한 트랜잭션에 묶을 수 있다 —
     // 큐를 DB로 두는 진짜 이득(불일치 없음). 자기소개(questionType null)는 저장하지 않고 null을 돌려준다.
     @Transactional
-    public FeedbackResult saveOne(FeedbackDTO fb, Member member, String attemptId) {
+    public FeedbackResult saveOne(FeedbackDTO fb, ScoringJob job) {
         if (fb.isFailed() || fb.getQuestion().getQuestionType() == null) return null;
-        FeedbackResult saved = feedbackResultRepository.save(toEntity(fb, member, attemptId, null, null));
+        FeedbackResult saved = feedbackResultRepository.save(
+                toEntity(fb, job.getMember(), job.getId(), job.getComboPatternKey(), job.getComboCategory()));
         List<FeedbackTag> tags = new ArrayList<>();
         if (fb.getTags() != null) {
             for (var t : fb.getTags()) {

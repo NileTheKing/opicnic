@@ -3,7 +3,6 @@ package com.opicnic.opicnic.service.job;
 import com.opicnic.opicnic.config.RateLimiterService;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
-import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.job.ScoringJob;
 import com.opicnic.opicnic.dto.job.UploadUrlRequest;
 import com.opicnic.opicnic.dto.job.UploadUrlResponse;
@@ -50,7 +49,7 @@ public class ScoringJobService {
     }
 
     public List<UploadUrlResponse> issueUploadUrls(String attemptId, List<UploadUrlRequest> requests) {
-        PracticeAttempt attempt = requireMockExamAttempt(attemptId);
+        PracticeAttempt attempt = requireAttempt(attemptId);
         int questionCount = attempt.questionIds().size();
         if (requests == null || requests.isEmpty()) {
             throw new IllegalArgumentException("업로드할 문항이 없습니다.");
@@ -85,7 +84,7 @@ public class ScoringJobService {
         if (existing.isPresent()) {
             return existing.get();
         }
-        PracticeAttempt attempt = requireMockExamAttempt(attemptId);
+        PracticeAttempt attempt = requireAttempt(attemptId);
         Member owner = resolveOwner(attempt, requester);
 
         // 채점 문항(자기소개 제외) 수만큼 한도 소비. 검증을 다 통과한 뒤, DB 저장 직전 — 기존 동기 경로와 같은 순서.
@@ -100,7 +99,7 @@ public class ScoringJobService {
             return jobRepository.findById(attemptId)
                     .orElseThrow(() -> new IllegalStateException("이미 다른 요청이 제출을 처리하고 있습니다."));
         }
-        ScoringJob job = new ScoringJob(attemptId, owner, PracticeMode.MOCK_EXAM);
+        ScoringJob job = new ScoringJob(attemptId, owner, attempt.mode(), attempt.comboPatternKey(), attempt.comboCategory());
         List<Long> questionIds = attempt.questionIds();
         for (int i = 0; i < questionIds.size(); i++) {
             job.addItem(i, questionIds.get(i), pendingKey(attemptId, i));
@@ -116,12 +115,8 @@ public class ScoringJobService {
         return jobRepository.findById(jobId);
     }
 
-    private PracticeAttempt requireMockExamAttempt(String attemptId) {
-        PracticeAttempt attempt = attemptService.requireValidAttempt(attemptId);
-        if (attempt.mode() != PracticeMode.MOCK_EXAM) {
-            throw new IllegalArgumentException("모의고사 attempt만 비동기 채점을 지원합니다.");
-        }
-        return attempt;
+    private PracticeAttempt requireAttempt(String attemptId) {
+        return attemptService.requireValidAttempt(attemptId);
     }
 
     // attempt에 memberId가 있으면 그 회원이 주인. 없으면(dev의 로그인 없는 attempt) dev 테스터 회원.
