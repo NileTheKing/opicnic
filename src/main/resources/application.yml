@@ -98,8 +98,9 @@ opicnic:
   # 비동기 채점 워커 (ADR-0001, service/job/ScoringWorker). 값은 코드 기본값과 같다 — 운영에서 환경변수로 덮는다.
   worker:
     enabled: ${WORKER_ENABLED:true}
-    # 동시에 외부(Groq)로 나가는 문항 수 상한. 우리 서버 능력이 아니라 "제공자 한도 ÷ 문항당 사용량"으로 정한다.
-    # 무료 티어(TPM 8K)면 사실상 1, 종량제면 수백. 30은 동시 30명 × 1문항 가정의 시작값 — 측정으로 조정.
+    # 동시에 처리하는 문항 수 상한. 유료 제공자 가정이라 외부 한도가 아니라 우리 서버가 정한다.
+    # 60 = 피크 동시 제출 30건(콤보 ~90문항)에서 큐가 안 생기는 값 (docs/performance/2026-09-22/slots-sweep.md).
+    # 더 올리면 HikariCP(10)가 먼저 고갈돼 접수가 늦어진다 — 풀 보호가 먼저(backlog).
     concurrency: ${WORKER_CONCURRENCY:60}
     poll-ms: 1000
     # 최근 window건 중 실패가 failure-ratio 이상이면 open-seconds 동안 집지 않는다 (모델 소멸·제공자 장애 시 할당량 보호)
