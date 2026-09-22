@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 // ADR-0001 4절 ④. DB(잡 테이블)를 큐로 쓰는 워커. 서버·컨트롤러와 직접 대화하지 않고 DB로만 만난다 —
 // 그래서 재시작하면 QUEUED/PROCESSING 행을 다시 주워 이어간다.
@@ -59,6 +60,7 @@ public class ScoringWorker {
     private final FailureCircuit circuit;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final AtomicInteger inFlight = new AtomicInteger();
+    private final AtomicLong queued = new AtomicLong();
 
     public ScoringWorker(ScoringJobRepository jobRepository, ScoringJobItemRepository itemRepository,
                          PracticeAttemptService attemptService, FeedbackService feedbackService,
@@ -82,6 +84,7 @@ public class ScoringWorker {
         this.circuit = new FailureCircuit(circuitWindow, circuitFailureRatio, Duration.ofSeconds(circuitOpenSeconds));
         meterRegistry.gauge("opicnic.worker.in_flight", inFlight);
         meterRegistry.gauge("opicnic.worker.circuit_open", circuit, c -> c.isOpen() ? 1 : 0);
+        meterRegistry.gauge("opicnic.worker.queued", queued);   // 큐 깊이(QUEUED 수). poll()마다 갱신 — 1초 지연의 대시보드용 값
         log.info("[Worker] enabled={} concurrency={} circuit(window={}, ratio={}, open={}s)",
                 enabled, concurrency, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
     }
@@ -102,9 +105,11 @@ public class ScoringWorker {
         int requeued = itemRepository.requeueStale(LocalDateTime.now().minus(STALE_AFTER));
         if (requeued > 0) log.warn("[Worker] PROCESSING에 {}분 이상 멈춘 문항 {}건 회수", STALE_AFTER.toMinutes(), requeued);
 
-        if (circuit.isOpen()) return;
+        if (circuit.isOpen() || slots.availablePermits() == 0) {
+            queued.set(itemRepository.countByStatus(ScoringJobItemStatus.QUEUED));
+            return;
+        }
         int free = slots.availablePermits();
-        if (free == 0) return;
 
         List<ScoringJobItem> candidates = itemRepository.findClaimable(free);
         for (ScoringJobItem candidate : candidates) {
@@ -124,6 +129,7 @@ public class ScoringWorker {
                 }
             });
         }
+        queued.set(itemRepository.countByStatus(ScoringJobItemStatus.QUEUED));   // claim 뒤에 세야 "대기"와 "처리 중"이 겹치지 않는다
     }
 
     // 트랜잭션은 DB를 만지는 짧은 구간에만. Groq를 기다리는 수 초 동안 커넥션을 물고 있지 않는다.
@@ -167,6 +173,7 @@ public class ScoringWorker {
                 FeedbackResult saved = persistence.saveOne(feedback, job);
                 item.markDone(saved == null ? null : saved.getId());
                 job.refreshCompletion();
+                recordJobDurationIfFinished(job);
             });
             tSave = System.currentTimeMillis() - t2;
             circuit.record(true);
@@ -181,11 +188,20 @@ public class ScoringWorker {
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
                 item.markFailed(e.getMessage(), backoff);
                 job.markProcessing();
-                if (item.getStatus() == ScoringJobItemStatus.FAILED) job.refreshCompletion();
+                if (item.getStatus() == ScoringJobItemStatus.FAILED) {
+                    job.refreshCompletion();
+                    recordJobDurationIfFinished(job);
+                }
             });
             circuit.record(false);
             String outcome = ctx.attempts() >= ScoringJobItem.MAX_ATTEMPTS ? "failed" : "retry";
             meterRegistry.counter("opicnic.worker.items", "outcome", outcome).increment();
+            if ("retry".equals(outcome)) {
+                // S2(호출 증폭) 관측용. 옛 동기 루프의 opicnic.retry와 같은 이름·태그 — 대시보드 "재시도 횟수" 패널이 그대로 읽는다
+                meterRegistry.counter("opicnic.retry",
+                        "kind", ctx.sttText() == null ? "stt" : "llm",
+                        "reason", rateLimited ? "429" : "other").increment();
+            }
             log.warn("[Worker] 문항 {} 시도 {}/{} 실패{} → {} (backoff {}ms): {}", ctx.questionIndex(), ctx.attempts(),
                     ScoringJobItem.MAX_ATTEMPTS, rateLimited ? " (429)" : "", outcome, backoff.toMillis(), e.getMessage());
         } finally {
@@ -193,7 +209,14 @@ public class ScoringWorker {
         }
     }
 
-    // 동기 경로(FeedbackService)와 같은 값: 429는 3s·6s + jitter, 그 외 1s·2s + jitter. 시도 n 뒤의 대기.
+    // 접수(created_at) → 마지막 문항 종료(completed_at). SLO "접수 후 완료 시간"의 실제 값. 잡을 닫은 트랜잭션 안에서 한 번만 기록된다
+    private void recordJobDurationIfFinished(ScoringJob job) {
+        if (!job.isFinished() || job.getCompletedAt() == null) return;
+        meterRegistry.timer("opicnic.job.duration", "status", job.getStatus().name())
+                .record(Duration.between(job.getCreatedAt(), job.getCompletedAt()));
+    }
+
+    // 429는 3s·6s + jitter, 그 외 1s·2s + jitter. 시도 n 뒤의 대기.
     static Duration backoff(int attempt, boolean rateLimited) {
         long base = rateLimited ? 3000L << (attempt - 1) : 1000L << (attempt - 1);
         long jitter = ThreadLocalRandom.current().nextLong(rateLimited ? 1000 : 300);

@@ -167,7 +167,7 @@ docker run --rm --entrypoint amtool -v "$PWD/docker/alertmanager:/etc/alertmanag
 
 `docker/grafana/provisioning/`이 grafana 컨테이너의 `/etc/grafana/provisioning`에 마운트된다. 데이터소스(`datasources/prometheus.yml`, uid `prometheus`)와 대시보드(`dashboards/opicnic-overview.json`)가 기동 시 자동 등록되며 UI에서 수정해도 저장되지 않는다(`allowUiUpdates: false`) — 바꾸려면 JSON을 고치고 30초 기다리거나 재시작.
 
-대시보드는 2행 7패널: 1행 앱 골든 시그널(요청/s, 5xx 비율, HTTP p95, 포화 = 힙 사용률·HikariCP pending·프로세스 CPU), 2행 Groq 의존성 RED(호출/s, 실패율 + 429 별도, 호출 p95, 전부 stt/score/tag 라인 분리). 모델 소멸 장애는 2행에서만 보인다.
+대시보드 구성: 상단 stat 8개(채점 실패율, 제출 p95, 5xx, 알림, 힙, 429, **채점 대기 문항**, **접수→완료 p95**) → 채점 워커 행(큐 깊이/처리 중, 문항 처리량 done·retry·failed, 접수→완료 p50/p95, 서킷 상태 — 지표 `opicnic_worker_*`, `opicnic_job_duration_seconds`, `opicnic_retry_total`) → HTTP 골든 시그널 → Groq 의존성 RED(stt/score/tag 분리) → 재시도/리소스. 모델 소멸 장애는 Groq 행에서만 보이고, 그 결과는 워커 행의 서킷·failed로 이어진다. 접수→완료 버킷은 `application.yml`의 `opicnic.job.duration` SLO(10s/30s/60s/120s).
 
 ## Deployment Notes
 

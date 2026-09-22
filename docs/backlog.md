@@ -13,8 +13,9 @@
 - [x] 3단계: `ScoringWorker` — 이탈·재시작(접수 직후/처리 중) 완료율 100% 확인 (`scripts/s1-async.sh`) — 2026-09-19
 - [x] 4단계: 화면 — question.html 모의고사 분기(R2 직접 업로드 → 접수), `progress.html` 폴링, 결과는 기존 feedback.html에 DB로. 브라우저로 전 구간 확인 — 2026-09-21
 - [x] 콤보 이전(ADR 2단계) 1/2: 콤보·유형별 진입점 asyncScoring, 모드 제한 해제, 콤보 패턴/카테고리를 잡 행에 복사해 결과 행에 붙임(학습분석 사이클 유지), 결과 URL `/practice/result/{id}` — curl로 콤보 2문항 완주 확인 — 2026-09-21
+- [x] Grafana 워커 행 + 지표 3개 추가(`opicnic_worker_queued`, `opicnic_job_duration_seconds`, 워커 `opicnic_retry_total`) — 2026-09-21
 - [x] 콤보 이전 2/2: 옛 동기 경로 제거 — `/answers`·`retry`·`finalize`·세션 결과 화면·멀티파트 예외 매핑·`getComboFeedbackStreaming`·`saveFeedbackResults`, question.html 동기 분기. 채점 규칙 테스트는 `gradeWithSpeech`로 재타깃. 측정 스크립트 `scripts/archive/` — 2026-09-21
-- [ ] **R2 + 비동기 구현 (나머지)** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. 대화에서 정한 구현 결정: dev 테스터 회원(nullable 대신) / 워커 동시 상한 설정값 30 / 숏폴링 2초, SSE는 후속 / submit 시 R2 HEAD 안 함 / URL 발급은 녹음 후(서명에 크기 포함) / **잡 행은 submit에서 생성**(화면 열 때 아님 — 약속 전엔 Caffeine) / 경로 `/api/scoring-jobs`. 남은 순서: Grafana 워커 패널 → 전환 후 S2~S4 → 운영 배포(VM `.env`에 R2 키) → ADR 결과 절·블로그.
+- [ ] **R2 + 비동기 구현 (나머지)** — [`adr/0001-async-r2.md`](adr/0001-async-r2.md) 4절. 대화에서 정한 구현 결정: dev 테스터 회원(nullable 대신) / 워커 동시 상한 설정값 30 / 숏폴링 2초, SSE는 후속 / submit 시 R2 HEAD 안 함 / URL 발급은 녹음 후(서명에 크기 포함) / **잡 행은 submit에서 생성**(화면 열 때 아님 — 약속 전엔 Caffeine) / 경로 `/api/scoring-jobs`. 남은 순서: 전환 후 S2~S4 → 운영 배포(VM `.env`에 R2 키) → ADR 결과 절·블로그.
   - 후속(1단계 범위 밖): 처리 후 오디오 `pending/`→`attempts/` 복사(30일 보관, ADR 3절). 지금은 pending/ 라이프사이클 1일로 지워짐
   - 후속: `COMPLETED_WITH_FAILURES` 문항의 사용자 재시도 API (`POST /api/scoring-jobs/{id}/items/{index}/retries`) presigned URL(`content-length-range` 4MB, 소유자·문항 범위, 10분 만료, 키는 서버가 `pending/{attemptId}/q{n}.webm`) → submit 시 R2 내부 복사로 `attempts/` → 잡 테이블(DB) + 가상 스레드 워커 폴링 → 문항별 즉시 저장 + 상태값 → finalize 제거 → 재시도 3회 상한 + FAILED 확정 + 워커 실패율 서킷.
   - 이때 같이: dev attempt(memberId=null)도 DB에 저장되게 — 안 그러면 S1의 kill/restart → DB 검증이 성립 안 함

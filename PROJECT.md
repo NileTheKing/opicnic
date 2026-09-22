@@ -28,7 +28,7 @@ ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값) — 잡
 
 콤보 패턴/카테고리는 submit 시 `ScoringJob`에 복사되고 워커가 `FeedbackResult`에 그대로 붙인다 — 학습분석(콤보↔유형 사이클)이 이 값에 의존한다.
 
-`config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 한다. Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`), 워커 지표는 `opicnic_worker_*` — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
+`config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 한다. Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`), 워커 지표는 `opicnic_worker_{queued,in_flight,circuit_open,items_total}`·`opicnic_job_duration_seconds`·`opicnic_retry_total` — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
 
 옛 동기 경로(멀티파트 업로드 → 서버가 즉시 STT+채점 → 세션 → finalize)는 2026-09-21에 제거했다. 근거는 `docs/adr/0001-async-r2.md`, 전/후 실측은 `docs/performance/slo.md`.
 

@@ -87,8 +87,11 @@ management:
       percentiles-histogram:
         # count/sum만으로는 p95가 안 나온다. SLO 버킷을 함께 지정해 카디널리티를 제한한다.
         http.server.requests: true
+        opicnic.job.duration: true
       slo:
         http.server.requests: 100ms,500ms,1s,5s
+        # 접수→완료. SLO 후보(모의고사 2분, 콤보 1분)를 경계로 두면 "SLO 안/밖 비율"을 버킷 하나로 읽을 수 있다
+        opicnic.job.duration: 10s,30s,60s,120s
 opicnic:
   coaching:
     min-count: 3

@@ -53,4 +53,6 @@ public interface ScoringJobItemRepository extends JpaRepository<ScoringJobItem, 
     default int requeueStale(LocalDateTime staleBefore) {
         return requeueStale(staleBefore, ScoringJobItemStatus.QUEUED, ScoringJobItemStatus.PROCESSING);
     }
+
+    long countByStatus(ScoringJobItemStatus status);
 }
