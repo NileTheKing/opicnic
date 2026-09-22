@@ -33,6 +33,12 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DOMAIN=${DOMAIN}
       - GROQ_API_KEY=${GROQ_API_KEY}
+      # 비동기 채점(ADR-0001): 오디오는 R2, 키 4개는 VM .env에. 없으면 앱이 인메모리 저장소로 떠서 재시작 시 오디오 유실 — 운영 금지
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:?R2_ACCOUNT_ID가 .env에 필요}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID가 .env에 필요}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY가 .env에 필요}
+      - R2_BUCKET=${R2_BUCKET:-opicnic-audio}
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-60}
     depends_on:
       mysql:
         condition: service_healthy

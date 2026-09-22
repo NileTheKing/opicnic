@@ -82,17 +82,18 @@ docker exec opicnic_app sh -c 'java -XX:+PrintFlagsFinal -version | grep MaxHeap
 
 ## Upload Size Limits
 
-업로드 상한은 **4겹이 같은 값을 바라봐야 한다.** 한 곳만 바꾸면 바깥쪽에서 먼저 잘리거나 안쪽이 무의미해진다.
+(2026-09-21 이후) 오디오는 브라우저 → R2 직접 업로드라 서버·nginx는 파일을 받지 않는다. 상한은 두 곳:
 
 | 위치 | 값 | 파일 |
 |---|---|---|
 | 브라우저 녹음 시간 | 120초 | `templates/practice/question.html` (`MAX_RECORDING_SECONDS`) |
-| 호스트 nginx | 64M | `/etc/nginx/sites-available/opicnic` (**VM에만 존재**) |
-| 컨테이너 nginx | 64M | `docker/nginx/nginx.conf.template` |
-| 톰캣 | 4MB / 64MB | `application.yml` (`max-file-size` / `max-request-size`) |
-| 컨트롤러 | 4MB | `PracticeAttemptApiController.MAX_ANSWER_FILE_BYTES` |
+| presigned URL 서명 | 4MB | `ScoringJobService.MAX_AUDIO_BYTES` — 크기가 서명에 박혀 R2가 초과분을 403으로 거부 |
 
-근거는 2분 녹음 webm/opus 실측 0.5~1.3MB(`scripts/test_1m20s.webm` 80초 844KB = 84.4kbps). 64MB는 모의고사 15문항을 한 요청에 담는 현 제출 구조 기준(15 × 4MB + 여유)이다.
+서버로 오는 본문은 JSON뿐이라 컨테이너 nginx `client_max_body_size`는 1M. 호스트 nginx의 64M은 남아 있어도 무해하나 같이 줄여도 된다. 옛 근거: 2분 녹음 webm/opus 실측 0.5~1.3MB, 64MB = 15문항 × 4MB(동기 경로, 제거됨).
+
+## R2 / 워커 환경변수 (VM `.env`)
+
+앱 컨테이너는 `docker-compose.prod.yml`에서 `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`(셋 다 필수 — 없으면 compose가 기동 거부), `R2_BUCKET`(기본 opicnic-audio), `WORKER_CONCURRENCY`(기본 60)를 받는다. 키는 로컬 `.env`에 있고 VM `.env`에 같은 값을 넣는다. 버킷·CORS(opicnic.xyz 허용)·라이프사이클은 `scripts/r2/setup.sh`로 이미 만들어져 있다.
 
 **호스트 nginx는 리포에 없다.** 위 `Host Nginx Example`과 실제 VM 파일을 함께 고쳐야 한다.
 

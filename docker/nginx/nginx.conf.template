@@ -2,9 +2,9 @@ server {
     listen 80;
     server_name ${DOMAIN};
 
-    # 톰캣 max-request-size(64MB)와 같은 값. 초과 요청은 여기서 413으로 끊겨
-    # 애플리케이션까지 가지 않는다. 모의고사 15문항 x 4MB 기준.
-    client_max_body_size 64M;
+    # 오디오는 브라우저가 R2에 직접 올리므로(ADR-0001) 서버로 오는 요청 본문은 JSON뿐이다.
+    # 1M이면 충분 — 옛 64M(모의고사 15문항 x 4MB)은 동기 업로드 경로와 함께 2026-09-21 제거.
+    client_max_body_size 1M;
 
     # SEC-07: actuator(헬스체크/메트릭)는 외부에 열 필요 없다 — 내부 Prometheus는
     # 이 nginx를 거치지 않고 Docker network로 opicnic_app:8080에 직접 scrape한다.
