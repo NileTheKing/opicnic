@@ -1,0 +1,29 @@
+# 운영 VM에서 부하 측정할 때만 겹쳐 쓰는 오버라이드 (docs/performance/slo.md S3·S4).
+#   켜기: docker compose -f docker-compose.prod.yml -f docker-compose.loadtest.yml up -d app
+#   끄기: docker compose -f docker-compose.prod.yml up -d app
+# 켜져 있는 동안: 채점은 mock(고정 지연), dev 엔드포인트(/api/practice-attempts/start 등)가 공개됨,
+# 결과는 dev 테스터 회원 명의로 운영 DB에 쌓임 → 측정 후 scripts/loadtest-cleanup.sql 로 삭제.
+services:
+  app:
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xmx5g
+      - SPRING_PROFILES_ACTIVE=prod,dev
+      - STT_ENABLED=false
+      - LLM_ENABLED=false
+      - STT_MOCK_DELAY_MS=${STT_MOCK_DELAY_MS:-3000}
+      - LLM_MOCK_DELAY_MS=${LLM_MOCK_DELAY_MS:-4500}
+      - STT_MOCK_429_RATE=${STT_MOCK_429_RATE:-0}
+      - STT_MOCK_5XX_RATE=${STT_MOCK_5XX_RATE:-0}
+      - STT_MOCK_TIMEOUT_RATE=${STT_MOCK_TIMEOUT_RATE:-0}
+      - LLM_MOCK_429_RATE=${LLM_MOCK_429_RATE:-0}
+      - LLM_MOCK_5XX_RATE=${LLM_MOCK_5XX_RATE:-0}
+      - LLM_MOCK_TIMEOUT_RATE=${LLM_MOCK_TIMEOUT_RATE:-0}
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-60}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DOMAIN=${DOMAIN}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET=${R2_BUCKET:-opicnic-audio}
