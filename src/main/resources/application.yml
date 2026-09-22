@@ -100,7 +100,7 @@ opicnic:
     enabled: ${WORKER_ENABLED:true}
     # 동시에 외부(Groq)로 나가는 문항 수 상한. 우리 서버 능력이 아니라 "제공자 한도 ÷ 문항당 사용량"으로 정한다.
     # 무료 티어(TPM 8K)면 사실상 1, 종량제면 수백. 30은 동시 30명 × 1문항 가정의 시작값 — 측정으로 조정.
-    concurrency: ${WORKER_CONCURRENCY:30}
+    concurrency: ${WORKER_CONCURRENCY:60}
     poll-ms: 1000
     # 최근 window건 중 실패가 failure-ratio 이상이면 open-seconds 동안 집지 않는다 (모델 소멸·제공자 장애 시 할당량 보호)
     circuit:

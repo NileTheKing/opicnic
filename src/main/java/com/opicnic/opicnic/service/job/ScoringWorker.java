@@ -67,7 +67,7 @@ public class ScoringWorker {
                          FeedbackPersistenceService persistence, AudioStorage audioStorage,
                          TransactionTemplate tx, MeterRegistry meterRegistry,
                          @Value("${opicnic.worker.enabled:true}") boolean enabled,
-                         @Value("${opicnic.worker.concurrency:30}") int concurrency,
+                         @Value("${opicnic.worker.concurrency:60}") int concurrency,
                          @Value("${opicnic.worker.circuit.window:20}") int circuitWindow,
                          @Value("${opicnic.worker.circuit.failure-ratio:0.8}") double circuitFailureRatio,
                          @Value("${opicnic.worker.circuit.open-seconds:30}") long circuitOpenSeconds) {
