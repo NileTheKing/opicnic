@@ -19,8 +19,13 @@ set -euo pipefail
 N=${1:-50}; PAR=${2:-5}; LABEL=${3:-after}
 BASE=${BASE:-http://localhost:8080}; AUDIO=${AUDIO:-scripts/test_audio.webm}
 TOPIC=${TOPIC:-MOVIE_WATCHING}; DIFFICULTY=${DIFFICULTY:-LEVEL_3}
+# DB 조회: 로컬(docker 3307) 또는 SSH_HOST="-i ~/.ssh/key user@host"가 있으면 VM의 opicnic_mysql(비밀번호는 VM .env에서)
 DB_PASS=$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)
-q() { docker exec "${MYSQL_CONTAINER:-opicnic_mysql_s1}" mysql -uroot -p"$DB_PASS" opicnic -N -e "$1" 2>/dev/null; }
+if [ -n "${SSH_HOST:-}" ]; then
+  q() { ssh -o BatchMode=yes $SSH_HOST 'cd ~/opicnic && set -a && . ./.env && set +a && docker exec -i opicnic_mysql mysql -u"$DB_USERNAME" -p"$DB_PASSWORD" opicnic -N' <<<"$1" 2>/dev/null; }
+else
+  q() { docker exec "${MYSQL_CONTAINER:-opicnic_mysql_s1}" mysql -uroot -p"$DB_PASS" opicnic -N -e "$1" 2>/dev/null; }
+fi
 OUT_DIR="docs/performance/$(date +%F)"; OUT="$OUT_DIR/s2-async-$LABEL.txt"; mkdir -p "$OUT_DIR"
 curl -sf "$BASE/actuator/health" >/dev/null || { echo "서버 없음" >&2; exit 1; }
 

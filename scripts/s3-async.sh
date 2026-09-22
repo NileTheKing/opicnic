@@ -12,10 +12,21 @@ set -euo pipefail
 USERS=${1:-30}; DURATION=${2:-300}; LABEL=${3:-after}
 BASE=${BASE:-http://localhost:8080}; AUDIO=${AUDIO:-scripts/test_audio.webm}
 TOPIC=${TOPIC:-MOVIE_WATCHING}; DIFFICULTY=${DIFFICULTY:-LEVEL_3}
+# DB 조회: 로컬(docker 3307) 또는 SSH_HOST="-i ~/.ssh/key user@host"가 있으면 VM의 opicnic_mysql(비밀번호는 VM .env에서)
 DB_PASS=$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)
-q() { docker exec "${MYSQL_CONTAINER:-opicnic_mysql_s1}" mysql -uroot -p"$DB_PASS" opicnic -N -e "$1" 2>/dev/null; }
+if [ -n "${SSH_HOST:-}" ]; then
+  q() { ssh -o BatchMode=yes $SSH_HOST 'cd ~/opicnic && set -a && . ./.env && set +a && docker exec -i opicnic_mysql mysql -u"$DB_USERNAME" -p"$DB_PASSWORD" opicnic -N' <<<"$1" 2>/dev/null; }
+else
+  q() { docker exec "${MYSQL_CONTAINER:-opicnic_mysql_s1}" mysql -uroot -p"$DB_PASS" opicnic -N -e "$1" 2>/dev/null; }
+fi
 OUT_DIR="docs/performance/$(date +%F)"; OUT="$OUT_DIR/s3-async-$LABEL.txt"; RAW=$(mktemp); SAMPLES=$(mktemp); mkdir -p "$OUT_DIR"
-curl -sf "$BASE/actuator/health" >/dev/null || { echo "서버 없음" >&2; exit 1; }
+# 지표: 로컬은 actuator 직접, VM은 actuator가 외부에 닫혀 있어(SEC-07) SSH로 컨테이너 안에서 읽는다
+if [ -n "${SSH_HOST:-}" ]; then
+  prom() { ssh -o BatchMode=yes $SSH_HOST 'docker exec opicnic_app wget -qO- http://localhost:8080/actuator/prometheus' 2>/dev/null; }
+else
+  prom() { curl -s "$BASE/actuator/prometheus"; }
+fi
+[ -n "$(prom | head -1)" ] || { echo "서버 없음 (지표 못 읽음)" >&2; exit 1; }
 
 user_loop() {  # $1 = user index. 각 줄: "user attemptId q submit_http submit_s complete_s"
   local U=$1 END=$2 JAR CSRF TOKEN HEADER START A COUNT SIZE BODY SUB T0
@@ -40,25 +51,38 @@ user_loop() {  # $1 = user index. 각 줄: "user attemptId q submit_http submit_
     rm -f "$JAR"
   done
 }
-sampler() { while true; do curl -s "$BASE/actuator/prometheus" | awk -v t="$(date +%T)" '
-  /^opicnic_worker_(queued|in_flight) /{printf "%s %s %s\n", t, $1, $2}
-  /^hikaricp_connections_(active|pending)\{/{split($1,a,"{"); printf "%s %s %s\n", t, a[1], $2}
-  '; echo "$(date +%T) heap_mb $(curl -s "$BASE/actuator/metrics/jvm.memory.used?tag=area:heap" | jq -r '(.measurements[0].value/1048576|floor)')"; sleep 5; done; }
-gc() { local g; g=$(curl -s "$BASE/actuator/prometheus" | awk '/^jvm_gc_pause_seconds_(count|sum)/{printf "%s ", $0}'); echo "${g:-(GC 없음)}"; }
+sampler() { while true; do prom | python3 -c '
+import sys,re,time
+t=time.strftime("%H:%M:%S"); heap=0
+for l in sys.stdin:
+    m=re.match(r"(opicnic_worker_(?:queued|in_flight)|hikaricp_connections_(?:active|pending))(?:\{[^}]*\})? ([0-9.eE+-]+)",l)
+    if m: print(t,m.group(1),m.group(2))
+    if l.startswith("jvm_memory_used_bytes{area=\"heap\""): heap+=float(l.rsplit(" ",1)[1])
+print(t,"heap_mb",int(heap/1048576))'; sleep 5; done; }
+gc() { local g; g=$(prom | awk '/^jvm_gc_pause_seconds_(count|sum)/{printf "%s ", $0}'); echo "${g:-(GC 없음)}"; }
 export -f user_loop; export BASE AUDIO TOPIC DIFFICULTY
 
 { echo "# S3-async $LABEL — $(date '+%F %T')"; echo "# base=$BASE users=$USERS duration=${DURATION}s topic=$TOPIC/$DIFFICULTY audio=$AUDIO"
   echo "# 서버 기동 명령을 여기 손으로 적을 것:"; echo "#   "; } > "$OUT"
-GC0=$(gc); T_START=$(date +%s); END=$((T_START + DURATION))
+srv() { prom | python3 -c '
+import sys,re
+c=t=0.0
+for l in sys.stdin:
+    m=re.match(r"http_server_requests_seconds_(count|sum)\{[^}]*status=\"202\"[^}]*uri=\"/api/scoring-jobs\"[^}]*\} ([0-9.eE+-]+)",l)
+    if m:
+        if m.group(1)=="count": c=float(m.group(2))
+        else: t=float(m.group(2))
+print(c,t)'; }
+SRV0=$(srv); GC0=$(gc); T_START=$(date +%s); END=$((T_START + DURATION))
 sampler > "$SAMPLES" & SAMPLER_PID=$!
 seq 1 "$USERS" | xargs -P "$USERS" -I{} bash -c "user_loop {} $END" > "$RAW"
 kill $SAMPLER_PID 2>/dev/null || true
-T_END=$(date +%s); GC1=$(gc)
+T_END=$(date +%s); GC1=$(gc); SRV1=$(srv)
 IDS=$(awk '{printf "%s\047%s\047", (n++?",":""), $2}' "$RAW")
 
 {
 echo "user attemptId                             q   http  submit_s  complete_s"; sort -k1,1n -k5 "$RAW"
-python3 - "$RAW" "$SAMPLES" "$((T_END-T_START))" <<'PY'
+python3 - "$RAW" "$SAMPLES" "$((T_END-T_START))" "$SRV0" "$SRV1" <<'PY'
 import sys,statistics as st
 rows=[l.split() for l in open(sys.argv[1]) if l.strip()]
 sub=[float(r[4]) for r in rows if r[3]=='202']; comp=[float(r[5]) for r in rows if r[3]=='202']; codes=[r[3] for r in rows]
@@ -67,7 +91,9 @@ p=lambda xs,k: sorted(xs)[max(0,int(len(xs)*k)-1)] if xs else 0
 print(f"\n# 콤보 {len(rows)}건 / 문항 {qs}개 / {el}s → {len(rows)*60/el:.0f} 콤보/분")
 putx=sum(1 for c in codes if c.startswith('PUTx'))
 print(f"# 접수 HTTP: 202={codes.count('202')} 비202={len(codes)-codes.count('202')-putx}  (SLO 100% 202)   R2 업로드 실패로 접수 안 함: {putx}건")
-print(f"# 접수 응답: avg {st.mean(sub):.3f}s  p50 {p(sub,.5):.3f}s  p95 {p(sub,.95):.3f}s  max {max(sub):.3f}s  (SLO p95 ≤ 0.5s)")
+print(f"# 접수 응답(클라이언트 측정, TLS·네트워크 포함): avg {st.mean(sub):.3f}s  p50 {p(sub,.5):.3f}s  p95 {p(sub,.95):.3f}s  max {max(sub):.3f}s")
+c0,t0=map(float,sys.argv[4].split()); c1,t1=map(float,sys.argv[5].split())
+if c1>c0: print(f"# 접수 응답(서버 측정, http_server_requests): avg {(t1-t0)/(c1-c0):.3f}s over {int(c1-c0)}건  (SLO p95 ≤ 0.5s — 서버 측 p95는 Grafana '제출 API p95' 패널)")
 print(f"# 접수→완료(클라이언트 폴링 기준, +≤2s): avg {st.mean(comp):.1f}s  p50 {p(comp,.5):.1f}s  p95 {p(comp,.95):.1f}s  max {max(comp):.1f}s")
 qd=[int(float(l.split()[2])) for l in open(sys.argv[2]) if 'queued' in l]; inf=[int(float(l.split()[2])) for l in open(sys.argv[2]) if 'in_flight' in l]
 if qd: print(f"# 큐 깊이(5s 샘플 {len(qd)}회): avg {st.mean(qd):.0f}  max {max(qd)}   처리 중: avg {st.mean(inf):.0f}  max {max(inf)}")
@@ -87,6 +113,6 @@ echo "# 잡 상태: $(q "select status, count(*) from scoring_job where id in ($
 echo "# 문항 상태: $(q "select status, count(*) from scoring_job_item where job_id in ($IDS) group by status" | awk '{printf "%s=%s ", $1, $2}')"
 echo "# 접수→완료 DB(초): $(q "select round(min(timestampdiff(microsecond,created_at,completed_at))/1e6,1), round(avg(timestampdiff(microsecond,created_at,completed_at))/1e6,1), round(max(timestampdiff(microsecond,created_at,completed_at))/1e6,1) from scoring_job where id in ($IDS)" | awk '{print "min "$1" / avg "$2" / max "$3}')"
 echo "# GC 전: $GC0"; echo "# GC 후: $GC1"
-echo "# 서버 생존: $(curl -s "$BASE/actuator/health")"
+echo "# 서버 생존: $(prom | grep -c "^opicnic_worker_in_flight") (지표 응답=1)"
 } | tee -a "$OUT"
 rm -f "$RAW" "$SAMPLES"; echo "→ $OUT"
