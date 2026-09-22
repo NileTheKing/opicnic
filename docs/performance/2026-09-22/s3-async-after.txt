@@ -2,7 +2,7 @@
 # base=http://localhost:8080 users=30 duration=300s topic=MOVIE_WATCHING/LEVEL_3 audio=scripts/test_audio.webm
 # 서버: SPRING_PROFILES_ACTIVE=dev STT_ENABLED=false LLM_ENABLED=false STT_MOCK_DELAY_MS=3000 LLM_MOCK_DELAY_MS=4500 JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g" ./gradlew bootRun (MySQL 3307, 실제 R2, 워커 동시 상한 30)
 # 요약: 접수 248/248 202, p95 0.032s(SLO 0.5s ✓). 접수→완료 p50 12.3s / p95 18.3s / max 26.7s — S1 단독(10.3s) 대비 p95 +8s는 큐 대기(큐 max 40, 처리 중 max 30 = 동시 상한에 붙음).
-#       처리량 44콤보/분(전환 전 k6 1,080건/5분 = 216/분): 동기는 상한이 없어 30명이 각자 7.5s씩 자고 끝났고, 비동기는 워커 슬롯 30이 상한. 30명 연속 제출 = 문항 ~90개 동시 요구 vs 슬롯 30. 상한은 설정값(backlog "동시 상한 산정").
+#       처리량 44콤보/분(전환 전 k6 1,080건/5분 = 216/분): 동기는 상한이 없어 30명이 각자 7.5s씩 자고 끝났고, 비동기는 워커 슬롯 30이 상한. 30명 연속 제출 = 문항 ~90개 동시 요구 vs 슬롯 30. 30은 근거 없는 시작값. 유료 제공자 가정이므로 외부 한도가 아니라 우리 서버(힙·CPU·DB 커넥션)가 어디서 먼저 무너지나로 정한다(backlog "동시 상한 산정").
 #       GC 5분: Humongous 3회(전환 전 25회 — 오디오가 HTTP 요청 힙을 안 거침), Evacuation 4회, Full GC 0.
 #       FAILED 1/682: R2 "key does not exist" — 스크립트가 PUT 응답을 확인 안 하고 접수함(브라우저는 put.ok 확인 후 접수). 워커는 이걸 3회 재시도했는데 404는 재시도 무의미 → 후속.
 user attemptId                             q   http  submit_s  complete_s
