@@ -99,7 +99,7 @@ opicnic:
   worker:
     enabled: ${WORKER_ENABLED:true}
     # 동시에 처리하는 문항 수 상한. 유료 제공자 가정이라 외부 한도가 아니라 우리 서버가 정한다.
-    # 60 = 피크 동시 제출 30건(콤보 ~90문항)에서 큐가 안 생기는 값 (docs/performance/2026-09-22/slots-sweep.md).
+    # 60 = 피크 동시 제출 30건이 전부 콤보(~90문항)일 때 큐가 안 생기는 값. 모의고사 피크엔 부족하나 그 전에 커넥션 풀이 한계 (docs/performance/2026-09-22/slots-sweep.md).
     # 더 올리면 HikariCP(10)가 먼저 고갈돼 접수가 늦어진다 — 풀 보호가 먼저(backlog).
     concurrency: ${WORKER_CONCURRENCY:60}
     poll-ms: 1000
