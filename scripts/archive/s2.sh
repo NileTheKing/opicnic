@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# [보관] 동기 채점 경로(/answers·/finalize)는 2026-09-21에 제거됨 — 전환 전 측정 기록용, 현재는 실행 불가
 # S2 — 외부 API 실패 주입 시 우리 쪽 호출 증폭 측정 (docs/performance/slo.md 검증 시나리오 S2)
 #
 # 콤보 N건을 제출하고, 전후의 opicnic_external_call_seconds_count 차이를 "실패가 없었다면 필요한 호출 수"로

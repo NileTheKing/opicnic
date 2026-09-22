@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 // 사용자별 시간당 문항 한도 버킷. RateLimitInterceptor(단순 1건당 1소비 경로)와
-// PracticeAttemptApiController(검증 통과 후 실제 문항 수만큼 소비)가 공유해서 쓴다.
+// ScoringJobService.submit(검증 통과 후 실제 문항 수만큼 소비)이 공유해서 쓴다.
 // 검증 실패로 끝날 요청까지 미리 소비하지 않도록, "먼저 검증 다 통과한 뒤 여기서 소비"하는
 // 순서를 호출하는 쪽이 지켜야 한다 — 이 서비스 자체는 순서를 강제하지 않는다.
 @Component
@@ -44,7 +44,7 @@ public class RateLimiterService {
         return getBucket(getUserKey()).tryConsume(cost);
     }
 
-    // FU-03: PracticeAttemptApiController가 답변 제출 경로에서 호출한다. attemptMemberId==null이고
+    // FU-03: ScoringJobService.submit이 접수 경로에서 호출한다. attemptMemberId==null이고
     // dev 프로파일이면(=DevPracticeController가 로그인 세션 없이 만든 k6 부하테스트 attempt) 버킷을
     // 아예 소비하지 않는다 — 유한 용량의 또 다른 공유 버킷을 만드는 대신 이 조합만 완전히 예외 처리한다.
     // dev의 로그인 회원 attempt(memberId != null)와 production의 익명 요청은 계속 기존 한도(시간당

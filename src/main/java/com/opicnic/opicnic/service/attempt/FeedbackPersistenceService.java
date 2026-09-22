@@ -3,77 +3,35 @@ package com.opicnic.opicnic.service.attempt;
 import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.FeedbackTag;
 import com.opicnic.opicnic.domain.Member;
-import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
 import com.opicnic.opicnic.domain.job.ScoringJob;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.FeedbackTagRepository;
-import com.opicnic.opicnic.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// DATA-01: 피드백 저장과 태그 저장이 별개 saveAll 호출이라 태그 저장이 실패해도 피드백은
-// 이미 커밋된 채로 남는 문제가 있었다. 컨트롤러의 finalize()가 자기 자신을 호출하는 구조에선
-// @Transactional이 프록시를 안 거쳐 무시되므로, 별도 빈으로 분리해 두 저장을 하나의
-// 트랜잭션으로 묶는다 — 하나가 실패하면 둘 다 롤백된다.
+// DATA-01: 피드백 저장과 태그 저장이 별개 호출이라 태그 저장이 실패해도 피드백은 이미 커밋된 채로
+// 남는 문제가 있었다. 별도 빈으로 분리해 두 저장을 하나의 트랜잭션으로 묶는다 — 하나가 실패하면 둘 다 롤백된다.
+// 워커는 이 트랜잭션을 자기 트랜잭션(문항 DONE + 잡 마무리) 안에서 부르므로 결과 행·태그·문항 상태가 함께 커밋된다.
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class FeedbackPersistenceService {
 
-    private final MemberRepository memberRepository;
     private final FeedbackResultRepository feedbackResultRepository;
     private final FeedbackTagRepository feedbackTagRepository;
 
-    @Transactional
-    public void saveFeedbackResults(List<FeedbackDTO> feedbackResults, OAuth2User oAuth2User,
-                                     PracticeAttempt attempt) {
-        if (oAuth2User == null) return;
-        String provider = oAuth2User.getAttribute("provider");
-        String providerId = oAuth2User.getAttribute("providerId");
-        Member member = memberRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
-        if (member == null) return;
-
-        // 자기소개는 실제 시험에서도 채점 문항으로 취급되지 않는다 — DB에 아예 저장하지 않아야
-        // "총 문항 수", "최근 기록", "코칭 열람 조건" 같은 문항 개수 기반 통계에 섞이지 않는다.
-        List<FeedbackDTO> validFeedback = feedbackResults.stream()
-                .filter(fb -> !fb.isFailed())
-                .filter(fb -> fb.getQuestion().getQuestionType() != null)
-                .toList();
-        List<FeedbackResult> toSave = validFeedback.stream()
-                .map(fb -> toEntity(fb, member, attempt.attemptId(), attempt.comboPatternKey(), attempt.comboCategory()))
-                .toList();
-
-        List<FeedbackResult> saved = feedbackResultRepository.saveAll(toSave);
-
-        List<FeedbackTag> tagsToSave = new ArrayList<>();
-        for (int i = 0; i < saved.size(); i++) {
-            List<FeedbackTagDto> tags = validFeedback.get(i).getTags();
-            if (tags == null) continue;
-            for (var t : tags) {
-                tagsToSave.add(FeedbackTag.builder()
-                        .feedbackResult(saved.get(i))
-                        .category(t.category())
-                        .tag(t.tag())
-                        .build());
-            }
-        }
-        feedbackTagRepository.saveAll(tagsToSave);
-
-        log.info("[DB 저장] 피드백 {}건, 태그 {}건 (member: {}, combo: {})",
-                saved.size(), tagsToSave.size(), member.getId(), attempt.comboCategory());
-    }
-
-    // 비동기 워커용: 문항 하나를 태그까지 한 트랜잭션으로 저장하고 저장된 엔티티를 돌려준다.
+    // 워커용: 문항 하나를 태그까지 한 트랜잭션으로 저장하고 저장된 엔티티를 돌려준다.
     // 문항 상태(DONE)와 결과 행이 같은 DB에 있어 워커가 "상태 갱신 + 결과 저장"을 한 트랜잭션에 묶을 수 있다 —
     // 큐를 DB로 두는 진짜 이득(불일치 없음). 자기소개(questionType null)는 저장하지 않고 null을 돌려준다.
+    // 자기소개는 실제 시험에서도 채점 문항으로 취급되지 않는다 — DB에 아예 저장하지 않아야
+    // "총 문항 수", "최근 기록", "코칭 열람 조건" 같은 문항 개수 기반 통계에 섞이지 않는다.
     @Transactional
     public FeedbackResult saveOne(FeedbackDTO fb, ScoringJob job) {
         if (fb.isFailed() || fb.getQuestion().getQuestionType() == null) return null;

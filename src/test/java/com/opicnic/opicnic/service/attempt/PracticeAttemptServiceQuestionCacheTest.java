@@ -2,9 +2,6 @@ package com.opicnic.opicnic.service.attempt;
 
 import com.opicnic.opicnic.domain.Question;
 import com.opicnic.opicnic.domain.QuestionSet;
-import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
-import com.opicnic.opicnic.domain.enums.AttemptStatus;
-import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -12,8 +9,6 @@ import com.opicnic.opicnic.repository.QuestionRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,11 +30,6 @@ class PracticeAttemptServiceQuestionCacheTest {
         QuestionRepository questionRepository = Mockito.mock(QuestionRepository.class);
         PracticeAttemptService service = new PracticeAttemptService(store, questionRepository);
 
-        String attemptId = "attempt-1";
-        PracticeAttempt attempt = new PracticeAttempt(attemptId, List.of(1L), null, PracticeMode.COMBO,
-                null, null, Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS);
-        when(store.findById(attemptId)).thenReturn(Optional.of(attempt));
-
         // 실제로는 LAZY 프록시지만, 이 mock으로 "영속성 컨텍스트가 끝난 뒤 다시 건드리면
         // LazyInitializationException이 난다"는 상황을 흉내낸다. QuestionDto.from()은 캐시 미스
         // 시(첫 호출) getTopic()을 두 번 부르므로(label/name), 그 두 번까지는 정상 반환하고
@@ -51,20 +41,18 @@ class PracticeAttemptServiceQuestionCacheTest {
 
         Question question = new Question("내용", QuestionType.TYPE_1, questionSet);
         question.setId(1L);
-        when(questionRepository.findAllById(List.of(1L))).thenReturn(List.of(question));
+        when(questionRepository.findById(1L)).thenReturn(Optional.of(question));
 
         // 캐시 미스 — DB에서 로드하고 DTO로 변환하며 이때 getTopic()이 처음(유일하게) 호출된다.
-        List<QuestionDto> first = service.restoreQuestionsForIndexes(attemptId, List.of(0));
-        assertThat(first).hasSize(1);
-        assertThat(first.get(0).getSurveyTopicName()).isEqualTo("MOVIE_WATCHING");
+        QuestionDto first = service.questionById(1L);
+        assertThat(first.getSurveyTopicName()).isEqualTo("MOVIE_WATCHING");
 
         // 캐시 히트 — 이미 저장된 QuestionDto만 반환해야 하며, questionSet.getTopic()을
         // 다시 호출하면 안 된다(호출하면 위 stub이 예외를 던져 테스트가 실패한다).
-        List<QuestionDto> second = service.restoreQuestionsForIndexes(attemptId, List.of(0));
-        assertThat(second).hasSize(1);
-        assertThat(second.get(0).getSurveyTopicName()).isEqualTo("MOVIE_WATCHING");
+        QuestionDto second = service.questionById(1L);
+        assertThat(second.getSurveyTopicName()).isEqualTo("MOVIE_WATCHING");
 
         verify(questionSet, times(2)).getTopic();
-        verify(questionRepository, times(1)).findAllById(any());
+        verify(questionRepository, times(1)).findById(any());
     }
 }

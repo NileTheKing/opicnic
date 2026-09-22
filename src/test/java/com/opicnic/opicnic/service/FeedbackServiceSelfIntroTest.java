@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ class FeedbackServiceSelfIntroTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any()))
                 .thenReturn("My name is Yang and I am a software engineer who enjoys jogging on weekends.");
@@ -32,10 +31,7 @@ class FeedbackServiceSelfIntroTest {
                 "Please introduce yourself.", "자기소개", null);
 
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(selfIntro));
-
-        assertThat(results).hasSize(1);
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), selfIntro);
         assertThat(result.isFailed()).isFalse();
         assertThat(result.getOverallGrade()).isNull();
         assertThat(result.getOverall()).isNotBlank();

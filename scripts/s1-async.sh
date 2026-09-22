@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # S1 (전환 후) — 비동기 경로로 모의고사 15문항 제출: 접수 응답 시간 + 완료 시간 + DB 검증.
 #   start-mock → upload-urls → R2 PUT ×15 → POST /api/scoring-jobs(202) → 폴링 → DB에서 문항 상태·feedback_result 수 확인
-# 전제: 서버가 dev + mock 지연 + R2 키(.env)로 떠 있어야 한다 (scripts/s1.sh 헤더 참고). 측정 중 컴파일 금지.
+# 전제: 서버가 dev + mock 지연 + R2 키(.env)로 떠 있어야 한다 (scripts/archive/s1.sh 헤더 참고). 측정 중 컴파일 금지.
 # 사용: scripts/s1-async.sh [반복=1] [라벨=after]  → docs/performance/<오늘>/s1-async-<라벨>.txt
 #   MODE=client-kill : 제출 직후 폴링하지 않고 종료(이탈) → 30s 뒤 DB만 확인
 #   MODE=server-restart : 제출 KILL_DELAY초(기본 0) 뒤 RESTART_CMD 실행(기본: 앱 프로세스 kill) → 서버 복귀 대기 → 폴링

@@ -1,13 +1,14 @@
+// [보관] 동기 채점 경로(/answers·/finalize)는 2026-09-21에 제거됨 — 전환 전 측정 기록용, 현재는 실행 불가
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
-// S3 — 피크 동시 30 제출 5분 (docs/performance/slo.md 검증 시나리오 S3). load-test.js의 제출 흐름을 그대로 쓰고
-// 부하 모양만 다르다: 실패 주입 없이 현실 지연(STT 3s + LLM 4.5s)으로 동시 30 고정.
+// 실행: SPRING_PROFILES_ACTIVE=dev STT_ENABLED=false LLM_ENABLED=false ./gradlew bootRun 로 서버 기동 후
+//      k6 run scripts/load-test.js
+// (POST /api/practice-attempts/start는 dev 프로파일에서만 열리는 DevPracticeController 전용 엔드포인트)
 //
-// 실행: 서버를 s1.sh 헤더의 명령(mock + 지연 3000/4500, 실패율 0)으로 기동한 뒤
-//      k6 run --summary-export docs/performance/<날짜>/s3-<라벨>.json scripts/s3.js
-// 측정 중 컴파일 금지 (DevTools 핫 리스타트 → 지표 리셋)
+// 목적: Mock STT/LLM 모드에서 VirtualThread + StructuredTaskScope 처리량 측정
+//       Groq rate limit 우회, readAllBytes() 힙 부하만 격리해서 측정
 
 const answersDuration = new Trend('answers_duration', true);
 const startDuration   = new Trend('start_duration',   true);
@@ -45,11 +46,16 @@ function buildMultipart(textFields, fileEntries) {
 }
 
 export const options = {
-    // S3: 피크 동시 30 제출, 5분 (slo.md). 30은 국내 상위 영어앱 피크 추정 17건의 2배.
-    scenarios: {
-        peak: { executor: 'constant-vus', vus: 30, duration: __ENV.DURATION || '5m' },
+    stages: [
+        { duration: '15s', target: 20  },  // 웜업
+        { duration: '30s', target: 50  },  // 압박
+        { duration: '30s', target: 100 },  // 피크 (macOS 소켓 고갈 방지)
+        { duration: '15s', target: 0   },  // 쿨다운
+    ],
+    thresholds: {
+        'answers_duration': ['p(95)<5000'],
+        'error_rate':       ['rate<0.05'],
     },
-    thresholds: {},   // 판정은 slo.md 표에서 사람이. 여기선 기록만
 };
 
 const BASE = 'http://localhost:8080';
@@ -117,5 +123,5 @@ export default function () {
     }
     errorRate.add(answersOk ? 0 : 1);
 
-    sleep(1);   // 사용자가 결과를 보고 다음 콤보로 넘어가는 최소 간격
+    sleep(1);
 }

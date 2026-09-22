@@ -138,17 +138,11 @@
             disabled>
         제출 완료 <i class="fa-solid fa-check text-sm ml-1"></i>
     </button>
-    <button id="retryButton"
-            class="hidden w-full py-4 bg-gray-700 text-white rounded-2xl font-semibold hover:bg-gray-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-        실패 문항 다시 제출 <i class="fa-solid fa-rotate-right text-sm ml-1"></i>
-    </button>
 </div>
 
 <script th:inline="javascript">
     const questions = /*[[${questions}]]*/ [];
     const attemptId = /*[[${attemptId}]]*/ null;
-    // 모의고사(HomeController./practice/mock)만 true. 비동기 경로: R2 직접 업로드 → POST /api/scoring-jobs → 결과 URL로 이동.
-    const asyncScoring = /*[[${asyncScoring} ?: false]]*/ false;
 
     const questionNumber    = document.getElementById('questionNumber');
     const topicBadge        = document.getElementById('topicBadge');
@@ -156,7 +150,6 @@
     const progressBar       = document.getElementById('progressBar');
     const nextButton        = document.getElementById('nextButton');
     const submitButton      = document.getElementById('submitButton');
-    const retryButton       = document.getElementById('retryButton');
     const recordButton      = document.getElementById('recordButton');
     const stopButton        = document.getElementById('stopButton');
     const playButton        = document.getElementById('playButton');
@@ -174,8 +167,6 @@
     let isRecording = false, startTime, timerInterval;
     let recordedAudioBlob;
     let recordings = [];
-    let feedbackResults = [];
-    let failedIndexes = [];
     let submissionComplete = false;
 
     document.getElementById('exitButton').addEventListener('click', () => {
@@ -220,7 +211,6 @@
         nextButton.disabled = true;
         submitButton.classList.toggle('hidden', !isLast);
         submitButton.disabled = true;
-        retryButton.classList.add('hidden');
     }
 
     function setupEventListeners() {
@@ -229,7 +219,6 @@
         playButton.addEventListener('click', playRecording);
         nextButton.addEventListener('click', advanceToNextQuestion);
         submitButton.addEventListener('click', submitAllRecordings);
-        retryButton.addEventListener('click', retryFailedRecordings);
         window.addEventListener('beforeunload', warnBeforeLeavingWithRecordings);
     }
 
@@ -243,12 +232,10 @@
     async function submitAllRecordings() {
         if (recordedAudioBlob) recordings[currentQuestionIndex] = recordedAudioBlob;
         if (!hasAllRecordings()) { showError('모든 문제를 녹음해주세요.'); return; }
-        const indexes = questions.map((_, i) => i);
-        if (asyncScoring) { await submitAsync(indexes); return; }
-        await submitRecordings(`/api/practice-attempts/${encodeURIComponent(attemptId)}/answers`, indexes);
+        await submitAsync(questions.map((_, i) => i));
     }
 
-    // 비동기 제출: ① 서버에 크기를 알려 문항별 서명 URL 받기 → ② R2에 직접 PUT (서버 안 거침, 병렬)
+    // 제출: ① 서버에 크기를 알려 문항별 서명 URL 받기 → ② R2에 직접 PUT (서버 안 거침, 병렬)
     // → ③ 접수(잡 생성, 202) → ④ 결과 URL로. 접수 뒤엔 이 탭을 닫아도 서버가 끝까지 채점한다.
     async function submitAsync(indexes) {
         document.getElementById('loading').classList.remove('hidden');
@@ -279,57 +266,6 @@
             submitButton.disabled = false;
             showError(err.message || '제출 중 오류가 발생했습니다.');
         }
-    }
-
-    async function retryFailedRecordings() {
-        if (failedIndexes.length === 0) return;
-        await submitRecordings(`/api/practice-attempts/${encodeURIComponent(attemptId)}/answers/retry`, failedIndexes);
-    }
-
-    async function submitRecordings(endpoint, indexes) {
-        document.getElementById('loading').classList.remove('hidden');
-        submitButton.disabled = true;
-        retryButton.disabled = true;
-
-        try {
-            const formData = new FormData();
-            indexes.forEach(index => {
-                const blob = recordings[index];
-                if (!blob) throw new Error(`Q${index + 1} 녹음 파일이 없습니다.`);
-                formData.append('files', new File([blob], `file_${index + 1}.webm`, { type: 'audio/webm' }));
-            });
-            formData.append('questionIndexes', JSON.stringify(indexes));
-
-            const response = await fetch(endpoint, { method: 'POST', headers: { [csrfHeader]: csrfToken }, body: formData });
-            if (!response.ok) throw new Error('피드백 요청에 실패했습니다.');
-
-            const data = await response.json();
-            data.results.forEach(item => { feedbackResults[item.questionIndex] = item.feedback; });
-            failedIndexes = data.failedIndexes || [];
-
-            if (failedIndexes.length > 0) {
-                document.getElementById('loading').classList.add('hidden');
-                retryButton.classList.remove('hidden');
-                retryButton.disabled = false;
-                showError(`분석 실패 문항 ${failedIndexes.length}개가 있습니다. 다시 제출해 주세요.`);
-                return;
-            }
-
-            await finalizeFeedback();
-        } catch (err) {
-            document.getElementById('loading').classList.add('hidden');
-            retryButton.disabled = false;
-            submitButton.disabled = false;
-            showError(err.message || '피드백 요청 중 오류가 발생했습니다.');
-        }
-    }
-
-    async function finalizeFeedback() {
-        const response = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/finalize`, { method: 'POST', headers: { [csrfHeader]: csrfToken } });
-        if (!response.ok) throw new Error('피드백 결과 확정에 실패했습니다.');
-        const data = await response.json();
-        submissionComplete = true;
-        window.location.href = data.resultUrl;
     }
 
     function hasAllRecordings() {

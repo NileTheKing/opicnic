@@ -32,7 +32,7 @@ public class DevPracticeController {
     private final FeedbackService feedbackService;
     private final MockExamService mockExamService;
 
-    // k6는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/answers 등)는 CSRF를 그대로
+    // 측정 스크립트는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/api/scoring-jobs 등)는 CSRF를 그대로
     // 강제해야 하므로(SEC-06), 여기서 토큰을 미리 발급받아 이후 POST에 실어 보내게 한다.
     @GetMapping("/csrf")
     public Map<String, String> csrfToken(CsrfToken token) {

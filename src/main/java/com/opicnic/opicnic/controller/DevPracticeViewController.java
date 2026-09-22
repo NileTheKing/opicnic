@@ -32,7 +32,6 @@ public class DevPracticeViewController {
         var attempt = attemptService.createAttempt(questions, null, PracticeMode.MOCK_EXAM, null, null);
         model.addAttribute("questions", questions);
         model.addAttribute("attemptId", attempt.attemptId());
-        model.addAttribute("asyncScoring", true);
         return "practice/question";
     }
 }

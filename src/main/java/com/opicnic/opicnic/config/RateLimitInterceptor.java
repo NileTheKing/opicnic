@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 // /analytics/coaching처럼 "요청 1건 = 실제 비용 1건"으로 단순 대응되는 경로에만 쓴다.
-// /api/practice-attempts/*/answers[/retry]는 문항 수만큼 비용이 나고 사전 검증도 필요해서,
-// 여기서 미리 소비하지 않고 PracticeAttemptApiController가 검증 통과 후 직접 RateLimiterService를
-// 호출한다 — 인터셉터에서 먼저 소비해버리면 검증 실패로 끝날 요청도 한도를 깎아먹는다.
+// POST /api/scoring-jobs는 문항 수만큼 비용이 나고 사전 검증도 필요해서, 여기서 미리 소비하지 않고
+// ScoringJobService.submit이 검증 통과 후 직접 RateLimiterService를 호출한다 — 인터셉터에서 먼저
+// 소비해버리면 검증 실패로 끝날 요청도 한도를 깎아먹는다.
 @Component
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {

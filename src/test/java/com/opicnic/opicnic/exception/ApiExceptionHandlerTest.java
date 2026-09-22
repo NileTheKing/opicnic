@@ -1,13 +1,9 @@
 package com.opicnic.opicnic.exception;
 
-import com.opicnic.opicnic.controller.AdminQuestionSetApiController;
-import com.opicnic.opicnic.controller.PracticeAttemptApiController;
 import com.opicnic.opicnic.config.RateLimiterService;
-import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.controller.AdminQuestionSetApiController;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
-import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.QuestionAssemblyService;
-import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // API-01 회귀 테스트: 클라이언트 실수(깨진 JSON body, URL 파라미터 타입 불일치)가 서버 장애(500)가
 // 아니라 400으로 처리되는지 검증. 이전엔 ApiExceptionHandler의 catch-all(Exception -> 500)로
 // 떨어져서 서버 장애 지표와 클라이언트 오류가 섞였다.
-@WebMvcTest(controllers = {AdminQuestionSetApiController.class, PracticeAttemptApiController.class})
+@WebMvcTest(controllers = {AdminQuestionSetApiController.class})
 @AutoConfigureMockMvc(addFilters = false)
 @Import(ApiExceptionHandler.class)
 class ApiExceptionHandlerTest {
@@ -39,12 +35,7 @@ class ApiExceptionHandlerTest {
     private QuestionAssemblyService questionAssemblyService;
     @MockBean
     private PracticeAttemptService attemptService;
-    @MockBean
-    private FeedbackService feedbackService;
-    @MockBean
-    private MemberRepository memberRepository;
-    @MockBean
-    private FeedbackPersistenceService feedbackPersistenceService;
+    // WebConfig가 RateLimitInterceptor를 등록하므로 슬라이스 컨텍스트에도 그 의존성이 필요하다
     @MockBean
     private RateLimiterService rateLimiterService;
 

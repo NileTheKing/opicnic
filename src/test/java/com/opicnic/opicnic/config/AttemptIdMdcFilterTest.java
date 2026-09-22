@@ -24,9 +24,7 @@ class AttemptIdMdcFilterTest {
     @Test
     @DisplayName("/api/practice-attempts/{attemptId}/** 요청 동안 MDC에 attemptId가 있고, 끝나면 제거된다")
     void attemptPath_putsAndRemovesMdc() throws Exception {
-        assertThat(mdcSeenDownstream("/api/practice-attempts/abc-123/answers")).isEqualTo("abc-123");
-        assertThat(mdcSeenDownstream("/api/practice-attempts/abc-123/answers/retry")).isEqualTo("abc-123");
-        assertThat(mdcSeenDownstream("/api/practice-attempts/abc-123/finalize")).isEqualTo("abc-123");
+        assertThat(mdcSeenDownstream("/api/practice-attempts/abc-123/upload-urls")).isEqualTo("abc-123");
         assertThat(MDC.get("attemptId")).isNull();
     }
 

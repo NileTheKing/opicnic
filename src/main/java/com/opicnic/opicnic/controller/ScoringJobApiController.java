@@ -77,7 +77,7 @@ public class ScoringJobApiController {
         return ResponseEntity.ok(ScoringJobStatusResponse.from(job));
     }
 
-    // PracticeAttemptApiController.rejectIfNotOwner와 같은 규칙. memberId==null(dev attempt)은 누구나.
+    // memberId==null(dev attempt)은 누구나.
     // dev 테스터 회원이 주인인 잡도 마찬가지로 열어둔다 — 측정 스크립트가 로그인 없이 폴링해야 한다.
     private ResponseEntity<?> rejectIfNotOwner(Long ownerId, OAuth2User oAuth2User) {
         if (ownerId == null) return null;

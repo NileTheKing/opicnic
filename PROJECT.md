@@ -6,45 +6,31 @@ OPIcnic 코드베이스 지도. 컨트롤러/서비스를 처음부터 grep하�
 
 ## 핵심 흐름
 
-### 1. 콤보 연습 (제출 → 피드백)
+### 1. 연습 제출 → 비동기 채점 (ADR-0001) — 콤보·유형별·모의고사 공용
+
+진입점 셋이 모두 같은 화면·같은 채점 경로를 탄다. 서버는 오디오 파일을 받지 않는다(브라우저 → R2 직접).
 
 ```
-PracticeComboController (/practice/combo)
-  → PracticeAttemptService.createAttempt()   // attemptId 발급, questionIds를 Caffeine에 저장
-  → question.html 렌더링
-
-PracticeAttemptApiController (/api/practice-attempts/{attemptId}/...)
-  → FeedbackService.getComboFeedbackStreaming()
-      → StructuredTaskScope로 문항별 병렬 처리
-      → STTService (Groq Whisper)
-      → GroqService.getOpicFeedback()        // 채점
-      → GroqService.extractFeedbackTags()    // 태깅
-      → FeedbackResult + FeedbackTag 저장 (finalize 시점)
-  → PracticeFeedbackController (/practice/feedback/result) 결과 화면
-```
-
-실패 문항 재시도(`/{attemptId}/answers/retry`)도 같은 `FeedbackService` 경로를 재사용한다 — attemptId로 원본 questionIds를 복원해서 재매핑.
-
-`config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 하고, `FeedbackService`는 fork한 subtask에 그 MDC를 복사한다(스레드 로컬이라 자동 전파 안 됨). Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`) — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
-
-### 1-b. 모의고사 비동기 채점 (ADR-0001, 1단계)
-
-```
-HomeController (/practice/mock) → PracticeAttemptService.createAttempt()   // Caffeine, 지금과 동일. 모델에 asyncScoring=true
-  (브라우저 녹음 — question.html은 asyncScoring이면 submitAsync(): 아래 ①②③ 후 /practice/result/{id}로 이동)
+PracticeComboController (/practice/combo) · PracticeTypeController (/practice/type) · HomeController (/practice/mock)
+  → PracticeAttemptService.createAttempt()   // attemptId 발급, questionIds(+콤보 패턴/카테고리)를 Caffeine에 저장. 아직 약속 전
+  → question.html 렌더링 (녹음 후 submitAsync(): 아래 ①②③ 후 /practice/result/{id}로 이동)
 ScoringJobApiController
-  POST /api/practice-attempts/{id}/upload-urls  → ScoringJobService.issueUploadUrls()  // 크기가 서명에 박힌 presigned PUT
-  (브라우저 → R2 직접 PUT)
-  POST /api/scoring-jobs {attemptId}            → ScoringJobService.submit()           // DB에 ScoringJob + Item(QUEUED), 202 + Location
-  GET  /api/scoring-jobs/{id}                   → 폴링. 매번 DB를 읽어 상태를 센다
-ScoringJobViewController GET /practice/result/{id} → 처리 중: progress.html(폴링) / 완료: feedback.html(DB)
-ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값)
+  ① POST /api/practice-attempts/{id}/upload-urls → ScoringJobService.issueUploadUrls()  // 크기가 서명에 박힌 presigned PUT
+  ② (브라우저 → R2 직접 PUT, 병렬)
+  ③ POST /api/scoring-jobs {attemptId}           → ScoringJobService.submit()           // DB에 ScoringJob + Item(QUEUED), 202 + Location. 여기서부터 약속
+     GET  /api/scoring-jobs/{id}                  → 폴링. 매번 DB를 읽어 상태를 센다
+ScoringJobViewController GET /practice/result/{id} → 처리 중: progress.html(2초 폴링) / 완료: feedback.html(DB)
+ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값) — 잡이 아니라 문항 단위로 집는다(제출 건끼리 섞여 공정)
   claim(UPDATE WHERE QUEUED) → AudioStorage.read → FeedbackService.transcribe(성공분 item.sttText에 저장)
-  → FeedbackService.gradeWithSpeech → [FeedbackPersistenceService.saveOne + item DONE + job 마무리] 한 트랜잭션(잡 행 락)
+  → FeedbackService.gradeWithSpeech (채점 → 태깅) → [FeedbackPersistenceService.saveOne + item DONE + job 마무리] 한 트랜잭션(잡 행 락)
   실패 → item.markFailed(backoff) → QUEUED(다시 집힘) 또는 3회째 FAILED. 기동 시·5분 스윕으로 PROCESSING 고아 회수. 실패율 서킷
 ```
 
-서버·워커·폴링은 서로 대화하지 않고 DB로만 만난다 — 그래서 재시작에도 이어진다. 전 구간 검증은 `scripts/s1-async.sh`(normal / client-kill / server-restart).
+콤보 패턴/카테고리는 submit 시 `ScoringJob`에 복사되고 워커가 `FeedbackResult`에 그대로 붙인다 — 학습분석(콤보↔유형 사이클)이 이 값에 의존한다.
+
+`config/AttemptIdMdcFilter`가 `/api/practice-attempts/{attemptId}/**` 요청 동안 attemptId를 MDC에 넣어 로그 줄에 `[attempt=…]`로 찍히게 한다. Groq 호출 RED 지표는 `service/ExternalCallMetrics`(`opicnic_external_call_seconds`), 워커 지표는 `opicnic_worker_*` — 운영 알림·대시보드는 `docs/deployment.md` Monitoring 참고.
+
+옛 동기 경로(멀티파트 업로드 → 서버가 즉시 STT+채점 → 세션 → finalize)는 2026-09-21에 제거했다. 근거는 `docs/adr/0001-async-r2.md`, 전/후 실측은 `docs/performance/slo.md`.
 
 ### 2. 코칭 리포트 생성
 
@@ -67,7 +53,7 @@ HomeController (/practice/mock)
       → TopicCatalog (배경설문 22개 vs 돌발 23개 풀 구분)
       → OpicComboPatternProvider (난이도별 ComboPattern)
       → QuestionAssemblyService.assemble()  // QuestionSet + ComboPattern → QuestionDto
-  → (이후 흐름 1의 PracticeAttempt 경로와 합류)
+  → (이후 흐름 1의 PracticeAttempt → 비동기 채점 경로와 합류)
 ```
 
 ## 컨트롤러 → 라우트
@@ -82,8 +68,6 @@ HomeController (/practice/mock)
 | `PracticeComboController` | `/practice/combo` | View | 주제/카테고리 기반 콤보 연습 시작 |
 | `PracticeTypeController` | `/practice/type` | View | 유형별 연습 (`?type=TYPE_N`, 주제는 랜덤·유형 고정, 구현 완료) |
 | `PracticeFocusController` | `/practice/focus` | View | 집중 연습 모드 (구상 단계) |
-| `PracticeFeedbackController` | `/practice/feedback/result` | View | 연습 결과 화면 |
-| `PracticeAttemptApiController` | `/api/practice-attempts` | **REST API** | 답변 제출/재시도/확정 (`/{attemptId}/answers`, `/{attemptId}/answers/retry`, `/{attemptId}/finalize`) |
 | `ExamController` | `/exam` | View | 시험 준비 계획 (학습 스케줄) |
 | `AnalyticsController` | `/analytics` | View | 학습분석 탭 (현황판, A) |
 | `TodayController` | `/today` | View | 오늘 할 일 (B) — 콤보 진행률, 이번주 과제 자기신고, 회피 감지. 홈 위젯을 통해서만 진입(별도 nav 탭 없음) |
@@ -107,14 +91,14 @@ HomeController (/practice/mock)
 | `QuestionAssemblyService` | `QuestionSet + ComboPattern` → `QuestionDto` 리스트 변환 |
 | `ComboQuestionStrategy` / `FixedComboQuestionStrategy` / `OpicStandardComboSelectionStrategy` | 콤보 내 문제 선택 전략 |
 | `TopicCatalog` | 배경설문 주제(22개)/돌발 주제(23개) 카탈로그 |
-| `FeedbackService` | 답변 제출 처리 — STT/LLM 병렬 호출(`StructuredTaskScope`), 429 분리 백오프, 재시도 로직. `transcribe()`/`gradeWithSpeech()`는 워커용 단일 문항 경로(재시도 없음 — 워커가 소유) |
+| `FeedbackService` | 단일 문항 채점 — `transcribe()`(STT), `gradeWithSpeech()`(채점 → 태깅 → 점수 검증·등급). 재시도 없음(워커가 소유). `isRateLimited()`로 429 판정 |
 | `GroqService` | Groq API 호출 — `getOpicFeedback`(채점), `extractFeedbackTags`(태깅), `getCoachingReport`(코칭 리포트 문장화) |
 | `STTService` | Groq Whisper STT 호출 |
 | `CoachingService` | 저장된 `FeedbackTag`를 요소별·유형별로 집계해 코칭 리포트 생성 (태그 아키텍처 — 클래스 상단 주석 참고). `parseReport()`/`buildTeaser()`로 리포트 JSON 파싱과 홈·A·B 공통 코칭 티저 문구도 제공 |
 | `ExamPlanService` | 학습 이력 기반 시험 준비 계획/약점 유형 진단 |
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
-| `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 동기 경로 차단). R2 확인·외부 호출 없음 |
+| `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 중복 접수 차단). R2 확인·외부 호출 없음 |
 | `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
 | `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |
 
@@ -139,11 +123,9 @@ HomeController (/practice/mock)
 
 ## PracticeAttempt / attemptId 설계 배경
 
-`PracticeAttemptService.createAttempt()`는 서버가 문제를 조립한 뒤 `attemptId → questionIds[]`를 Caffeine 캐시(2시간 TTL)에 저장한다. 클라이언트는 `attemptId`만 받고, 제출 시 `attemptId`는 URL 경로(`/api/practice-attempts/{attemptId}/...`)로, 오디오는 별도 멀티파트 파일로 전송한다.
+`PracticeAttemptService.createAttempt()`는 서버가 문제를 조립한 뒤 `attemptId → questionIds[]`(+콤보 메타)를 Caffeine 캐시(2시간 TTL)에 저장한다. 클라이언트는 `attemptId`만 받고, 서명 URL 발급·접수 때 `attemptId`만 보낸다 — 문항 내용이나 ID를 조작할 수 없고, 서버는 submit 시점에 이 캐시에서 문항 목록을 꺼내 잡 행을 만든다.
 
-**주목적: 제출-재시도-finalize 3단계 멀티스텝 플로우 지원.**
-실패 문항만 재제출할 때 서버가 원본 questionIds를 복원해야 retry 매핑이 가능하기 때문이다.
-부수효과로 클라이언트가 question content나 ID를 조작할 수 없게 된다.
+**약속의 경계**: submit(202) 전은 캐시(잃어도 무해 — 사용자가 다시 시작), submit 후는 DB `ScoringJob`(재시작에도 남아야 하는 약속).
 
 캐시(인메모리)를 쓰는 이유: 연습 완료 전의 임시 상태라 DB 영구 저장이 불필요하고, 서버 재시작 시 만료돼도 무해하다. 분산 캐시(Redis)로 교체 안 한 이유는 `docs/hold.md` 참고 — `PracticeAttemptStore` 인터페이스로 이미 분리해둬서 나중에 교체 가능.
 

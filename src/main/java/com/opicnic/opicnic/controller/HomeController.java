@@ -142,8 +142,6 @@ public class HomeController {
             PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM, null, null);
             model.addAttribute("questions", questions);
             model.addAttribute("attemptId", attempt.attemptId());
-            // 비동기 경로(R2 직접 업로드 → POST /api/scoring-jobs → 폴링). question.html이 이 값으로 분기한다
-            model.addAttribute("asyncScoring", true);
         } catch (IllegalStateException e) {
             log.warn("모의고사 시작 불가: {}", e.getMessage());
             return "redirect:/?noTopics=true";

@@ -24,7 +24,7 @@ import java.util.Set;
 
 // 비동기 채점 접수 (ADR-0001 4절 ①~③). 제출 전은 Caffeine PracticeAttempt, 제출 후는 DB ScoringJob —
 // 리소스 경계(/api/practice-attempts vs /api/scoring-jobs)가 저장소 경계와 같다.
-// 1단계에서는 모의고사만. 콤보는 PracticeAttemptApiController의 동기 경로 그대로.
+// 모의고사·콤보·유형별 연습 모두 이 경로 하나다(2026-09-21 동기 경로 제거).
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -93,7 +93,7 @@ public class ScoringJobService {
             throw new RateLimitExceededException("시간당 문항 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
         }
 
-        // Caffeine attempt를 SUBMITTED로 — 동기 경로(/answers)로 같은 attempt를 또 제출하지 못하게.
+        // Caffeine attempt를 SUBMITTED로 — 같은 attempt로 URL 발급·재접수가 끼어들지 못하게.
         // 동시에 두 submit이 오면 하나만 이 전이에 성공한다(REVIEW-01과 같은 장치).
         if (!attemptService.tryStartFinalizing(attemptId)) {
             return jobRepository.findById(attemptId)

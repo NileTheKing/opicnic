@@ -15,7 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.stream.Collectors;
 
 // @RestController가 붙은 API 컨트롤러(EnumController, AdminQuestionSetApiController,
-// PracticeAttemptApiController)에만 적용된다. 뷰를 반환하는 @Controller는 대상이 아니다.
+// ScoringJobApiController)에만 적용된다. 뷰를 반환하는 @Controller는 대상이 아니다.
 @RestControllerAdvice(annotations = RestController.class)
 @Slf4j
 public class ApiExceptionHandler {
@@ -55,18 +55,15 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse(e.getName() + " 파라미터 형식이 올바르지 않습니다."));
     }
 
-    // REVIEW-05: multipart Content-Type이 아닌 요청이 멀티파트 전용 엔드포인트로 들어옴(Spring이
-    // @RequestBody 등에서 요청 Content-Type을 처리할 수 없을 때도 던진다) — catch-all(500)로 새지 않도록 415.
+    // REVIEW-05: Spring이 요청 Content-Type을 처리할 수 없을 때(@RequestBody에 JSON이 아닌 것 등) — catch-all(500)로 새지 않도록 415.
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .body(new ErrorResponse("지원하지 않는 콘텐츠 타입입니다."));
     }
 
-    // FU-04: PayloadTooLargeException/MaxUploadSizeExceededException, MissingServletRequestPartException,
-    // MultipartException 매핑은 MultipartExceptionHandler(selector 없는 전역 advice)로 옮겼다.
-    // DispatcherServlet이 handler를 찾기 전(checkMultipart 단계)에 이 예외들을 던지면 handlerType이
-    // 없어 여기(annotations = RestController.class로 범위가 좁혀진 advice)는 애초에 적용되지 않기 때문이다.
+    // 멀티파트 예외 매핑(옛 MultipartExceptionHandler)은 2026-09-21 동기 업로드 경로 제거와 함께 지웠다 —
+    // 오디오는 이제 브라우저가 R2에 직접 올리고 서버는 파일을 받지 않는다.
 
     // 만료/이미 제출된 세션 등 "요청 시점엔 유효했으나 더 이상 유효하지 않은 상태"를 나타내는 데 사용 (예: PracticeAttempt 세션 만료)
     @ExceptionHandler(IllegalStateException.class)

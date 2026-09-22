@@ -7,22 +7,21 @@ import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.dto.QuestionDto;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.time.Duration;
-import java.time.Instant;
+
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.StructuredTaskScope;
-import java.util.concurrent.ThreadLocalRandom;
+
+
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -33,138 +32,17 @@ public class FeedbackService {
     private final STTService sttService;
     private final GroqService groqService;
     private final ObjectMapper objectMapper;
-    private final MeterRegistry meterRegistry;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
         return comboPracticeService.getComboQuestions(topic, difficulty);
     }
 
-    public List<FeedbackDTO> getComboFeedbackStreaming(
-            List<byte[]> audioBuffers, List<QuestionDto> questions) {
-
-        if (audioBuffers.size() != questions.size()) {
-            throw new IllegalArgumentException(
-                "음성 파일 수(" + audioBuffers.size() + ")와 질문 수(" + questions.size() + ")가 일치하지 않습니다.");
-        }
-
-        log.info("[Structured Concurrency] 피드백 분석 시작 ({}개)", audioBuffers.size());
-        long start = System.currentTimeMillis();
-
-        // MDC(attemptId 등)는 스레드 로컬이라 fork된 가상 스레드에 자동으로 안 넘어간다.
-        // 요청 스레드의 컨텍스트를 복사해 각 subtask 시작 시 넣어야 [Subtask-N] 로그에도 attemptId가 붙는다.
-        Map<String, String> mdc = MDC.getCopyOfContextMap();
-
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<FeedbackDTO>> subtasks = new ArrayList<>();
-
-            List<Long> subtaskDurations = new CopyOnWriteArrayList<>();
-
-            for (int i = 0; i < audioBuffers.size(); i++) {
-                final int idx = i;
-                final byte[] audioBuffer = audioBuffers.get(i);
-                final QuestionDto question = questions.get(i);
-
-                subtasks.add(scope.fork(withMdc(mdc, () -> {
-                    long subtaskStart = System.currentTimeMillis();
-                    log.info("[Subtask-{}] STT & LLM 처리 시작 (Thread: {})", idx, Thread.currentThread());
-
-                    int maxAttempts = 3;
-                    Exception lastException = null;
-                    boolean lastWasRateLimited = false;
-                    // 루프 밖으로 꺼내 성공한 STT 결과를 재시도 간 재사용한다. 채점/태깅 LLM만 실패해도
-                    // STT부터 다시 부르던 구조가 429를 자가 유발했다(2026-08-31 실측: 15문항 재시도로
-                    // STT 호출 43건 중 22건만 성공, 429 21회 — Whisper RPM 20을 스스로 초과). STT 자체가
-                    // 실패한 경우엔 speechText가 null로 남아 다음 시도에서 정상적으로 재호출된다.
-                    String speechText = null;
-
-                    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-                        try {
-                            if (attempt > 0) {
-                                // 429(rate limit)는 일반 일시 오류보다 훨씬 더 기다려야 재시도가 의미 있다 —
-                                // 같은 짧은 백오프로 밀어붙이면 다음 시도도 또 429를 받을 뿐이다.
-                                long delay = lastWasRateLimited
-                                        ? (3000L << (attempt - 1)) + ThreadLocalRandom.current().nextLong(1000)
-                                        : (1000L << (attempt - 1)) + ThreadLocalRandom.current().nextLong(300);
-                                log.warn("[Subtask-{}] 재시도 {}/{}, {}ms 대기{}", idx, attempt, maxAttempts - 1, delay,
-                                        lastWasRateLimited ? " (rate limit 감지, 대기 연장)" : "");
-                                // 재시도 횟수만 센다(S2 호출 증폭 관측용). speechText가 없으면 STT부터 다시 부르는 재시도다.
-                                meterRegistry.counter("opicnic.retry",
-                                        "kind", speechText == null ? "stt" : "llm",
-                                        "reason", lastWasRateLimited ? "429" : "other").increment();
-                                Thread.sleep(delay);
-                            }
-
-                            if (speechText == null) {
-                                speechText = sttService.sendStreamToStt(
-                                        audioBuffer, "audio_" + idx + ".webm");
-                            }
-                            if (speechText == null || speechText.trim().split("\\s+").length < 5) {
-                                subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
-                                return noResponseDto(question, speechText);
-                            }
-                            if (question.getQuestionType() == null) {
-                                // 자기소개는 DB Question이 아니라 고정 문항이라 QuestionType이 없다.
-                                // 실제 시험에서도 자기소개는 채점 문항으로 취급되지 않으므로 TYPE_1~10 rubric에
-                                // 맞지 않는 채점/태깅 LLM 호출 없이 완료 처리한다. DB 저장 자체를 하지 않도록
-                                // PracticeAttemptApiController.saveFeedbackResults()에서 questionType==null을 걸러내며,
-                                // 이 필터링 덕분에 "총 문항 수"/"최근 기록"/"코칭 열람 조건" 등 문항 개수 기반
-                                // 통계에도 섞이지 않는다.
-                                subtaskDurations.add(System.currentTimeMillis() - subtaskStart);
-                                return selfIntroductionDto(question, speechText);
-                            }
-                            FeedbackDTO dto = gradeWithSpeech(speechText, question);
-
-                            long subtaskMs = System.currentTimeMillis() - subtaskStart;
-                            subtaskDurations.add(subtaskMs);
-                            log.info("[Subtask-{}] 완료: {}ms{}", idx, subtaskMs,
-                                    attempt > 0 ? " (재시도 " + attempt + "회)" : "");
-                            return dto;
-
-                        } catch (Exception e) {
-                            lastException = e;
-                            lastWasRateLimited = isRateLimited(e);
-                            log.warn("[Subtask-{}] 시도 {}/{} 실패{}: {}", idx, attempt + 1, maxAttempts,
-                                    lastWasRateLimited ? " (429 rate limit)" : "", e.getMessage());
-                        }
-                    }
-
-                    long subtaskMs = System.currentTimeMillis() - subtaskStart;
-                    subtaskDurations.add(subtaskMs);
-                    log.error("[Subtask-{}] 최종 실패 ({}회 시도): {}ms | {}",
-                            idx, maxAttempts, subtaskMs, lastException.getMessage());
-                    return FeedbackDTO.builder()
-                            .question(question)
-                            .failed(true)
-                            .errorMessage(lastException.getMessage())
-                            .build();
-                })));
-            }
-
-            scope.joinUntil(Instant.now().plus(Duration.ofSeconds(90)));
-            scope.throwIfFailed();
-
-            List<FeedbackDTO> results = subtasks.stream()
-                    .map(StructuredTaskScope.Subtask::get)
-                    .toList();
-
-            long parallelMs = System.currentTimeMillis() - start;
-            long sequentialEstimateMs = subtaskDurations.stream().mapToLong(Long::longValue).sum();
-            log.info("[Structured Concurrency 완료] 병렬: {}ms | 순차 예상: {}ms | 단축: {}ms ({}%)",
-                    parallelMs, sequentialEstimateMs,
-                    sequentialEstimateMs - parallelMs,
-                    sequentialEstimateMs > 0 ? (sequentialEstimateMs - parallelMs) * 100 / sequentialEstimateMs : 0);
-            return results;
-
-        } catch (Exception e) {
-            log.error("병렬 처리 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("피드백 분석 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    // 비동기 워커용 단일 문항 채점 (ADR-0001). 동기 경로(getComboFeedbackStreaming)와 같은 규칙을 쓰되
-    // 재시도 루프가 없다 — 재시도는 워커가 문항을 다시 집는 것(ScoringJobItem.attempts)으로 소유한다.
-    // 여기서 내부 재시도까지 하면 3×3=9회가 된다. speechText가 있으면 STT를 건너뛴다 — 워커는 STT 성공분을
-    // DB(ScoringJobItem.sttText)에 남겨 재시도·재시작 후에도 STT를 다시 부르지 않는다(2026-08-31 자가 429 재발 방지).
+    // 단일 문항 채점 (ADR-0001). 재시도 루프가 없다 — 재시도는 워커가 문항을 다시 집는 것(ScoringJobItem.attempts)으로
+    // 소유한다. 여기서 내부 재시도까지 하면 3×3=9회가 된다. 워커는 STT 성공분을 DB(ScoringJobItem.sttText)에 남겨
+    // 재시도·재시작 후에도 STT를 다시 부르지 않는다 — 채점 LLM만 실패해도 STT부터 다시 부르던 옛 동기 루프가
+    // 429를 자가 유발했다(2026-08-31 실측: 15문항 재시도로 STT 43건 중 22건만 성공, Whisper RPM 20 자가 초과).
+    // 자기소개(questionType null)는 채점 문항이 아니므로 LLM 호출 없이 완료 처리하고, 저장은
+    // FeedbackPersistenceService.saveOne이 questionType==null을 걸러 문항 개수 통계에 섞이지 않게 한다.
     public String transcribe(byte[] audio, String filename) {
         return sttService.sendStreamToStt(audio, filename);
     }
@@ -239,17 +117,6 @@ public class FeedbackService {
                 .tags(tags)
                 .build();
 
-    }
-
-    private static <T> Callable<T> withMdc(Map<String, String> mdc, Callable<T> task) {
-        return () -> {
-            if (mdc != null) MDC.setContextMap(mdc);
-            try {
-                return task.call();
-            } finally {
-                MDC.clear();
-            }
-        };
     }
 
     // STT는 RestClient가 HttpClientErrorException(429)을 던지지만, 채점/태깅은 Spring AI ChatModel을

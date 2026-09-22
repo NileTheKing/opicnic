@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -30,7 +29,7 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
 
         // fluencyScore가 4점(90단어 이상)이 나오도록 충분히 긴 답변을 준다 — 짧으면 fluency 자체가
         // 평균을 끌어내려 이 테스트가 검증하려는 MP 제외 효과와 뒤섞인다.
@@ -54,9 +53,7 @@ class FeedbackServiceRoleplayMainPointTest {
 
         QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_6);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(roleplayQuestion));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), roleplayQuestion);
         assertThat(result.getMainPointScore()).isNull();
         assertThat(result.getOverall()).doesNotContain("핵심전달");
         assertThat(result.getOverallGrade()).isIn("IH", "AL");
@@ -81,15 +78,13 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(sttText);
 
         QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", type);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(roleplayQuestion));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), roleplayQuestion);
         assertThat(result.getMainPointScore()).isNull();
         assertThat(result.getExpressionScore()).isEqualTo(1);
         assertThat(result.getAccuracyScore()).isEqualTo(1);
@@ -107,15 +102,13 @@ class FeedbackServiceRoleplayMainPointTest {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
         GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn("no idea");
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
         assertThat(result.getMainPointScore()).isEqualTo(1);
         assertThat(result.getOverallGrade()).isEqualTo("IL");
     }

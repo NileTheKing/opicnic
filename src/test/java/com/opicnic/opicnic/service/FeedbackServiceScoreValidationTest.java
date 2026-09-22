@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 class FeedbackServiceScoreValidationTest {
 
     private FeedbackService newService(GroqService groqService, STTService sttService) {
-        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper(), new SimpleMeterRegistry());
+        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper());
     }
 
     private String emptyTagsJson() {
@@ -49,12 +49,9 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
-        assertThat(result.isFailed()).isTrue();
-        assertThat(result.getExpressionScore()).isNull();
+        // 범위 밖 점수는 조용히 저장되지 않고 예외로 끝나야 한다(워커가 FAILED/재시도로 처리)
+        assertThatThrownBy(() -> feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"), question))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("expressionScore");
     }
 
     @Test
@@ -76,11 +73,9 @@ class FeedbackServiceScoreValidationTest {
         when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
-        assertThat(result.isFailed()).isTrue();
+        // 예외로 끝나야 워커가 문항을 FAILED/재시도로 처리한다 — NPE가 아니라 원인이 읽히는 IllegalStateException
+        assertThatThrownBy(() -> feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"), question))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("contentScore");
     }
 
     @Test
@@ -109,9 +104,7 @@ class FeedbackServiceScoreValidationTest {
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
         assertThat(result.isFailed()).isFalse();
         assertThat(result.getTags()).hasSize(1);
         assertThat(result.getTags().get(0).tag()).isEqualTo("MP_GOOD");
@@ -141,9 +134,7 @@ class FeedbackServiceScoreValidationTest {
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
         assertThat(result.getTags()).extracting(t -> t.tag()).containsExactly("TENSE_ERROR");
     }
 
@@ -175,9 +166,7 @@ class FeedbackServiceScoreValidationTest {
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
         assertThat(result.getTags()).extracting(t -> t.tag()).containsExactly("TENSE_ERROR");
     }
 
@@ -207,9 +196,7 @@ class FeedbackServiceScoreValidationTest {
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        List<FeedbackDTO> results = feedbackService.getComboFeedbackStreaming(streams, List.of(question));
-
-        FeedbackDTO result = results.get(0);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
         assertThat(result.getTags()).extracting(t -> t.tag())
                 .containsExactly("TENSE_ERROR", "ARTICLE_ERROR", "PREPOSITION_ERROR", "SUBJECT_VERB_ERROR");
     }

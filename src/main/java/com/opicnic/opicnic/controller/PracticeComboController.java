@@ -88,7 +88,6 @@ public class PracticeComboController {
                 combo.comboPatternKey(), combo.comboCategory());
         model.addAttribute("questions", combo.questions());
         model.addAttribute("attemptId", attempt.attemptId());
-        model.addAttribute("asyncScoring", true);   // ADR-0001 2단계: 콤보도 R2 업로드 → 접수 → 폴링
         return "practice/question";
     }
 

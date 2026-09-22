@@ -31,7 +31,7 @@ JAVA_TOOL_OPTIONS="-Xms2g -Xmx2g -Djdk.tracePinnedThreads=short" \
 ## 3. 부하 테스트 실행 (k6)
 ```bash
 # 500 VU, 30s 테스트 실행
-k6 run --vus 500 --duration 30s scripts/load-test.js
+k6 run --vus 500 --duration 30s scripts/archive/load-test.js   # 동기 경로 제거(2026-09-21) 후 실행 불가 — 기록용
 ```
 
 ### S1 (모의고사 15문항)
