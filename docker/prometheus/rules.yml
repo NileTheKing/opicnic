@@ -6,17 +6,58 @@ groups:
       - alert: ScoringFailureRateHigh
         # 5분 창에서 채점(kind=score) 호출이 3건 이상이고, 그 중 outcome!=ok가 50% 이상.
         # 3건 미만은 표본이 적어 무시(사용자 1명의 429 한 번으로 울리지 않게).
+        # 비율을 `and`의 왼쪽에 둔다 — `and`는 왼쪽 값을 돌려주므로, 반대로 두면 $value가 호출 건수가 된다.
         expr: |
-          sum(increase(opicnic_external_call_seconds_count{provider="groq", kind="score"}[5m])) >= 3
-          and
           (
             sum(increase(opicnic_external_call_seconds_count{provider="groq", kind="score", outcome!="ok"}[5m]))
             /
             sum(increase(opicnic_external_call_seconds_count{provider="groq", kind="score"}[5m]))
           ) >= 0.5
+          and
+          sum(increase(opicnic_external_call_seconds_count{provider="groq", kind="score"}[5m])) >= 3
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "채점 실패율 50% 이상 (5분 창, 2분 지속)"
           description: "Groq 채점 호출 실패율이 {{ $value | humanizePercentage }}. 먼저 GET https://api.groq.com/openai/v1/models 로 모델 생존 확인 (PROJECT.md 참고)."
+
+      - alert: WorkerItemFinalFailureRatioHigh
+        # 위 ScoringFailureRateHigh는 "Groq 호출이 실패했다"는 의존성 신호다. 재시도로 회복되면 사용자는 아무것도 못 느낀다.
+        # 사용자가 실제로 보는 증상은 "문항이 FAILED로 끝났다"는 것 — 3회(MAX_ATTEMPTS) 다 써서 더 이상 재시도가 없는 경우다.
+        # ScoringWorker.process()의 outcome 라벨: done(성공) / retry(재시도 예정, 카운트 안 함) / failed(최종 실패).
+        # 완료된(끝난) 문항 중 failed 비율 20% 이상. 10분 창, 완료 3건 미만은 표본이 적어 무시(사용자 1명분으로 안 울리게).
+        expr: |
+          (
+            sum(increase(opicnic_worker_items_total{outcome="failed"}[10m]))
+            /
+            sum(increase(opicnic_worker_items_total{outcome=~"done|failed"}[10m]))
+          ) >= 0.2
+          and
+          sum(increase(opicnic_worker_items_total{outcome=~"done|failed"}[10m])) >= 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "채점 문항 최종 실패율 20% 이상 (10분 창, 5분 지속)"
+          description: "완료된 채점 문항 중 {{ $value | humanizePercentage }}이 FAILED로 끝남(3회 재시도 소진). 사용자가 실제로 FAILED 카드를 본다."
+
+      - alert: WorkerStalled
+        # 비동기로 옮기면서 생긴 위험: 워커가 멈춰도 사용자는 에러를 못 본다 — 그냥 계속 기다린다(무한 QUEUED).
+        # 큐에 대기 중인 문항이 있는데(queued>0) 5분 동안 완료(done+failed) 문항이 하나도 안 늘면 워커가 멈춘 것.
+        # 양쪽 다 sum()으로 라벨을 없앤다 — gauge엔 job/instance 라벨이 붙어 있어 sum()과 `and` 매칭이 안 되면 영영 안 울린다.
+        expr: |
+          sum(opicnic_worker_queued) > 0
+          and
+          sum(increase(opicnic_worker_items_total{outcome=~"done|failed"}[5m])) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "워커가 멈춘 것으로 보임 (대기 중인데 5분간 완료 없음)"
+          description: "opicnic_worker_queued={{ $value }}인데 5분간 done/failed 증가가 없음. 워커 프로세스·서킷 상태 확인."
+
+      # 서킷 상시 OPEN(circuit_open==1)은 넣지 않는다: circuit.record()는 시도마다(재시도 포함) 기록되므로
+      # 서킷이 열리는 실패 폭주는 위 WorkerItemFinalFailureRatioHigh보다 먼저 반응하지만, 서킷은 30초마다
+      # 반열림 재시도로 닫혔다 열렸다를 반복해 "sustained" 5분 조건이 오탐(잦은 open/close 사이 gap)에 취약하다.
+      # 최종 사용자 증상(문항 FAILED)은 위 규칙이 이미 잡으므로 중복 신호로 보고 제외.

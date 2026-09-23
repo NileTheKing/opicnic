@@ -1,0 +1,100 @@
+rule_files:
+  - rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # WorkerItemFinalFailureRatioHigh: 완료 5건 중 failed 2건 = 40% >= 20% → 표본 조건(>=3)도 충족, 10분 내내 유지되므로 5m 뒤 발화
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "0+3x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="failed"}'
+        values: "0+2x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="retry"}'
+        values: "0+1x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerItemFinalFailureRatioHigh
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "채점 문항 최종 실패율 20% 이상 (10분 창, 5분 지속)"
+              description: "완료된 채점 문항 중 40%이 FAILED로 끝남(3회 재시도 소진). 사용자가 실제로 FAILED 카드를 본다."
+
+  # WorkerItemFinalFailureRatioHigh: 표본 미달 — 10분 창에 완료가 done 1 + failed 1 = 2건뿐(<3) → 절대 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "0 0 0 0 0 0 0 0 0 0 1 1 1 1 1"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="failed"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 1 1 1"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerItemFinalFailureRatioHigh
+        exp_alerts: []
+
+  # WorkerStalled: 큐에 5건 쌓인 채 done/failed가 전혀 늘지 않음 → 5분 지속 뒤 발화
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_queued{job="opicnic-app", instance="app:8080"}'
+        values: "5+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "10+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="failed"}'
+        values: "2+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerStalled
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "워커가 멈춘 것으로 보임 (대기 중인데 5분간 완료 없음)"
+              description: "opicnic_worker_queued=5인데 5분간 done/failed 증가가 없음. 워커 프로세스·서킷 상태 확인."
+
+  # WorkerStalled: 큐는 있지만 계속 처리되고 있음(done이 매분 증가) → 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_queued{job="opicnic-app", instance="app:8080"}'
+        values: "5+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "0+1x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="failed"}'
+        values: "0+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerStalled
+        exp_alerts: []
+
+  # WorkerStalled: 큐가 비어 있으면(queued=0) 완료가 안 늘어도 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_queued{job="opicnic-app", instance="app:8080"}'
+        values: "0+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "10+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="failed"}'
+        values: "0+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerStalled
+        exp_alerts: []
+
+  # ScoringFailureRateHigh: 채점 호출 10건 중 6건 실패 → 알림 문구의 $value가 호출 건수가 아니라 비율(60%)이어야 한다
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_external_call_seconds_count{job="opicnic-app", instance="app:8080", provider="groq", kind="score", outcome="ok"}'
+        values: "0+4x15"
+      - series: 'opicnic_external_call_seconds_count{job="opicnic-app", instance="app:8080", provider="groq", kind="score", outcome="error"}'
+        values: "0+6x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: ScoringFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "채점 실패율 50% 이상 (5분 창, 2분 지속)"
+              description: "Groq 채점 호출 실패율이 60%. 먼저 GET https://api.groq.com/openai/v1/models 로 모델 생존 확인 (PROJECT.md 참고)."
