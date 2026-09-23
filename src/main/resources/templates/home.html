@@ -28,6 +28,17 @@
         <!-- 로그인 상태 -->
         <div sec:authorize="isAuthenticated()">
 
+            <!-- 채점 알림: 결과 화면을 떠난 사이 채점이 끝났거나 아직 진행 중인 연습 -->
+            <a th:if="${unseenJobId != null}" th:href="@{/practice/result/{id}(id=${unseenJobId})}"
+               th:classappend="${unseenJobFinished} ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-600'"
+               class="mb-4 flex items-center justify-between gap-3 border text-sm px-4 py-3 rounded-xl hover:opacity-90 transition-opacity">
+                <span class="flex items-center gap-3">
+                    <i th:class="${unseenJobFinished} ? 'fas fa-circle-check' : 'fas fa-circle-notch fa-spin'"></i>
+                    <span th:text="${unseenJobFinished} ? '채점이 끝난 결과가 있어요' : '채점 중인 연습이 있어요'"></span>
+                </span>
+                <i class="fas fa-chevron-right text-xs"></i>
+            </a>
+
             <!-- 주제 미설정 경고 -->
             <div th:if="${selectedTopics == null or #lists.isEmpty(selectedTopics)}"
                  class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">

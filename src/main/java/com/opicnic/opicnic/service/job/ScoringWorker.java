@@ -3,6 +3,7 @@ package com.opicnic.opicnic.service.job;
 import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.job.ScoringJob;
 import com.opicnic.opicnic.domain.job.ScoringJobItem;
+import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
 import com.opicnic.opicnic.domain.job.ScoringJobItemStatus;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -12,6 +13,7 @@ import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import com.opicnic.opicnic.storage.AudioStorage;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.HttpClientErrorException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,7 +41,10 @@ import java.util.concurrent.atomic.AtomicLong;
 // 그래서 재시작하면 QUEUED/PROCESSING 행을 다시 주워 이어간다.
 //
 // 한 문항 처리: claim → R2 읽기 → STT(성공분은 DB에 남김) → 채점·태깅 → [FeedbackResult 저장 + DONE]을 한 트랜잭션.
-// 실패: markFailed → 백오프 뒤 QUEUED(다시 집힘) 또는 3회째 FAILED. 재시도는 "다시 집기"다. 내부 루프 없음.
+// 실패: 분류(classify) → 일시적이면 접수 후 retryBudget(30분)까지 백오프 뒤 QUEUED(다시 집힘), 영구적이면 즉시 FAILED,
+// LLM 형식 오류면 3회째 FAILED. 재시도는 "다시 집기"다. 내부 루프 없음.
+// 예산이 횟수가 아니라 시간인 이유: 사용자는 요청에 묶여 있지 않고(비동기), 실패는 지연보다 훨씬 비싸다(다시 말해야 함).
+// 3회 = 약 10초이던 동기 시절 상한은 20초짜리 제공자 흔들림에도 문항을 영구 실패로 만들었다 (docs/performance/slo.md).
 //
 // 동시 상한(opicnic.worker.concurrency)은 우리 서버가 아니라 제공자 한도 ÷ 문항당 사용량으로 정하는 값이다 —
 // 가상 스레드라 스레드는 무한이지만 외부에 300건을 한꺼번에 쏘면 429 폭탄이다. 무료 티어면 1, 종량제면 수백.
@@ -58,6 +65,7 @@ public class ScoringWorker {
     private final boolean enabled;
     private final Semaphore slots;
     private final FailureCircuit circuit;
+    private final Duration retryBudget;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final AtomicInteger inFlight = new AtomicInteger();
     private final AtomicLong queued = new AtomicLong();
@@ -70,7 +78,8 @@ public class ScoringWorker {
                          @Value("${opicnic.worker.concurrency:60}") int concurrency,
                          @Value("${opicnic.worker.circuit.window:20}") int circuitWindow,
                          @Value("${opicnic.worker.circuit.failure-ratio:0.8}") double circuitFailureRatio,
-                         @Value("${opicnic.worker.circuit.open-seconds:30}") long circuitOpenSeconds) {
+                         @Value("${opicnic.worker.circuit.open-seconds:30}") long circuitOpenSeconds,
+                         @Value("${opicnic.worker.retry-budget:30m}") Duration retryBudget) {
         this.jobRepository = jobRepository;
         this.itemRepository = itemRepository;
         this.attemptService = attemptService;
@@ -81,12 +90,13 @@ public class ScoringWorker {
         this.meterRegistry = meterRegistry;
         this.enabled = enabled;
         this.slots = new Semaphore(concurrency);
+        this.retryBudget = retryBudget;
         this.circuit = new FailureCircuit(circuitWindow, circuitFailureRatio, Duration.ofSeconds(circuitOpenSeconds));
         meterRegistry.gauge("opicnic.worker.in_flight", inFlight);
         meterRegistry.gauge("opicnic.worker.circuit_open", circuit, c -> c.isOpen() ? 1 : 0);
         meterRegistry.gauge("opicnic.worker.queued", queued);   // 큐 깊이(QUEUED 수). poll()마다 갱신 — 1초 지연의 대시보드용 값
-        log.info("[Worker] enabled={} concurrency={} circuit(window={}, ratio={}, open={}s)",
-                enabled, concurrency, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
+        log.info("[Worker] enabled={} concurrency={} retryBudget={} circuit(window={}, ratio={}, open={}s)",
+                enabled, concurrency, retryBudget, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
     }
 
     // 기동 직후: PROCESSING인 문항은 전부 죽은 프로세스의 것이다(단일 인스턴스 전제, ADR-0001 6절) — 5분 기다리지 않고
@@ -138,7 +148,8 @@ public class ScoringWorker {
             ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
             ScoringJob job = item.getJob();
             return new ItemContext(item.getId(), job.getId(), job.getMember().getId(), item.getQuestionIndex(),
-                    item.getQuestionId(), item.getAudioKey(), item.getSttText(), item.getAttempts());
+                    item.getQuestionId(), item.getAudioKey(), item.getSttText(), item.getAttempts(),
+                    job.getCreatedAt().plus(retryBudget));
         });
         MDC.put("attemptId", ctx.jobId());
         tx.executeWithoutResult(s -> jobRepository.findById(ctx.jobId()).ifPresent(ScoringJob::markProcessing));
@@ -182,28 +193,33 @@ public class ScoringWorker {
                     System.currentTimeMillis() - start, tRead, tStt, tGrade, tSave, ctx.attempts());
         } catch (Exception e) {
             boolean rateLimited = FeedbackService.isRateLimited(e);
+            FailureKind kind = classify(e);
             Duration backoff = backoff(ctx.attempts(), rateLimited);
-            tx.executeWithoutResult(s -> {
+            ScoringJobItemStatus after = tx.execute(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
-                item.markFailed(e.getMessage(), backoff);
+                item.markFailed(e.getMessage(), kind, backoff, ctx.deadline());
                 job.markProcessing();
                 if (item.getStatus() == ScoringJobItemStatus.FAILED) {
                     job.refreshCompletion();
                     recordJobDurationIfFinished(job);
                 }
+                return item.getStatus();
             });
-            circuit.record(false);
-            String outcome = ctx.attempts() >= ScoringJobItem.MAX_ATTEMPTS ? "failed" : "retry";
+            // 녹음 파일 문제는 제공자 상태와 무관하다 — 서킷(제공자 장애 감지)에 섞지 않는다
+            if (kind != FailureKind.PERMANENT) circuit.record(false);
+            String outcome = after == ScoringJobItemStatus.FAILED ? "failed" : "retry";
             meterRegistry.counter("opicnic.worker.items", "outcome", outcome).increment();
+            meterRegistry.counter("opicnic.worker.failures", "kind", kind.name().toLowerCase()).increment();
             if ("retry".equals(outcome)) {
                 // S2(호출 증폭) 관측용. 옛 동기 루프의 opicnic.retry와 같은 이름·태그 — 대시보드 "재시도 횟수" 패널이 그대로 읽는다
                 meterRegistry.counter("opicnic.retry",
                         "kind", ctx.sttText() == null ? "stt" : "llm",
                         "reason", rateLimited ? "429" : "other").increment();
             }
-            log.warn("[Worker] 문항 {} 시도 {}/{} 실패{} → {} (backoff {}ms): {}", ctx.questionIndex(), ctx.attempts(),
-                    ScoringJobItem.MAX_ATTEMPTS, rateLimited ? " (429)" : "", outcome, backoff.toMillis(), e.getMessage());
+            log.warn("[Worker] 문항 {} 시도 {} 실패 [{}{}] → {} (backoff {}ms, 예산 {}까지): {}", ctx.questionIndex(),
+                    ctx.attempts(), kind, rateLimited ? ", 429" : "", outcome, backoff.toMillis(), ctx.deadline(),
+                    e.getMessage());
         } finally {
             MDC.clear();
         }
@@ -216,11 +232,31 @@ public class ScoringWorker {
                 .record(Duration.between(job.getCreatedAt(), job.getCompletedAt()));
     }
 
-    // 429는 3s·6s + jitter, 그 외 1s·2s + jitter. 시도 n 뒤의 대기.
+    // 시도 n 뒤의 대기: 2s·4s·8s…(429는 4s부터) 2배씩, 상한 60s, + jitter. 상한이 있어 30분 예산을 다 써도
+    // 문항당 호출은 분당 한 번 꼴이고, 제공자가 완전히 죽었으면 서킷이 집기 자체를 멈춘다.
     static Duration backoff(int attempt, boolean rateLimited) {
-        long base = rateLimited ? 3000L << (attempt - 1) : 1000L << (attempt - 1);
-        long jitter = ThreadLocalRandom.current().nextLong(rateLimited ? 1000 : 300);
-        return Duration.ofMillis(base + jitter);
+        long base = rateLimited ? 4000L : 2000L;
+        long delay = Math.min(MAX_BACKOFF_MS, base << Math.min(attempt - 1, 10));
+        long jitter = ThreadLocalRandom.current().nextLong(1000);
+        return Duration.ofMillis(delay + jitter);
+    }
+
+    static final long MAX_BACKOFF_MS = 60_000L;
+
+    // 기다리면 풀리는가로 나눈다.
+    //  PERMANENT: 녹음 파일이 스토리지에 없음, 제공자가 파일 자체를 거절(400·413·415·422) — 몇 번을 해도 같다
+    //  INVALID_OUTPUT: LLM 응답이 형식을 어김(점수 누락·범위 밖, JSON 파싱 실패) — 몇 번은 다시 해볼 만하다
+    //  TRANSIENT: 나머지(429·5xx·타임아웃·제공자 인증/모델 문제) — 운영자가 고치면 풀리므로 예산까지 기다린다
+    static FailureKind classify(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof NoSuchKeyException || c instanceof java.util.NoSuchElementException) return FailureKind.PERMANENT;
+            if (c instanceof HttpClientErrorException http) {
+                int code = http.getStatusCode().value();
+                if (code == 400 || code == 413 || code == 415 || code == 422) return FailureKind.PERMANENT;
+            }
+            if (c instanceof IllegalStateException || c instanceof JsonProcessingException) return FailureKind.INVALID_OUTPUT;
+        }
+        return FailureKind.TRANSIENT;
     }
 
     @PreDestroy
@@ -229,7 +265,7 @@ public class ScoringWorker {
     }
 
     private record ItemContext(Long itemId, String jobId, Long memberId, int questionIndex, Long questionId,
-                               String audioKey, String sttText, int attempts) {
+                               String audioKey, String sttText, int attempts, LocalDateTime deadline) {
     }
 
     // ADR-0001 4절 "워커 루프에 전체 실패율 서킷". 최근 window건 중 실패 비율이 임계 이상이면 openFor 동안 집지 않는다 —

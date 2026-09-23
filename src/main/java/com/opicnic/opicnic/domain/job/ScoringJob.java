@@ -60,6 +60,10 @@ public class ScoringJob {
 
     private LocalDateTime completedAt;
 
+    // 사용자가 끝난 결과를 처음 본 시각. 채점이 늦어져 사용자가 화면을 떠난 경우, 홈에서 "끝난 결과가 있어요"를
+    // 알려주는 기준(아직 null이면 안 본 것)
+    private LocalDateTime resultSeenAt;
+
     // id는 Caffeine PracticeAttempt의 attemptId를 그대로 쓴다 — 클라이언트가 submit 전후로 같은 id로 대화한다
     public ScoringJob(String id, Member member, PracticeMode mode) {
         this(id, member, mode, null, null);
@@ -91,6 +95,10 @@ public class ScoringJob {
         boolean anyFailed = items.stream().anyMatch(i -> i.getStatus() == ScoringJobItemStatus.FAILED);
         this.status = anyFailed ? ScoringJobStatus.COMPLETED_WITH_FAILURES : ScoringJobStatus.COMPLETED;
         this.completedAt = LocalDateTime.now();
+    }
+
+    public void markResultSeen() {
+        if (isFinished() && resultSeenAt == null) this.resultSeenAt = LocalDateTime.now();
     }
 
     public boolean isFinished() {

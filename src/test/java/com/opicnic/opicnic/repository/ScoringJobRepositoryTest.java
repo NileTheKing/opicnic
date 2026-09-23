@@ -5,6 +5,8 @@ import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.Role;
 import com.opicnic.opicnic.domain.job.ScoringJob;
 import com.opicnic.opicnic.domain.job.ScoringJobItem;
+import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
+import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureReason;
 import com.opicnic.opicnic.domain.job.ScoringJobItemStatus;
 import com.opicnic.opicnic.domain.job.ScoringJobStatus;
 import jakarta.persistence.EntityManager;
@@ -18,6 +20,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -73,22 +76,74 @@ class ScoringJobRepositoryTest {
     }
 
     @Test
-    void failureRequeuesUntilThirdAttemptThenFails() {
+    void transientFailureRequeuesWhileBudgetLastsThenFails() {
+        ScoringJob job = queuedJob(1);
+        Long itemId = jobRepository.findById(job.getId()).orElseThrow().getItems().get(0).getId();
+        LocalDateTime deadline = LocalDateTime.now().plusMinutes(30);
+
+        // 예산 안: 몇 번을 실패해도 다시 큐로 (옛 3회 상한 없음)
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            assertThat(itemRepository.claim(itemId)).isEqualTo(1);
+            ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
+            item.markFailed("429", FailureKind.TRANSIENT, Duration.ZERO, deadline);
+            itemRepository.saveAndFlush(item);
+            em.clear();
+            assertThat(itemRepository.findById(itemId).orElseThrow().getStatus()).isEqualTo(ScoringJobItemStatus.QUEUED);
+        }
+
+        // 다음 시도가 예산을 넘으면 FAILED, 사유는 예산 초과
+        assertThat(itemRepository.claim(itemId)).isEqualTo(1);
+        ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
+        item.markFailed("503", FailureKind.TRANSIENT, Duration.ofMinutes(31), deadline);
+        itemRepository.saveAndFlush(item);
+        em.clear();
+        ScoringJobItem failed = itemRepository.findById(itemId).orElseThrow();
+        assertThat(failed.getStatus()).isEqualTo(ScoringJobItemStatus.FAILED);
+        assertThat(failed.getFailureReason()).isEqualTo(FailureReason.RETRY_BUDGET_EXCEEDED);
+        // FAILED는 더 집히지 않는다
+        assertThat(itemRepository.claim(itemId)).isEqualTo(0);
+    }
+
+    @Test
+    void permanentFailureFailsImmediately() {
         ScoringJob job = queuedJob(1);
         Long itemId = jobRepository.findById(job.getId()).orElseThrow().getItems().get(0).getId();
 
-        for (int attempt = 1; attempt <= ScoringJobItem.MAX_ATTEMPTS; attempt++) {
+        assertThat(itemRepository.claim(itemId)).isEqualTo(1);
+        ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
+        item.markFailed("NoSuchKey", FailureKind.PERMANENT, Duration.ZERO, LocalDateTime.now().plusMinutes(30));
+        itemRepository.saveAndFlush(item);
+        em.clear();
+
+        ScoringJobItem failed = itemRepository.findById(itemId).orElseThrow();
+        assertThat(failed.getStatus()).isEqualTo(ScoringJobItemStatus.FAILED);
+        assertThat(failed.getFailureReason()).isEqualTo(FailureReason.AUDIO);
+    }
+
+    @Test
+    void invalidOutputFailsOnThirdEvenWithinBudget() {
+        ScoringJob job = queuedJob(1);
+        Long itemId = jobRepository.findById(job.getId()).orElseThrow().getItems().get(0).getId();
+        LocalDateTime deadline = LocalDateTime.now().plusMinutes(30);
+
+        // 일시적 실패가 섞여도 형식 오류 횟수만 센다
+        assertThat(itemRepository.claim(itemId)).isEqualTo(1);
+        ScoringJobItem first = itemRepository.findById(itemId).orElseThrow();
+        first.markFailed("timeout", FailureKind.TRANSIENT, Duration.ZERO, deadline);
+        itemRepository.saveAndFlush(first);
+        em.clear();
+
+        for (int n = 1; n <= ScoringJobItem.MAX_INVALID_OUTPUTS; n++) {
             assertThat(itemRepository.claim(itemId)).isEqualTo(1);
             ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
-            item.markFailed("429");
+            item.markFailed("contentScore 누락", FailureKind.INVALID_OUTPUT, Duration.ZERO, deadline);
             itemRepository.saveAndFlush(item);
             em.clear();
-            ScoringJobItemStatus expected = attempt < ScoringJobItem.MAX_ATTEMPTS
+            ScoringJobItemStatus expected = n < ScoringJobItem.MAX_INVALID_OUTPUTS
                     ? ScoringJobItemStatus.QUEUED : ScoringJobItemStatus.FAILED;
             assertThat(itemRepository.findById(itemId).orElseThrow().getStatus()).isEqualTo(expected);
         }
-        // FAILED는 더 집히지 않는다
-        assertThat(itemRepository.claim(itemId)).isEqualTo(0);
+        assertThat(itemRepository.findById(itemId).orElseThrow().getFailureReason()).isEqualTo(FailureReason.INVALID_OUTPUT);
     }
 
     @Test
@@ -103,14 +158,12 @@ class ScoringJobRepositoryTest {
         jobRepository.saveAndFlush(loaded);
         em.clear();
 
-        // 두 번째 문항은 3회 소진 → FAILED (집기는 QUEUED일 때만 되므로 집기·실패를 번갈아)
-        for (int i = 0; i < ScoringJobItem.MAX_ATTEMPTS; i++) {
-            assertThat(itemRepository.claim(secondId)).isEqualTo(1);
-            ScoringJobItem second = itemRepository.findById(secondId).orElseThrow();
-            second.markFailed("timeout");
-            itemRepository.saveAndFlush(second);
-            em.clear();
-        }
+        // 두 번째 문항은 녹음 파일 문제 → 즉시 FAILED
+        assertThat(itemRepository.claim(secondId)).isEqualTo(1);
+        ScoringJobItem second = itemRepository.findById(secondId).orElseThrow();
+        second.markFailed("NoSuchKey", FailureKind.PERMANENT, Duration.ZERO, LocalDateTime.now().plusMinutes(30));
+        itemRepository.saveAndFlush(second);
+        em.clear();
 
         loaded = jobRepository.findById(job.getId()).orElseThrow();
         loaded.refreshCompletion();

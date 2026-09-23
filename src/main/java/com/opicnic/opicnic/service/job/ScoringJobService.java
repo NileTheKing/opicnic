@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +114,19 @@ public class ScoringJobService {
     @Transactional(readOnly = true)
     public Optional<ScoringJob> find(String jobId) {
         return jobRepository.findById(jobId);
+    }
+
+    // 사용자가 끝난 결과를 봤다 — 홈의 "끝난 결과가 있어요" 배너를 내린다. 끝나지 않았으면 아무것도 안 한다
+    @Transactional
+    public void markResultSeen(String jobId) {
+        jobRepository.findById(jobId).ifPresent(ScoringJob::markResultSeen);
+    }
+
+    // 홈 배너용: 최근 하루 안에 접수했고 결과를 아직 안 본 가장 최근 잡(채점 중이거나 끝났는데 안 봤거나)
+    @Transactional(readOnly = true)
+    public Optional<ScoringJob> findUnseen(Long memberId) {
+        return jobRepository.findFirstByMemberIdAndResultSeenAtIsNullAndCreatedAtAfterOrderByCreatedAtDesc(
+                memberId, LocalDateTime.now().minusDays(1));
     }
 
     private PracticeAttempt requireAttempt(String attemptId) {

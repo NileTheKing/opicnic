@@ -16,7 +16,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ScoringJobItem {
 
-    public static final int MAX_ATTEMPTS = 3;
+    // LLM 형식 오류(점수 누락·범위 밖)만 횟수로 끊는다 — 같은 답변에 계속 이상한 형식이 오면 기다려도 안 풀린다.
+    // 일시적 실패(429·5xx·타임아웃)는 횟수가 아니라 시간 예산(ScoringWorker retryBudget)으로 끊는다.
+    public static final int MAX_INVALID_OUTPUTS = 3;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,10 +42,18 @@ public class ScoringJobItem {
     @Column(nullable = false, length = 20)
     private ScoringJobItemStatus status;
 
-    // 워커가 이 문항을 집은 횟수(ScoringJobItemRepository.claim이 올림). MAX_ATTEMPTS 도달 시 FAILED 확정 —
-    // 버그 하나로 할당량을 다 태우지 않게
+    // 워커가 이 문항을 집은 횟수(ScoringJobItemRepository.claim이 올림). 백오프 간격을 정하는 데 쓴다
     @Column(nullable = false)
     private int attempts;
+
+    // LLM 형식 오류 횟수. MAX_INVALID_OUTPUTS 도달 시 FAILED
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int invalidOutputs;
+
+    // FAILED일 때 왜 끝났는지 — 사용자에게 보여줄 문구가 갈린다. null이면 옛 3회 상한 시절의 FAILED
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FailureReason failureReason;
 
     @Column(length = 500)
     private String lastError;
@@ -82,21 +92,29 @@ public class ScoringJobItem {
         this.sttText = sttText;
     }
 
-    // 실패 시: 시도가 남았으면 QUEUED로 되돌려 backoff 뒤에 다시 집히게, 소진했으면 FAILED 확정
-    public void markFailed(String error, java.time.Duration backoff) {
+    // 실패 시 분류대로: 영구 실패는 즉시 FAILED, 형식 오류는 3회째 FAILED, 일시적 실패는 다음 시도가
+    // 예산(deadline)을 넘으면 FAILED. 아니면 QUEUED로 되돌려 backoff 뒤에 다시 집히게 한다.
+    public void markFailed(String error, FailureKind kind, java.time.Duration backoff, LocalDateTime deadline) {
         this.lastError = error == null ? null : error.substring(0, Math.min(error.length(), 500));
-        if (attempts >= MAX_ATTEMPTS) {
+        LocalDateTime next = LocalDateTime.now().plus(backoff);
+        FailureReason reason = switch (kind) {
+            case PERMANENT -> FailureReason.AUDIO;
+            case INVALID_OUTPUT -> ++invalidOutputs >= MAX_INVALID_OUTPUTS ? FailureReason.INVALID_OUTPUT : null;
+            case TRANSIENT -> next.isAfter(deadline) ? FailureReason.RETRY_BUDGET_EXCEEDED : null;
+        };
+        if (reason != null) {
             this.status = ScoringJobItemStatus.FAILED;
+            this.failureReason = reason;
             this.nextAttemptAt = null;
         } else {
             this.status = ScoringJobItemStatus.QUEUED;
-            this.nextAttemptAt = LocalDateTime.now().plus(backoff);
+            this.nextAttemptAt = next;
         }
     }
 
-    public void markFailed(String error) {
-        markFailed(error, java.time.Duration.ZERO);
-    }
+    public enum FailureKind { TRANSIENT, PERMANENT, INVALID_OUTPUT }
+
+    public enum FailureReason { AUDIO, INVALID_OUTPUT, RETRY_BUDGET_EXCEEDED }
 
     public boolean isFinished() {
         return status == ScoringJobItemStatus.DONE || status == ScoringJobItemStatus.FAILED;

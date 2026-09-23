@@ -21,7 +21,7 @@ tests:
               severity: critical
             exp_annotations:
               summary: "채점 문항 최종 실패율 20% 이상 (10분 창, 5분 지속)"
-              description: "완료된 채점 문항 중 40%이 FAILED로 끝남(3회 재시도 소진). 사용자가 실제로 FAILED 카드를 본다."
+              description: "완료된 채점 문항 중 40%이 FAILED로 끝남(파일 문제·형식 오류·재시도 예산 초과). 사용자가 실제로 실패 카드를 본다."
 
   # WorkerItemFinalFailureRatioHigh: 표본 미달 — 10분 창에 완료가 done 1 + failed 1 = 2건뿐(<3) → 절대 발화하지 않음
   - interval: 1m
@@ -51,8 +51,8 @@ tests:
           - exp_labels:
               severity: critical
             exp_annotations:
-              summary: "워커가 멈춘 것으로 보임 (대기 중인데 5분간 완료 없음)"
-              description: "opicnic_worker_queued=5인데 5분간 done/failed 증가가 없음. 워커 프로세스·서킷 상태 확인."
+              summary: "워커가 멈춘 것으로 보임 (대기 중인데 5분간 처리 시도 없음)"
+              description: "opicnic_worker_queued=5인데 5분간 done/retry/failed 증가가 없음. 워커 프로세스·DB 연결 확인."
 
   # WorkerStalled: 큐는 있지만 계속 처리되고 있음(done이 매분 증가) → 발화하지 않음
   - interval: 1m
@@ -192,3 +192,32 @@ tests:
       - eval_time: 40m
         alertname: JobCompletionSloBreach
         exp_alerts: []
+
+  # WorkerStalled: 제공자 장애 중 — 끝나는 문항은 없지만 재시도(retry)는 돈다 → 멈춤이 아니므로 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_queued{job="opicnic-app", instance="app:8080"}'
+        values: "5+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="done"}'
+        values: "10+0x15"
+      - series: 'opicnic_worker_items_total{job="opicnic-app", instance="app:8080", outcome="retry"}'
+        values: "0+2x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerStalled
+        exp_alerts: []
+
+  # WorkerStalled: 재시작 직후 한 건도 처리 못 함 — 카운터 시계열 자체가 없어도 발화해야 한다
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_worker_queued{job="opicnic-app", instance="app:8080"}'
+        values: "3+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: WorkerStalled
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "워커가 멈춘 것으로 보임 (대기 중인데 5분간 처리 시도 없음)"
+              description: "opicnic_worker_queued=3인데 5분간 done/retry/failed 증가가 없음. 워커 프로세스·DB 연결 확인."

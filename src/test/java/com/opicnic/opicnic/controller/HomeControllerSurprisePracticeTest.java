@@ -11,6 +11,7 @@ import com.opicnic.opicnic.service.ExamPlanService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.TopicCatalog;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import com.opicnic.opicnic.service.job.ScoringJobService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -44,7 +45,7 @@ class HomeControllerSurprisePracticeTest {
         HomeController controller = new HomeController(
                 memberRepository, surveyProfileRepository, questionSetRepository, mockExamService,
                 topicCatalog, practiceAttemptService, new Random(), feedbackResultRepository,
-                examScheduleRepository, examPlanService, coachingService);
+                examScheduleRepository, examPlanService, coachingService, Mockito.mock(ScoringJobService.class));
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttributes()).thenReturn(Map.of("provider", "kakao"));

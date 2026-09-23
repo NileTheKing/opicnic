@@ -103,6 +103,9 @@ opicnic:
     # 더 올리면 DB 커넥션(50)이 먼저 다 점유돼 접수가 늦어진다(랩탑 실측) — 풀 보호가 먼저(backlog).
     concurrency: ${WORKER_CONCURRENCY:60}
     poll-ms: 1000
+    # 일시적 실패(429·5xx·타임아웃)를 접수 후 얼마까지 재시도하나. 횟수가 아니라 시간 — 늦어져도 끝낸다 (docs/performance/slo.md).
+    # 영구 실패(녹음 파일 없음·깨짐)는 즉시, LLM 형식 오류는 3회로 따로 끊는다.
+    retry-budget: ${WORKER_RETRY_BUDGET:30m}
     # 최근 window건 중 실패가 failure-ratio 이상이면 open-seconds 동안 집지 않는다 (모델 소멸·제공자 장애 시 할당량 보호)
     circuit:
       window: 20

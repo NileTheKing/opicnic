@@ -3,7 +3,7 @@
 #
 # 콤보 N건을 비동기 경로(upload-urls → R2 PUT → POST /api/scoring-jobs 202)로 접수하고, 잡이 전부 끝날 때까지 기다린 뒤
 # 전후의 opicnic_external_call_seconds_count 차이를 "실패가 없었다면 필요한 호출 수"로 나눈다.
-# SLO: 증폭 ≤ 1.65배(실패 45% × 최대 3회 시도의 이론값 1+0.45+0.45²), 서버 생존, 접수 100% 202, 잡 완료율 100%.
+# SLO: 증폭 ≤ 1.82배(실패 45%에서 성공까지 재시도하는 이론값 1/(1−0.45); 2026-09-23 전엔 3회 상한의 1.65), FAILED 0, 서버 생존, 접수 100% 202, 잡 완료율 100%.
 # 전환 전과 다른 점: 문항 실패는 사용자 재제출이 아니라 워커 재시도로 흡수된다 — FAILED 문항 비율이 "사용자가 본 실패"다.
 #
 # 전제: 서버가 dev + mock + 실패 주입 + R2 키(.env)로 떠 있어야 한다. 예)
@@ -88,7 +88,7 @@ print("# 워커 문항 결과 (후-전)")
 for (name,_,oc),v in sorted(diff.items()):
     if name.startswith('opicnic_worker_items') and v: print(f"#   {oc:8s} {int(v)}")
 expected=questions*2; actual=calls.get('stt',0)+calls.get('score',0)
-print(f"# 증폭 = (stt {int(calls.get('stt',0))} + score {int(calls.get('score',0))}) / 기대 {expected} (문항 {questions} × 2) = {actual/expected:.2f}배  (SLO ≤ 1.65)")
+print(f"# 증폭 = (stt {int(calls.get('stt',0))} + score {int(calls.get('score',0))}) / 기대 {expected} (문항 {questions} × 2) = {actual/expected:.2f}배  (SLO ≤ 1.82)")
 PY
 {
   echo "# 잡 상태: $(q "select status, count(*) from scoring_job where id in ($IDS) group by status" | tr '\t' '=' | tr '\n' ' ')"

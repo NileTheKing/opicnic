@@ -1,9 +1,18 @@
 package com.opicnic.opicnic.service.job;
 
+import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+
 import java.time.Duration;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,12 +20,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ScoringWorkerTest {
 
     @Test
-    @DisplayName("백오프: 동기 경로와 같은 값 — 429는 3s·6s + jitter, 그 외 1s·2s + jitter")
-    void backoffMatchesSyncPath() {
-        assertThat(ScoringWorker.backoff(1, true).toMillis()).isBetween(3000L, 3999L);
-        assertThat(ScoringWorker.backoff(2, true).toMillis()).isBetween(6000L, 6999L);
-        assertThat(ScoringWorker.backoff(1, false).toMillis()).isBetween(1000L, 1299L);
-        assertThat(ScoringWorker.backoff(2, false).toMillis()).isBetween(2000L, 2299L);
+    @DisplayName("백오프: 2s부터 2배(429는 4s부터), 상한 60s + jitter 1s 미만")
+    void backoffDoublesUpToCap() {
+        assertThat(ScoringWorker.backoff(1, false).toMillis()).isBetween(2000L, 2999L);
+        assertThat(ScoringWorker.backoff(2, false).toMillis()).isBetween(4000L, 4999L);
+        assertThat(ScoringWorker.backoff(3, false).toMillis()).isBetween(8000L, 8999L);
+        assertThat(ScoringWorker.backoff(1, true).toMillis()).isBetween(4000L, 4999L);
+        assertThat(ScoringWorker.backoff(2, true).toMillis()).isBetween(8000L, 8999L);
+        // 상한: 오래 재시도해도 문항당 분당 한 번 꼴
+        assertThat(ScoringWorker.backoff(6, false).toMillis()).isBetween(60_000L, 60_999L);
+        assertThat(ScoringWorker.backoff(40, true).toMillis()).isBetween(60_000L, 60_999L);
+    }
+
+    @Test
+    @DisplayName("분류: 기다리면 풀리는가 — 파일 문제는 영구, LLM 형식 오류는 따로, 나머지는 일시적")
+    void classifyByWhetherWaitingHelps() {
+        assertThat(ScoringWorker.classify(NoSuchKeyException.builder().message("no key").build())).isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(new NoSuchElementException("객체 없음"))).isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "bad audio", HttpHeaders.EMPTY, null, null)))
+                .isEqualTo(FailureKind.PERMANENT);
+
+        assertThat(ScoringWorker.classify(new IllegalStateException("contentScore 누락"))).isEqualTo(FailureKind.INVALID_OUTPUT);
+
+        assertThat(ScoringWorker.classify(HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "429", HttpHeaders.EMPTY, null, null)))
+                .isEqualTo(FailureKind.TRANSIENT);
+        assertThat(ScoringWorker.classify(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "503", HttpHeaders.EMPTY, null, null)))
+                .isEqualTo(FailureKind.TRANSIENT);
+        assertThat(ScoringWorker.classify(new ResourceAccessException("Read timed out"))).isEqualTo(FailureKind.TRANSIENT);
+        // 원인 체인 안쪽까지 본다 — STT 래핑 RuntimeException 안의 파일 거절
+        assertThat(ScoringWorker.classify(new RuntimeException("stt", HttpClientErrorException.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "415", HttpHeaders.EMPTY, null, null))))
+                .isEqualTo(FailureKind.PERMANENT);
     }
 
     @Test

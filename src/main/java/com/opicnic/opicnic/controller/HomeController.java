@@ -17,6 +17,7 @@ import com.opicnic.opicnic.service.ExamPlanService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.TopicCatalog;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import com.opicnic.opicnic.service.job.ScoringJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,6 +47,7 @@ public class HomeController {
     private final ExamScheduleRepository examScheduleRepository;
     private final ExamPlanService examPlanService;
     private final CoachingService coachingService;
+    private final ScoringJobService scoringJobService;
 
     @GetMapping("/")
     public String home(@AuthenticationPrincipal OAuth2User user, Model model) {
@@ -61,6 +63,11 @@ public class HomeController {
                 });
                 model.addAttribute("coachingTeaser", coachingService.buildTeaser(member));
                 model.addAttribute("hasHistory", feedbackResultRepository.countByMemberId(member.getId()) > 0);
+                // 채점이 늦어져 결과 화면을 떠난 사용자에게 "완료되면 홈에서 알려드릴게요"를 지키는 자리
+                scoringJobService.findUnseen(member.getId()).ifPresent(job -> {
+                    model.addAttribute("unseenJobId", job.getId());
+                    model.addAttribute("unseenJobFinished", job.isFinished());
+                });
                 addTodaySummary(member, model);
             });
         }

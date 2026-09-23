@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>피드백 - OPIcnic</title>
+    <title>연습 결과 - OPIcnic</title>
     <script src="https://cdn.tailwindcss.com"></script>
 <script>
     tailwind.config = {
@@ -43,33 +43,71 @@
         <div class="w-10"></div>
     </div>
 
-    <!-- 문항 카드 -->
-    <div class="space-y-4" th:each="feedback, iterStat : ${feedbackResults}">
+    <!-- 채점 진행 상태: 아직 안 끝난 문항이 있을 때만 -->
+    <div id="progress" th:unless="${finished}" class="bg-white rounded-2xl shadow-sm px-5 py-4 mb-4">
+        <div class="flex items-center gap-3">
+            <svg class="animate-spin h-5 w-5 text-brand-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <p class="text-sm text-gray-700">채점 중이에요 ·
+                <span id="done-count" th:text="${#lists.size(cards.?[state != 'PENDING'])}">0</span> / <span th:text="${#lists.size(cards)}">3</span> 완료</p>
+        </div>
+        <p id="progress-hint" class="text-xs text-gray-400 mt-2">보통 10초 안에 끝나요. 끝난 문항부터 아래에 보여드릴게요.</p>
+        <!-- 30초가 지나도 남은 문항이 있으면: 여기서 기다리지 않아도 된다 -->
+        <div id="delay-notice" class="hidden mt-3 bg-amber-50 rounded-xl px-4 py-3">
+            <p class="text-sm text-amber-800 leading-relaxed">채점이 평소보다 늦어지고 있어요.<br>완료되면 홈에서 알려드릴게요.</p>
+            <a href="/" class="inline-block mt-2 text-sm font-semibold text-amber-900 underline">홈으로 가기</a>
+        </div>
+        <p id="poll-error" class="hidden text-xs text-red-500 mt-2"></p>
+    </div>
 
-        <!-- 실패 카드 -->
-        <div th:if="${feedback.failed}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <span class="text-sm font-semibold text-gray-700"
-                      th:text="'문항 ' + ${iterStat.count}"></span>
+    <!-- 문항 카드 -->
+    <div id="cards" class="space-y-4">
+        <th:block th:each="card : ${cards}"><div th:replace="~{:: card}"></div></th:block>
+    </div>
+
+    <!-- 카드 한 장. 전체 화면에서도, 처리 중 화면이 새로 끝난 문항을 받아 끼울 때(/cards/{index})도 이 조각을 쓴다 -->
+    <th:block th:if="false">
+    <div th:fragment="card" th:id="'card-' + ${card.index}" th:attr="data-state=${card.state}" th:with="feedback=${card.feedback}">
+
+        <!-- 분석 중 카드 -->
+        <div th:if="${card.state == 'PENDING'}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <span class="text-sm font-semibold text-gray-700" th:text="'문항 ' + ${card.number}"></span>
             </div>
             <div class="px-5 py-4">
-                <p class="text-sm text-gray-500 mb-3 leading-relaxed"
-                   th:text="${feedback.question.content}"></p>
-                <div class="flex items-center gap-2 bg-red-50 rounded-xl px-4 py-3">
-                    <i class="fa-solid fa-circle-exclamation text-red-400 text-sm shrink-0"></i>
-                    <p class="text-sm text-red-600">분석에 실패했습니다. 다시 시도해 주세요.</p>
+                <p class="text-sm text-gray-500 mb-3 leading-relaxed" th:text="${feedback.question.content}"></p>
+                <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-circle-notch fa-spin text-gray-400 text-sm shrink-0"></i>
+                    <p class="text-sm text-gray-500">분석 중이에요</p>
                 </div>
             </div>
         </div>
 
+        <!-- 실패 카드: 왜 안 됐는지만 말한다 -->
+        <div th:if="${card.state == 'FAILED'}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <span class="text-sm font-semibold text-gray-700" th:text="'문항 ' + ${card.number}"></span>
+            </div>
+            <div class="px-5 py-4">
+                <p class="text-sm text-gray-500 mb-3 leading-relaxed" th:text="${feedback.question.content}"></p>
+                <div class="flex items-center gap-2 bg-red-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-circle-exclamation text-red-400 text-sm shrink-0"></i>
+                    <p class="text-sm text-red-600" th:text="${card.failMessage}"></p>
+                </div>
+            </div>
+        </div>
+
+        <th:block th:if="${card.state == 'DONE'}">
         <!-- 정상 카드 -->
-        <div th:unless="${feedback.failed}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
 
             <!-- 카드 헤더: 문항번호 + 등급 -->
             <div class="px-5 pt-5 pb-4">
                 <div class="flex items-center justify-between mb-4">
                     <span class="text-xs font-medium text-gray-400"
-                          th:text="'문항 ' + ${iterStat.count}"></span>
+                          th:text="'문항 ' + ${card.number}"></span>
                     <!-- 등급 배지 -->
                     <span th:if="${feedback.overallGrade != null}"
                           th:text="${feedback.overallGrade}"
@@ -215,7 +253,9 @@
             </div>
 
         </div>
+        </th:block>
     </div>
+    </th:block>
 
     <!-- 하단 버튼 -->
     <div class="mt-6 space-y-3">
@@ -230,5 +270,60 @@
     </div>
 
 </div>
+<script th:unless="${finished}" th:inline="javascript">
+    // 끝난 문항부터 채운다: 2초마다 상태를 묻고, 새로 DONE/FAILED가 된 문항만 카드 조각을 받아 바꿔 끼운다
+    const jobId = /*[[${jobId}]]*/ null;
+    const elapsedAtLoad = /*[[${elapsedMillis}]]*/ 0;
+    const loadedAt = Date.now();
+    const DELAY_NOTICE_MS = 30000;
+    let pollFailures = 0;
+
+    function pendingCards() {
+        return Array.from(document.querySelectorAll('#cards [data-state="PENDING"]'));
+    }
+
+    async function swapCard(index) {
+        const res = await fetch(`/practice/result/${encodeURIComponent(jobId)}/cards/${index}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const el = document.getElementById('card-' + index);
+        if (el) el.outerHTML = await res.text();
+    }
+
+    async function poll() {
+        try {
+            const res = await fetch(`/api/scoring-jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error('상태 조회 실패 (' + res.status + ')');
+            const job = await res.json();
+            pollFailures = 0;
+            document.getElementById('poll-error').classList.add('hidden');
+
+            const pending = new Set(pendingCards().map(el => el.id));
+            for (const it of job.items) {
+                if ((it.status === 'DONE' || it.status === 'FAILED') && pending.has('card-' + it.index)) {
+                    await swapCard(it.index);
+                }
+            }
+            document.getElementById('done-count').textContent = job.done + job.failed;
+
+            if (job.status === 'COMPLETED' || job.status === 'COMPLETED_WITH_FAILURES') {
+                document.getElementById('progress').classList.add('hidden');
+                return;
+            }
+        } catch (e) {
+            // 서버 재시작 중이면 몇 번 실패한다 — 계속 묻는다. 채점은 DB·워커가 이어가고 있다
+            if (++pollFailures >= 5) {
+                const el = document.getElementById('poll-error');
+                el.textContent = '서버와 연결이 잠시 끊겼어요. 계속 확인 중입니다…';
+                el.classList.remove('hidden');
+            }
+        }
+        if (elapsedAtLoad + (Date.now() - loadedAt) >= DELAY_NOTICE_MS && pendingCards().length > 0) {
+            document.getElementById('progress-hint').classList.add('hidden');
+            document.getElementById('delay-notice').classList.remove('hidden');
+        }
+        setTimeout(poll, 2000);
+    }
+    poll();
+</script>
 </body>
 </html>
