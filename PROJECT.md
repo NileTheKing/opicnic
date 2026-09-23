@@ -23,7 +23,7 @@ ScoringJobViewController GET /practice/result/{id} → 처리 중: progress.html
 ScoringWorker (@Scheduled 1s, 가상 스레드, 동시 상한 설정값) — 잡이 아니라 문항 단위로 집는다(제출 건끼리 섞여 공정)
   claim(UPDATE WHERE QUEUED) → AudioStorage.read → FeedbackService.transcribe(성공분 item.sttText에 저장)
   → FeedbackService.gradeWithSpeech (채점 → 태깅) → [FeedbackPersistenceService.saveOne + item DONE + job 마무리] 한 트랜잭션(잡 행 락)
-  실패 → item.markFailed(backoff) → QUEUED(다시 집힘) 또는 3회째 FAILED. 기동 시·5분 스윕으로 PROCESSING 고아 회수. 실패율 서킷
+  실패 → classify(일시적/영구/LLM 형식 오류) → item.markFailed(kind, backoff, deadline): 일시적은 접수 후 30분(retry-budget)까지 QUEUED로 다시 집힘, 영구(R2 404·400/413/415/422)는 즉시, 형식 오류는 3회째 FAILED(failureReason 기록). 기동 시·5분 스윕으로 PROCESSING 고아 회수. 실패율 서킷
 ```
 
 콤보 패턴/카테고리는 submit 시 `ScoringJob`에 복사되고 워커가 `FeedbackResult`에 그대로 붙인다 — 학습분석(콤보↔유형 사이클)이 이 값에 의존한다.
