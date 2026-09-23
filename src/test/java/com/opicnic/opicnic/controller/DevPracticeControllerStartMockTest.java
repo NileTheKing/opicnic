@@ -6,7 +6,9 @@ import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
+import com.opicnic.opicnic.service.GroqService;
 import com.opicnic.opicnic.service.MockExamService;
+import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,7 +47,8 @@ class DevPracticeControllerStartMockTest {
                 null, null, Instant.now().plus(2, ChronoUnit.HOURS), AttemptStatus.IN_PROGRESS);
         when(attemptService.createAttempt(any(), any(), any(), any(), any())).thenReturn(attempt);
 
-        DevPracticeController controller = new DevPracticeController(attemptService, feedbackService, mockExamService);
+        DevPracticeController controller = new DevPracticeController(attemptService, feedbackService, mockExamService,
+                Mockito.mock(STTService.class), Mockito.mock(GroqService.class));
 
         ResponseEntity<?> response = controller.startMockAttempt();
 

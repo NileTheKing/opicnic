@@ -5,7 +5,9 @@ import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
+import com.opicnic.opicnic.service.GroqService;
 import com.opicnic.opicnic.service.MockExamService;
+import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +33,27 @@ public class DevPracticeController {
     private final PracticeAttemptService attemptService;
     private final FeedbackService feedbackService;
     private final MockExamService mockExamService;
+    private final STTService sttService;
+    private final GroqService groqService;
 
     // 측정 스크립트는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/api/scoring-jobs 등)는 CSRF를 그대로
     // 강제해야 하므로(SEC-06), 여기서 토큰을 미리 발급받아 이후 POST에 실어 보내게 한다.
     @GetMapping("/csrf")
     public Map<String, String> csrfToken(CsrfToken token) {
         return Map.of("token", token.getToken(), "headerName", token.getHeaderName());
+    }
+
+    // 실패 주입률을 실행 중에 바꾼다(STT·LLM 같은 값). 서킷 튜닝용 "제공자 다운"(1.0)과 대시보드 시연
+    // ("평소 → 장애 → 복구")을 앱 재시작 없이 — 재시작하면 지표가 끊기고 워커 회수까지 섞인다.
+    // 예) curl -X POST -H "$HEADER: $TOKEN" -b jar '.../mock-failures?rate429=0.3&rate5xx=0.1&rateTimeout=0.05'
+    @PostMapping("/mock-failures")
+    public Map<String, Double> setMockFailures(@RequestParam(defaultValue = "0") double rate429,
+                                               @RequestParam(defaultValue = "0") double rate5xx,
+                                               @RequestParam(defaultValue = "0") double rateTimeout) {
+        sttService.setMockFailureRates(rate429, rate5xx, rateTimeout);
+        groqService.setMockFailureRates(rate429, rate5xx, rateTimeout);
+        log.warn("[DEV] mock 실패 주입률 변경: 429={} 5xx={} timeout={}", rate429, rate5xx, rateTimeout);
+        return Map.of("rate429", rate429, "rate5xx", rate5xx, "rateTimeout", rateTimeout);
     }
 
     @PostMapping("/start")

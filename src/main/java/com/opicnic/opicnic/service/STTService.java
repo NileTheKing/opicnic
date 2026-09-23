@@ -38,9 +38,17 @@ public class STTService {
     private final MeterRegistry meterRegistry;
     private final boolean enabled;
     private final long mockDelayMs;
-    private final double mock429Rate;
-    private final double mock5xxRate;
-    private final double mockTimeoutRate;
+    // volatile: dev 스위치(DevPracticeController /mock-failures)가 실행 중에 바꾼다 — 앱 재시작 없이 "평소 → 장애 → 복구"를 재현
+    private volatile double mock429Rate;
+    private volatile double mock5xxRate;
+    private volatile double mockTimeoutRate;
+
+    // mock 경로(enabled=false)에서만 의미 있다. 운영(enabled=true)에선 이 값을 읽지 않는다
+    public void setMockFailureRates(double rate429, double rate5xx, double rateTimeout) {
+        this.mock429Rate = rate429;
+        this.mock5xxRate = rate5xx;
+        this.mockTimeoutRate = rateTimeout;
+    }
 
     public STTService(RestClient.Builder restClientBuilder,
                       @Value("${spring.ai.stt.api-key}") String apiKey,

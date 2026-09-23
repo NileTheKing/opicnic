@@ -44,14 +44,22 @@ public class GroqService {
     @Value("${LLM_MOCK_DELAY_MS:0}")
     private long mockDelayMs;
 
+    // volatile: dev 스위치(DevPracticeController /mock-failures)가 실행 중에 바꾼다
     @Value("${LLM_MOCK_429_RATE:0}")
-    private double mock429Rate;
+    private volatile double mock429Rate;
 
     @Value("${LLM_MOCK_5XX_RATE:0}")
-    private double mock5xxRate;
+    private volatile double mock5xxRate;
 
     @Value("${LLM_MOCK_TIMEOUT_RATE:0}")
-    private double mockTimeoutRate;
+    private volatile double mockTimeoutRate;
+
+    // mock 경로(enabled=false)에서만 의미 있다. 운영(enabled=true)에선 이 값을 읽지 않는다
+    public void setMockFailureRates(double rate429, double rate5xx, double rateTimeout) {
+        this.mock429Rate = rate429;
+        this.mock5xxRate = rate5xx;
+        this.mockTimeoutRate = rateTimeout;
+    }
 
     @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
     private String taggingModel;
