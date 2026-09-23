@@ -12,7 +12,8 @@
 - [ ] 폴링 초반 간격 — 무응답처럼 1~2초 만에 끝나는 잡은 서버 1.7s인데 화면 5s(운영 실사용). 첫 2~3회 0.5s 후 2s, 또는 SSE
 - [ ] 처리 후 오디오 `pending/`→`attempts/` 복사(30일 보관, ADR 3절). 지금은 1일 후 삭제. 재청취 기능과 함께
 - [ ] `COMPLETED_WITH_FAILURES` 문항의 사용자 재시도 API `POST /api/scoring-jobs/{id}/items/{index}/retries` — 새 presigned URL 발급 → 문항 QUEUED로. 지금은 FAILED 카드까지만
-- [ ] 블로그 초안 — "빠른 것과 안전한 것은 다르다"(S1 7.6s인데 완료율 0%)
+- [ ] 블로그 — 초안 있음 `local/2026-09-23-blog-draft-async-boundary.md`("경계를 어디에 그을 것인가"). 남은 것: 그림 3개(구조 전/후, 시나리오 3개 시퀀스), 문체 결정(평서체 vs 경어체), 발행처
+- [ ] (아이디어, 착수 전) 장애 알림에 AI 판단 보조 — Alertmanager webhook → 정형 수집(Prometheus 5분치·워커 큐·서킷) + 결정론적 확인(Groq /v1/models에 우리 모델 생존) + 런북 → LLM이 가설·근거·추천 액션 1개 → Slack 카드에 버튼 → 사람 승인 후 미리 만든 액션만 실행(워커 일시정지 등). 원칙은 `user_dev_direction` 그대로(코드가 한도·멱등·권한 소유, AI는 근거 수집·판단 보조). n8n 불필요(단계 6개 전부 HTTP). 견적 2.5일: 런북+워커 일시정지 스위치 / webhook+정형수집+Slack 카드 / LLM 요약 / 승인 버튼+감사 로그 / mock 주입으로 시나리오 3개 검증. 선행 필요: 런북(`deployment.md` 몇 줄뿐), 모델 fallback 런타임 스위치 없음
 
 ## 운영 — 외부 LLM 제공자
 
