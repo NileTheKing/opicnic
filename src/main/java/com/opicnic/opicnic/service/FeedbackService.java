@@ -120,7 +120,7 @@ public class FeedbackService {
     }
 
     // STT는 RestClient가 HttpClientErrorException(429)을 던지지만, 채점/태깅은 Spring AI ChatModel을
-    // 거치면서 NonTransientAiException("429 - …")으로 바뀌고 원인 체인이 없다. 예외 타입만 보면
+    // 거치면서 Spring AI 예외("HTTP 429 - …")로 바뀌고 원인 체인이 없다. 예외 타입만 보면
     // 실제 LLM 429가 rate-limit 분기(긴 백오프)를 못 타고 일반 백오프로 떨어진다 — 2026-09-18 계측
     // 작업 중 발견. ExternalCallMetrics.outcomeOf()가 두 경로를 다 판정하므로 그걸 재사용한다.
     public static boolean isRateLimited(Throwable e) {

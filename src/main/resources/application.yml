@@ -36,6 +36,9 @@ spring:
   ai:
     retry:
       max-attempts: 1
+      # 기본값은 429를 NonTransientAiException(기다려도 안 풀림)으로 준다. 우리 워커는 429를 기다리면 풀리는
+      # 실패로 보고 재시도하므로 의미를 맞춘다. 재시도는 워커가 하고 여기선 1회라 호출 동작은 같다
+      on-http-codes: [429]
     stt:
       api-key: ${GROQ_API_KEY}
       enabled: ${STT_ENABLED:true}

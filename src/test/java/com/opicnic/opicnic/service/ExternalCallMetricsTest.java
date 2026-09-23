@@ -79,9 +79,32 @@ class ExternalCallMetricsTest {
     void outcomeOf_classifiesExceptions() {
         assertThat(ExternalCallMetrics.outcomeOf(new ResourceAccessException("I/O", new SocketTimeoutException()))).isEqualTo("timeout");
         assertThat(ExternalCallMetrics.outcomeOf(new RuntimeException("wrap", new SocketTimeoutException()))).isEqualTo("timeout");
-        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("429 - Rate limit reached"))).isEqualTo("429");
-        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("404 - model not found"))).isEqualTo("error");
-        assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException("503 - Service Unavailable"))).isEqualTo("5xx");
         assertThat(ExternalCallMetrics.outcomeOf(new IllegalStateException("parse"))).isEqualTo("error");
+    }
+
+    // 운영 로그에 찍힌 실제 형식(Spring AI 1.1.5 SpringAiRetryAutoConfiguration). 2026-09-23 전 테스트는
+    // "429 - ..."만 넣어서, 이 형식을 못 알아보는 버그가 통과했다
+    static final String REAL_LLM_429 = "HTTP 429 - {\"error\":{\"message\":\"Rate limit reached for model "
+            + "`openai/gpt-oss-120b` in organization `org_x` service tier `on_demand` on tokens per minute (TPM): "
+            + "Limit 8000, Used 4271, Requested 7120.\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}";
+
+    @Test
+    @DisplayName("Spring AI 자동 설정 형식(HTTP 429 - ...): 예외 타입과 상관없이 상태 코드로 판정한다")
+    void outcomeOf_springAiAutoConfigFormat() {
+        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException(REAL_LLM_429))).isEqualTo("429");
+        assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException(REAL_LLM_429))).isEqualTo("429"); // on-http-codes: [429]
+        assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException("HTTP 503 - Service Unavailable"))).isEqualTo("5xx");
+        assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException("HTTP 500 - No response body available"))).isEqualTo("5xx");
+        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("HTTP 404 - {\"error\":{\"message\":\"The model does not exist\"}}"))).isEqualTo("error");
+        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("HTTP 400 - bad request"))).isEqualTo("error");
+    }
+
+    @Test
+    @DisplayName("RetryUtils 기본 형식(429 - ...)도 판정하고, 본문 속 숫자에는 속지 않는다")
+    void outcomeOf_retryUtilsFormatAndBodyDigits() {
+        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("429 - Rate limit reached"))).isEqualTo("429");
+        assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException("503 - Service Unavailable"))).isEqualTo("5xx");
+        assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("parse failed near 429 - x"))).isEqualTo("error");
+        assertThat(ExternalCallMetrics.outcomeOf(new RuntimeException("wrap", new NonTransientAiException(REAL_LLM_429)))).isEqualTo("429");
     }
 }
