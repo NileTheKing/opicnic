@@ -98,3 +98,97 @@ tests:
             exp_annotations:
               summary: "채점 실패율 50% 이상 (5분 창, 2분 지속)"
               description: "Groq 채점 호출 실패율이 60%. 먼저 GET https://api.groq.com/openai/v1/models 로 모델 생존 확인 (PROJECT.md 참고)."
+
+  # SubmitLatencySloBreach: 분당 10건 중 6건이 0.5초 초과(60%) → 표본 조건(>=5)도 충족, 10분 내내 유지되므로 5m 뒤 발화
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="0.5"}'
+        values: "0+2x15"
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="+Inf"}'
+        values: "0+5x15"
+      - series: 'http_server_requests_seconds_count{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202"}'
+        values: "0+5x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SubmitLatencySloBreach
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "제출 응답 지연 SLO 위반 (10분 창, 5분 지속)"
+              description: "POST /api/scoring-jobs 응답 중 60%이 0.5초를 초과함(SLO: p95 < 0.5초). 제출이 느려지면 사용자는 '약속'이 깨졌다고 느낀다."
+
+  # SubmitLatencySloBreach: 표본 미달 — 10분 창에 요청이 1건뿐(<5) → 절대 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="0.5"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="+Inf"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 1 1"
+      - series: 'http_server_requests_seconds_count{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 1 1"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SubmitLatencySloBreach
+        exp_alerts: []
+
+  # SubmitLatencySloBreach: 건강한 상태 — 분당 100건 중 97건이 0.5초 이내(초과 3%) → 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="0.5"}'
+        values: "0+97x15"
+      - series: 'http_server_requests_seconds_bucket{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202", le="+Inf"}'
+        values: "0+100x15"
+      - series: 'http_server_requests_seconds_count{job="opicnic-app", instance="app:8080", uri="/api/scoring-jobs", method="POST", status="202"}'
+        values: "0+100x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SubmitLatencySloBreach
+        exp_alerts: []
+
+  # JobCompletionSloBreach: 분당 3건 완료 중 2건이 60초 초과(약 67%) → 표본 조건(>=3)도 충족, 30분 내내 유지되므로 10m 뒤 발화
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="60"}'
+        values: "0+1x50"
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="+Inf"}'
+        values: "0+3x50"
+      - series: 'opicnic_job_duration_seconds_count{job="opicnic-app", instance="app:8080", status="COMPLETED"}'
+        values: "0+3x50"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: JobCompletionSloBreach
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "채점 잡 완료 SLO 위반 (30분 창, 10분 지속)"
+              description: "완료된 채점 잡 중 66.67%이 60초를 초과함(모의고사 완료 SLO, docs/performance/slo.md 기준). 임계값은 그 문서가 바뀌면 같이 바꿀 것."
+
+  # JobCompletionSloBreach: 표본 미달 — 30분 창에 완료 잡이 2건뿐(<3) → 절대 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="60"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="+Inf"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1"
+      - series: 'opicnic_job_duration_seconds_count{job="opicnic-app", instance="app:8080", status="COMPLETED"}'
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: JobCompletionSloBreach
+        exp_alerts: []
+
+  # JobCompletionSloBreach: 건강한 상태 — 분당 10건 완료 중 9건이 60초 이내(초과 10% 미만) → 발화하지 않음
+  - interval: 1m
+    input_series:
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="60"}'
+        values: "0+92x50"
+      - series: 'opicnic_job_duration_seconds_bucket{job="opicnic-app", instance="app:8080", status="COMPLETED", le="+Inf"}'
+        values: "0+100x50"
+      - series: 'opicnic_job_duration_seconds_count{job="opicnic-app", instance="app:8080", status="COMPLETED"}'
+        values: "0+100x50"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: JobCompletionSloBreach
+        exp_alerts: []
