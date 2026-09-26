@@ -99,7 +99,7 @@ HomeController (/practice/mock)
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
 | `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 중복 접수 차단). R2 확인·외부 호출 없음 |
-| `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
+| `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`, 천장 2s부터 2배·상한 60s 안에서 무작위 = full jitter), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
 | `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |
 
 ## 도메인 엔티티
