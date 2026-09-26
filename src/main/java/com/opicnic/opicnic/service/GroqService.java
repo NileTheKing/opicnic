@@ -194,6 +194,7 @@ public class GroqService {
 
     private Map<String, Object> callOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
+            MockProvider.admit();
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
@@ -283,6 +284,7 @@ public class GroqService {
 
     private String callFeedbackTags(String questionType, String mainPoint, String expression, String accuracy, String content) {
         if (!aiEnabled) {
+            MockProvider.admit();
             return "{\"mainPoint\":[],\"expression\":{\"vocab\":[\"VOCAB_BASIC\"],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}";
         }
 

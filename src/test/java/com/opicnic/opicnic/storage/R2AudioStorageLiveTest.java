@@ -22,7 +22,7 @@ class R2AudioStorageLiveTest {
 
     private final AudioStorage storage = new StorageConfig().audioStorage(
             System.getenv("R2_ACCOUNT_ID"), System.getenv("R2_ACCESS_KEY_ID"),
-            System.getenv("R2_SECRET_ACCESS_KEY"), System.getenv().getOrDefault("R2_BUCKET", "opicnic-audio"));
+            System.getenv("R2_SECRET_ACCESS_KEY"), System.getenv().getOrDefault("R2_BUCKET", "opicnic-audio"), false);
 
     @Test
     void presignedPutThenReadThenDelete() throws Exception {

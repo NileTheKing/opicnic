@@ -3,6 +3,7 @@ package com.opicnic.opicnic.config;
 import com.opicnic.opicnic.storage.AudioStorage;
 import com.opicnic.opicnic.storage.InMemoryAudioStorage;
 import com.opicnic.opicnic.storage.R2AudioStorage;
+import com.opicnic.opicnic.storage.ReadCachingAudioStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +26,8 @@ public class StorageConfig {
     public AudioStorage audioStorage(@Value("${R2_ACCOUNT_ID:}") String accountId,
                                      @Value("${R2_ACCESS_KEY_ID:}") String accessKeyId,
                                      @Value("${R2_SECRET_ACCESS_KEY:}") String secretAccessKey,
-                                     @Value("${R2_BUCKET:opicnic-audio}") String bucket) {
+                                     @Value("${R2_BUCKET:opicnic-audio}") String bucket,
+                                     @Value("${opicnic.storage.read-cache:false}") boolean readCache) {
         if (accountId.isBlank()) {
             log.warn("[Storage] R2_ACCOUNT_ID 없음 — 인메모리 AudioStorage로 기동. 재시작 시 오디오 유실. 운영에서는 안 됨");
             return new InMemoryAudioStorage();
@@ -42,7 +44,8 @@ public class StorageConfig {
                 .region(Region.of("auto")).endpointOverride(endpoint)
                 .credentialsProvider(credentials).serviceConfiguration(s3Config)
                 .build();
-        log.info("[Storage] R2 AudioStorage 기동: bucket={}", bucket);
-        return new R2AudioStorage(s3, presigner, bucket);
+        log.info("[Storage] R2 AudioStorage 기동: bucket={} readCache={}", bucket, readCache);
+        AudioStorage r2 = new R2AudioStorage(s3, presigner, bucket);
+        return readCache ? new ReadCachingAudioStorage(r2) : r2;
     }
 }

@@ -66,6 +66,7 @@ public class ScoringWorker {
     private final Semaphore slots;
     private final FailureCircuit circuit;
     private final Duration retryBudget;
+    private final boolean backoffEnabled;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final AtomicInteger inFlight = new AtomicInteger();
     private final AtomicLong queued = new AtomicLong();
@@ -79,7 +80,9 @@ public class ScoringWorker {
                          @Value("${opicnic.worker.circuit.window:20}") int circuitWindow,
                          @Value("${opicnic.worker.circuit.failure-ratio:0.8}") double circuitFailureRatio,
                          @Value("${opicnic.worker.circuit.open-seconds:30}") long circuitOpenSeconds,
-                         @Value("${opicnic.worker.retry-budget:30m}") Duration retryBudget) {
+                         @Value("${opicnic.worker.retry-budget:30m}") Duration retryBudget,
+                         // 재시도 폭주 실험의 대조군(scripts/retry-storm.sh)용. false면 실패 즉시 다음 폴링(1초)에 다시 집는다. 운영에선 끄지 않는다
+                         @Value("${opicnic.worker.backoff-enabled:true}") boolean backoffEnabled) {
         this.jobRepository = jobRepository;
         this.itemRepository = itemRepository;
         this.attemptService = attemptService;
@@ -91,12 +94,13 @@ public class ScoringWorker {
         this.enabled = enabled;
         this.slots = new Semaphore(concurrency);
         this.retryBudget = retryBudget;
+        this.backoffEnabled = backoffEnabled;
         this.circuit = new FailureCircuit(circuitWindow, circuitFailureRatio, Duration.ofSeconds(circuitOpenSeconds));
         meterRegistry.gauge("opicnic.worker.in_flight", inFlight);
         meterRegistry.gauge("opicnic.worker.circuit_open", circuit, c -> c.isOpen() ? 1 : 0);
         meterRegistry.gauge("opicnic.worker.queued", queued);   // 큐 깊이(QUEUED 수). poll()마다 갱신 — 1초 지연의 대시보드용 값
-        log.info("[Worker] enabled={} concurrency={} retryBudget={} circuit(window={}, ratio={}, open={}s)",
-                enabled, concurrency, retryBudget, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
+        log.info("[Worker] enabled={} concurrency={} retryBudget={} backoff={} circuit(window={}, ratio={}, open={}s)",
+                enabled, concurrency, retryBudget, backoffEnabled, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
     }
 
     // 기동 직후: PROCESSING인 문항은 전부 죽은 프로세스의 것이다(단일 인스턴스 전제, ADR-0001 6절) — 5분 기다리지 않고
@@ -194,7 +198,7 @@ public class ScoringWorker {
         } catch (Exception e) {
             boolean rateLimited = FeedbackService.isRateLimited(e);
             FailureKind kind = classify(e);
-            Duration backoff = backoff(ctx.attempts(), rateLimited);
+            Duration backoff = backoffEnabled ? backoff(ctx.attempts(), rateLimited) : Duration.ZERO;
             ScoringJobItemStatus after = tx.execute(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
@@ -232,13 +236,14 @@ public class ScoringWorker {
                 .record(Duration.between(job.getCreatedAt(), job.getCompletedAt()));
     }
 
-    // 시도 n 뒤의 대기: 2s·4s·8s…(429는 4s부터) 2배씩, 상한 60s, + jitter. 상한이 있어 30분 예산을 다 써도
-    // 문항당 호출은 분당 한 번 꼴이고, 제공자가 완전히 죽었으면 서킷이 집기 자체를 멈춘다.
+    // 시도 n 뒤의 대기: 0 ~ 천장 사이 무작위(full jitter). 천장은 2s·4s·8s…(429는 4s부터) 2배씩, 상한 60s.
+    // 2026-09-26 재시도 폭주 실험(docs/performance/2026-09-26/retry-storm.md): 천장 + 1초 미만 jitter였을 땐
+    // 장애가 길어지면 모든 문항이 60s 천장에 붙어 같은 박자로 몰렸다가(복구 후 60초 간격 파도) 한도에 걸려 또 60s를
+    // 기다렸다 — 복구 후 완료가 보호 없는 쪽보다 4.5배 느렸다. 천장 안 전체로 흩어야 박자가 안 맞는다.
     static Duration backoff(int attempt, boolean rateLimited) {
         long base = rateLimited ? 4000L : 2000L;
-        long delay = Math.min(MAX_BACKOFF_MS, base << Math.min(attempt - 1, 10));
-        long jitter = ThreadLocalRandom.current().nextLong(1000);
-        return Duration.ofMillis(delay + jitter);
+        long ceiling = Math.min(MAX_BACKOFF_MS, base << Math.min(attempt - 1, 10));
+        return Duration.ofMillis(ThreadLocalRandom.current().nextLong(ceiling + 1));
     }
 
     static final long MAX_BACKOFF_MS = 60_000L;

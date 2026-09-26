@@ -80,6 +80,7 @@ public class STTService {
 
     private String callStt(byte[] audioBytes, String filename) {
         if (!enabled) {
+            MockProvider.admit();
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }

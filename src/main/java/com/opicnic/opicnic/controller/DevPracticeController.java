@@ -7,6 +7,7 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.GroqService;
 import com.opicnic.opicnic.service.MockExamService;
+import com.opicnic.opicnic.service.MockProvider;
 import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,16 @@ public class DevPracticeController {
         groqService.setMockFailureRates(rate429, rate5xx, rateTimeout);
         log.warn("[DEV] mock 실패 주입률 변경: 429={} 5xx={} timeout={}", rate429, rate5xx, rateTimeout);
         return Map.of("rate429", rate429, "rate5xx", rate5xx, "rateTimeout", rateTimeout);
+    }
+
+    // 부하에 반응하는 가짜 제공자(MockProvider). 재시도 폭주 실험(scripts/retry-storm.sh)용 — 확률 주입과 달리 몰려서 부를수록 429가 는다.
+    // down=true면 모든 호출 즉시 503, limitPerSecond>0이면 STT·채점·태깅 합쳐 초당 그만큼만 받는다.
+    @PostMapping("/mock-provider")
+    public Map<String, Object> setMockProvider(@RequestParam(defaultValue = "false") boolean down,
+                                               @RequestParam(defaultValue = "0") int limitPerSecond) {
+        MockProvider.configure(down, limitPerSecond);
+        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={}", down, limitPerSecond);
+        return Map.of("down", down, "limitPerSecond", limitPerSecond);
     }
 
     @PostMapping("/start")

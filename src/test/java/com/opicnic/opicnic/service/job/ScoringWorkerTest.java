@@ -20,16 +20,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ScoringWorkerTest {
 
     @Test
-    @DisplayName("백오프: 2s부터 2배(429는 4s부터), 상한 60s + jitter 1s 미만")
-    void backoffDoublesUpToCap() {
-        assertThat(ScoringWorker.backoff(1, false).toMillis()).isBetween(2000L, 2999L);
-        assertThat(ScoringWorker.backoff(2, false).toMillis()).isBetween(4000L, 4999L);
-        assertThat(ScoringWorker.backoff(3, false).toMillis()).isBetween(8000L, 8999L);
-        assertThat(ScoringWorker.backoff(1, true).toMillis()).isBetween(4000L, 4999L);
-        assertThat(ScoringWorker.backoff(2, true).toMillis()).isBetween(8000L, 8999L);
+    @DisplayName("백오프: 0 ~ 천장 무작위(full jitter), 천장은 2s부터 2배(429는 4s부터) 상한 60s")
+    void backoffIsFullJitterUnderDoublingCeiling() {
+        assertCeiling(1, false, 2000L);
+        assertCeiling(3, false, 8000L);
+        assertCeiling(1, true, 4000L);
+        assertCeiling(2, true, 8000L);
         // 상한: 오래 재시도해도 문항당 분당 한 번 꼴
-        assertThat(ScoringWorker.backoff(6, false).toMillis()).isBetween(60_000L, 60_999L);
-        assertThat(ScoringWorker.backoff(40, true).toMillis()).isBetween(60_000L, 60_999L);
+        assertCeiling(6, false, 60_000L);
+        assertCeiling(40, true, 60_000L);
+    }
+
+    // 천장을 넘지 않고, 천장 안 전체로 흩어진다 — 천장에 붙어 같은 박자로 몰리지 않게(2026-09-26 재시도 폭주 실험)
+    private static void assertCeiling(int attempt, boolean rateLimited, long ceiling) {
+        long min = Long.MAX_VALUE, max = 0;
+        for (int i = 0; i < 500; i++) {
+            long ms = ScoringWorker.backoff(attempt, rateLimited).toMillis();
+            assertThat(ms).isBetween(0L, ceiling);
+            min = Math.min(min, ms);
+            max = Math.max(max, ms);
+        }
+        assertThat(min).isLessThan(ceiling / 5);
+        assertThat(max).isGreaterThan(ceiling * 4 / 5);
     }
 
     @Test
