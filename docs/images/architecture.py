@@ -11,15 +11,13 @@ def card(x, y, w, h, title, top=False):
 AX, WX, GX = 235, 870, 1210        # 요청 처리 카드, 워커 카드, Groq 카드의 x
 DB = 580                            # 저장소 x
 b += [card(AX, 185, 250, 360, 'Spring Boot: 요청 처리', top=True),
-      card(WX, 205, 250, 300, 'Spring Boot: 채점 워커'),
+      card(WX, 205, 250, 200, 'Spring Boot: 채점 워커'),
       card(GX, 205, 200, 300, 'Groq')]
 b += [box(30, 300, 160, 72, '브라우저'),
       box(AX + 25, 235, 200, 72, '접수 API', sub='202 즉시 응답'),
-      box(AX + 25, 335, 200, 72, '결과 조회', sub='2초 폴링'),
+      box(AX + 25, 335, 200, 72, '결과 조회', sub='폴링'),
       box(AX + 25, 435, 200, 72, '코칭 리포트', sub='태그 집계 후 LLM')]
-b += [rect(WX + 25, 235, 200, 110, C['navy']), text(WX + 125, 265, '워커', 16, 'white', 600),
-      text(WX + 125, 297, '가상 스레드 동시 60', 12, '#C9D3E0'), text(WX + 125, 321, 'full jitter, 30분 재시도', 12, '#C9D3E0'),
-      box(WX + 25, 370, 200, 64, '장애 대응', kind='white', size=14, sub='실패 분류, 서킷')]
+b += [box(WX + 25, 235, 200, 110, '워커', sub='문항 단위 채점, 재시도')]
 b += [box(GX + 17, 235, 166, 64, 'Whisper', kind='white', sub='STT'),
       box(GX + 17, 330, 166, 80, 'gpt-oss', kind='white', sub='120b 채점 / 20b 태깅')]
 b += [cylinder(DB, 55, 190, 100, 'S3', sub='녹음 (Cloudflare R2)'),
@@ -41,7 +39,7 @@ b += [path(f'M110,300 L110,105 L{DB-2},105', 'blue'), text(330, 88, '① 직접 
 # 모니터링
 b += [card(AX, 645, 1175, 80, '모니터링'),
       box(470, 657, 190, 56, 'Prometheus', kind='white', size=14, sub='앱, 워커 지표'),
-      box(730, 657, 190, 56, 'Alertmanager', kind='white', size=14, sub='증상 기반 알림 5개'),
+      box(730, 657, 190, 56, 'Alertmanager', kind='white', size=14, sub='알림'),
       box(990, 657, 140, 56, 'Discord', kind='white', size=14),
       box(1210, 657, 170, 56, 'Grafana', kind='white', size=14, sub='대시보드'),
       arrow(660, 685, 728, 685), arrow(920, 685, 988, 685)]
