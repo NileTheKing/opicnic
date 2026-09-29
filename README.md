@@ -2,7 +2,7 @@
 
 # OPIcnic
 
-**OPIc 전용 AI 피드백 서비스** — OPIc은 ACTFL 채점 기준을 따르는 시험이라 범용 영어 첨삭으로는 안 맞습니다. OPIcnic은 실제 시험 콤보 규칙으로 문제를 내고, OPIc 전용 루브릭으로 채점해 문항별 개별 피드백과, 여러 답변에 걸친 반복 습관을 잡아내는 코칭 리포트를 제공합니다.
+**OPIc 전용 AI 피드백 서비스**<br>실제 시험 콤보 규칙으로 문제를 내고, OPIc 루브릭으로 문항별 피드백을, 누적된 답변으로 반복 습관을 잡아내는 코칭 리포트를 제공합니다.
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -68,20 +68,20 @@ OPIcnic은 주제 선택부터 문제, 피드백, 코칭, 학습 계획까지 �
 <table>
 <tr>
 <td align="center">
-<strong>100%</strong><br>
-<sub>이탈·재시작 시 채점 완료율<br>접수 직후, 채점 중 서버 kill</sub>
+<strong>7.6s → 0.02s</strong><br>
+<sub>채점 접수 응답<br>비동기 전환 (S3 + DB 큐 워커)</sub>
 </td>
 <td align="center">
-<strong>22.8% → 0%</strong><br>
-<sub>외부 API 45% 장애 시 실패 문항<br>재시도 3회 제한 → 시간 기준</sub>
+<strong>78% → 0.4%</strong><br>
+<sub>장애 복구 시 429 비율<br>full jitter + 워커 동시성 제한</sub>
 </td>
 <td align="center">
-<strong>270s → 54s</strong><br>
-<sub>장애 복구 후 채점 완료<br>기존 백오프 → full jitter</sub>
+<strong>80%↓</strong><br>
+<sub>채점 제출 p95 레이턴시<br>커넥션 경합 해소</sub>
 </td>
 <td align="center">
 <strong>2.7×</strong><br>
-<sub>문항 병렬 처리 (실음성)<br>12,886ms → 4,719ms</sub>
+<sub>채점 레이턴시<br>문항별 가상 스레드 병렬 처리</sub>
 </td>
 </tr>
 </table>
