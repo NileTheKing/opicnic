@@ -80,7 +80,10 @@
                 <p class="text-sm text-gray-500 mb-3 leading-relaxed" th:text="${feedback.question.content}"></p>
                 <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
                     <i class="fa-solid fa-circle-notch fa-spin text-gray-400 text-sm shrink-0"></i>
-                    <p class="text-sm text-gray-500">분석 중이에요</p>
+                    <div>
+                        <p class="pending-text text-sm text-gray-500">분석 중이에요</p>
+                        <p class="pending-sub hidden text-xs text-gray-400 mt-0.5">다시 녹음하지 않아도 돼요</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -289,6 +292,17 @@
         if (el) el.outerHTML = await res.text();
     }
 
+    // 한 번 이상 실패해 워커가 다시 시도 중인 문항은 멈춘 게 아니라는 걸 보여준다.
+    // attempts는 시작한 시도 수라서, 대기(QUEUED) 중이면 다음 시도는 attempts + 1번째
+    function showRetry(it) {
+        const card = document.getElementById('card-' + it.index);
+        if (!card || card.dataset.state !== 'PENDING') return;
+        const nth = it.status === 'QUEUED' ? it.attempts + 1 : it.attempts;
+        if (nth < 2) return;
+        card.querySelector('.pending-text').textContent = `AI 응답이 늦어져 다시 시도하고 있어요 · ${nth}번째 시도`;
+        card.querySelector('.pending-sub').classList.remove('hidden');
+    }
+
     async function poll() {
         try {
             const res = await fetch(`/api/scoring-jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
@@ -301,6 +315,8 @@
             for (const it of job.items) {
                 if ((it.status === 'DONE' || it.status === 'FAILED') && pending.has('card-' + it.index)) {
                     await swapCard(it.index);
+                } else {
+                    showRetry(it);
                 }
             }
             document.getElementById('done-count').textContent = job.done + job.failed;
