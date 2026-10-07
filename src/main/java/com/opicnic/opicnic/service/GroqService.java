@@ -64,6 +64,40 @@ public class GroqService {
     @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
     private String taggingModel;
 
+    // gpt-oss(Groq)는 reasoning 토큰을 줄이려고 low를 준다. 빈 값이면 보내지 않는다 — 보정 실험의 Gemini 측정이 이 조건
+    @Value("${opicnic.llm.reasoning-effort:low}")
+    private String reasoningEffort;
+
+    // 등급 판단 — 코칭 점수와 별개로 ACTFL 기준 근거를 먼저 적고 level을 고르게 한다.
+    // docs/performance/2026-10-07-grading-calibration/level-v1.md 와 같은 내용(실험에서 잰 그대로 옮김)
+    static final String LEVEL_PROMPT =
+            "【추가: 등급(level) 판단 — 위 코칭 점수와 별개로】\n" +
+            "위 점수들(mainPoint/expression/accuracy/content)은 \"무엇을 고칠지\"를 위한 코칭 기준이다. 등급은 그 점수와 무관하게, 실제 OPIc 채점자처럼 \"이 사람이 영어로 무엇을 해낼 수 있는가\"로 판단하라.\n" +
+            "코칭 점수가 높다고 등급을 올리지 마라. 특히 문법 오류가 없어도 문장이 단순하면 높은 등급이 아니다.\n" +
+            "\n" +
+            "먼저 아래 5가지 근거를 관찰하고(levelEvidence), 그 근거로 등급을 고른다.\n" +
+            "1. textType — 말의 단위: 단어·구 나열 / 단문 몇 개 / 단문을 이어 붙인 나열 / 연결된 문단\n" +
+            "2. timeFrames — 시제 운용: 현재만 / 과거 시도하나 흔들림 / 과거·현재(·미래)를 대체로 통제 / 일관되게 통제\n" +
+            "3. cohesion — 연결: and·so 위주 / because·when 등 기본 접속 / 다양한 접속·전환(though, which, so that…) / 문단 전체가 하나의 흐름(도입-전개-마무리)\n" +
+            "4. vocabulary — 어휘: 기본 단어 반복 / 일반적이지만 충분 / 구체적·다양 / 정확하고 관용적, 뉘앙스 있음\n" +
+            "5. errors — 오류의 성격: 이해를 방해 / 잦지만 이해 가능 / 가끔, 복잡한 문장에서 / 드물고 패턴 없음\n" +
+            "\n" +
+            "등급 기술 (가장 잘 맞는 하나를 고르되, 경계에서는 낮은 쪽):\n" +
+            "- IL: 단어·구·외운 표현 위주, 문장이 거의 완성되지 않음. 매우 짧다.\n" +
+            "- IM1: 스스로 단문을 만든다. 몇 문장 수준, 기본 어휘, 거의 현재 시제, 세부 정보가 적다.\n" +
+            "- IM2: 단문을 여러 개 이어 질문에 충실히 답한다. and/so/because 정도의 연결, 약간의 세부 정보. 여전히 문장 단위.\n" +
+            "- IM3: 더 길고 구체적인 문장 나열, 복문을 가끔 쓴다. 과거 이야기를 대체로 맞는 시제로 하지만 흐름은 문장 단위이고, 구성(도입-전개-마무리)이 약하거나 어휘가 일반적이다.\n" +
+            "- IH: 문단 수준으로 말하려 하고 대부분 성공한다. 시제를 오가며 서술하지만 길어지면 가끔 흔들리거나 단순해진다. 어휘가 구체적이고 연결 장치가 다양하다.\n" +
+            "- AL: 처음부터 끝까지 하나로 이어진 문단. 시제를 일관되게 통제하며 이야기·묘사·의견을 구체적으로 전개한다. 어휘가 정확하고 자연스러우며, 오류는 드물고 의사소통에 영향이 없다.\n" +
+            "\n" +
+            "주의:\n" +
+            "- 길이는 근거가 아니다. 긴데 문장 나열이면 IM3 이하, 짧아도 연결이 탁월하면 그 수준을 인정하되 문단을 보여줄 만큼은 되어야 IH 이상.\n" +
+            "- 질문에 맞지 않는 답(묻는 것에 답하지 않음)은 그만큼 낮게 본다.\n" +
+            "\n" +
+            "JSON에 아래 두 필드를 추가하라 (기존 필드는 그대로):\n" +
+            "  \"levelEvidence\": {\"textType\": \"...\", \"timeFrames\": \"...\", \"cohesion\": \"...\", \"vocabulary\": \"...\", \"errors\": \"...\"},\n" +
+            "  \"level\": \"IL|IM1|IM2|IM3|IH|AL 중 하나\"";
+
     // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
     private static final String MOCK_429_BODY =
             "Rate limit reached for model `openai/gpt-oss-120b` in organization ... on tokens per minute (TPM): "
@@ -249,7 +283,7 @@ public class GroqService {
                 "  \"modelAnswer\": \"모범 답변 영어 텍스트\", \"modelAnswerComment\": \"한국어 설명\"\n" +
                 "}";
 
-        Message systemMessage = new SystemMessage(SYSTEM_PROMPT + exampleInstruction);
+        Message systemMessage = new SystemMessage(SYSTEM_PROMPT + exampleInstruction + "\n\n" + LEVEL_PROMPT);
         Message userMessage = new UserMessage(
                 "문제 유형: " + question.getQuestionType().name() + "\n" +
                 "질문: " + question.getContent() + "\n" +
@@ -266,7 +300,7 @@ public class GroqService {
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
                 .temperature(0.0)
-                .reasoningEffort("low")
+                .reasoningEffort(reasoningEffort == null || reasoningEffort.isBlank() ? null : reasoningEffort)
                 .maxTokens(3000)
                 .build();
 
