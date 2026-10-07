@@ -17,12 +17,13 @@ public record ScoringJobStatusResponse(
         int failed,
         List<Item> items
 ) {
-    public record Item(int index, ScoringJobItemStatus status, int attempts, Long feedbackResultId, String lastError) {
+    // 실패 원문(lastError)은 내보내지 않는다 — 제공자 응답 본문에 조직 ID 같은 내부 정보가 섞여 있다. 원인은 서버 로그·DB에서 본다
+    public record Item(int index, ScoringJobItemStatus status, int attempts, Long feedbackResultId) {
     }
 
     public static ScoringJobStatusResponse from(ScoringJob job) {
         List<Item> items = job.getItems().stream()
-                .map(i -> new Item(i.getQuestionIndex(), i.getStatus(), i.getAttempts(), i.getFeedbackResultId(), i.getLastError()))
+                .map(i -> new Item(i.getQuestionIndex(), i.getStatus(), i.getAttempts(), i.getFeedbackResultId()))
                 .toList();
         int done = (int) job.getItems().stream().filter(i -> i.getStatus() == ScoringJobItemStatus.DONE).count();
         int failed = (int) job.getItems().stream().filter(i -> i.getStatus() == ScoringJobItemStatus.FAILED).count();
