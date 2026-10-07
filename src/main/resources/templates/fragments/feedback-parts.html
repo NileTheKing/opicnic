@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<!-- 결과 화면(practice/feedback)과 기록 상세(analytics/history-detail)가 같이 쓰는 피드백 조각.
+     저장된 "진단\n예) '원문' -> '고친 문장'"을 FeedbackText가 쪼개고, 여기서 진단 / 내 문장 / 바꾼 문장을 따로 그린다.
+     바꾼 문장에서는 원문에 없던 단어만 초록으로 강조한다.
+     듣기 버튼은 브라우저 내장 음성(Web Speech)이라 서버 호출이 없다. -->
+<body>
+
+<!-- 이렇게 바꿔보세요: 진단 한 줄 + 내 문장 → 바꾼 문장 -->
+<div th:fragment="improvement(text)" th:with="fix=${T(com.opicnic.opicnic.dto.FeedbackText).fix(text)}"
+     class="bg-amber-50 rounded-xl p-4">
+    <div class="flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-lightbulb text-amber-400 text-sm"></i>
+        <p class="text-xs font-semibold text-amber-700">이렇게 바꿔보세요</p>
+    </div>
+    <p th:if="${fix.diagnosis != null}" class="text-sm font-medium text-gray-800 leading-relaxed" th:text="${fix.diagnosis}"></p>
+    <div th:if="${fix.hasExample()}" class="mt-3 space-y-1.5">
+        <div class="bg-white/70 rounded-lg px-3.5 py-2.5">
+            <p class="text-[11px] font-semibold text-gray-400 mb-0.5">내 답변</p>
+            <p class="text-sm text-gray-500 leading-relaxed" th:text="${fix.before}"></p>
+        </div>
+        <div class="flex justify-center">
+            <i class="fa-solid fa-arrow-down text-[10px] text-amber-300"></i>
+        </div>
+        <div class="bg-white rounded-lg px-3.5 py-2.5 ring-1 ring-emerald-200">
+            <div class="flex items-center justify-between mb-0.5">
+                <p class="text-[11px] font-semibold text-emerald-600">이렇게 말해보세요</p>
+                <button type="button" th:replace="~{fragments/feedback-parts :: speak(${fix.after})}"></button>
+            </div>
+            <p class="text-sm text-gray-900 leading-relaxed"><th:block th:each="seg : ${T(com.opicnic.opicnic.dto.FeedbackText).highlight(fix.before, fix.after)}"><span th:if="${seg.added}" class="font-semibold text-emerald-700 bg-emerald-50 rounded px-0.5" th:text="${seg.text}"></span><th:block th:unless="${seg.added}" th:text="${seg.text}"></th:block></th:block></p>
+        </div>
+    </div>
+</div>
+
+<!-- 세부 피드백 한 항목: 진단 + (있으면) 원문 취소선 → 고친 문장 -->
+<div th:fragment="criterion(label, text)" th:with="fix=${T(com.opicnic.opicnic.dto.FeedbackText).fix(text)}">
+    <p class="text-xs font-semibold text-gray-500 mb-0.5" th:text="${label}"></p>
+    <p th:if="${fix.diagnosis != null}" class="text-sm text-gray-600 leading-relaxed" th:text="${fix.diagnosis}"></p>
+    <div th:if="${fix.hasExample()}" class="mt-2 border-l-2 border-gray-200 pl-3 space-y-1">
+        <p class="text-sm text-gray-400 leading-relaxed line-through decoration-gray-300" th:text="${fix.before}"></p>
+        <p class="text-sm text-gray-800 leading-relaxed">
+            <i class="fa-solid fa-arrow-right text-[10px] text-emerald-500 mr-1"></i><th:block th:each="seg : ${T(com.opicnic.opicnic.dto.FeedbackText).highlight(fix.before, fix.after)}"><span th:if="${seg.added}" class="font-semibold text-emerald-700 bg-emerald-50 rounded px-0.5" th:text="${seg.text}"></span><th:block th:unless="${seg.added}" th:text="${seg.text}"></th:block></th:block>
+        </p>
+    </div>
+</div>
+
+<!-- 모범 답변: 접힌 버튼 → 펼치면 문단 + 듣기 + 좋은 이유 -->
+<div th:fragment="modelAnswer(answer, comment)" class="px-5 pb-5">
+    <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron2').classList.toggle('rotate-180')"
+            class="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-gray-400 text-xs"></i>
+            <span class="text-xs font-semibold text-brand-700">모범 답변 보기</span>
+        </div>
+        <i class="chevron2 fa-solid fa-chevron-down text-xs text-gray-300 transition-transform duration-200"></i>
+    </button>
+    <div class="hidden mt-2 bg-gray-50 rounded-xl px-4 py-4">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-[11px] font-semibold text-gray-400">모범 답변</p>
+            <button type="button" th:replace="~{fragments/feedback-parts :: speak(${answer})}"></button>
+        </div>
+        <div class="space-y-3">
+            <p th:each="paragraph : ${T(com.opicnic.opicnic.dto.FeedbackText).paragraphs(answer)}"
+               class="text-sm text-gray-800 leading-7" th:text="${paragraph}"></p>
+        </div>
+        <div th:if="${comment != null}" class="mt-4 flex gap-2.5 bg-white rounded-lg px-3.5 py-3">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-xs mt-0.5 shrink-0"></i>
+            <div>
+                <p class="text-[11px] font-semibold text-gray-500 mb-0.5">이 답변이 좋은 이유</p>
+                <p class="text-xs text-gray-600 leading-relaxed" th:text="${comment}"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 영어 문장 듣기. 다시 누르면 멈춘다 -->
+<button th:fragment="speak(say)" type="button" th:attr="data-say=${say}"
+        onclick="if (speechSynthesis.speaking) { speechSynthesis.cancel(); return; }
+                 const u = new SpeechSynthesisUtterance(this.dataset.say); u.lang = 'en-US'; u.rate = 0.95;
+                 speechSynthesis.speak(u);"
+        class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-700 bg-white hover:bg-brand-50 rounded-full px-2.5 py-1 shadow-sm transition-colors">
+    <i class="fa-solid fa-volume-high text-[10px]"></i>듣기
+</button>
+
+</body>
+</html>
