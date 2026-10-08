@@ -55,7 +55,8 @@ public class ScoringJobService {
         PracticeAttempt attempt = requireAttempt(attemptId);
         // 게스트는 한도가 찼으면 업로드(R2 쓰기)를 시작하기 전에 알린다
         if (attempt.memberId() != null) {
-            guestQuotaService.assertCanSubmit(memberRepository.findById(attempt.memberId()).orElse(null));
+            guestQuotaService.assertCanSubmit(memberRepository.findById(attempt.memberId()).orElse(null),
+                    attempt.mode(), attempt.questionIds().size());
         }
         int questionCount = attempt.questionIds().size();
         if (requests == null || requests.isEmpty()) {
@@ -94,8 +95,8 @@ public class ScoringJobService {
         PracticeAttempt attempt = requireAttempt(attemptId);
         Member owner = resolveOwner(attempt, requester);
 
-        // 게스트 체험 한도(게스트가 아니면 통과). 시간당 문항 한도와 별개로 하루 접수 수를 센다
-        guestQuotaService.assertCanSubmit(owner);
+        // 게스트 체험 한도(게스트가 아니면 통과): 모의고사 차단 + 하루 문항 수. 시간당 문항 한도와 별개
+        guestQuotaService.assertCanSubmit(owner, attempt.mode(), attempt.questionIds().size());
 
         // 채점 문항(자기소개 제외) 수만큼 한도 소비. 검증을 다 통과한 뒤, DB 저장 직전 — 기존 동기 경로와 같은 순서.
         long gradedCount = attempt.questionIds().stream().filter(id -> id != null).count();

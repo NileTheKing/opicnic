@@ -61,6 +61,28 @@ class ScoringJobServiceTest {
     }
 
     @Test
+    @DisplayName("게스트 한도는 URL 발급(업로드 전)과 접수 양쪽에서 모드·문항 수로 검사된다")
+    void guestQuota_checkedAtUploadAndSubmit() {
+        service.issueUploadUrls("att-1", List.of(new UploadUrlRequest(0, 10, "audio/webm")));
+        verify(guestQuota).assertCanSubmit(member, PracticeMode.MOCK_EXAM, 3);
+
+        service.submit("att-1", null);
+        verify(guestQuota, times(2)).assertCanSubmit(member, PracticeMode.MOCK_EXAM, 3);
+    }
+
+    @Test
+    @DisplayName("게스트 한도에 걸리면 한도 소비·잡 저장 없이 거절")
+    void guestQuota_rejectsBeforeSaving() {
+        doThrow(new com.opicnic.opicnic.exception.RateLimitExceededException("마감"))
+                .when(guestQuota).assertCanSubmit(any(), any(), anyInt());
+
+        assertThatThrownBy(() -> service.submit("att-1", null))
+                .isInstanceOf(com.opicnic.opicnic.exception.RateLimitExceededException.class);
+        verify(jobRepository, never()).save(any());
+        verify(rateLimiter, never()).tryConsume(anyInt(), any());
+    }
+
+    @Test
     @DisplayName("URL 발급: 문항 수·크기·타입을 통과한 요청만, 키는 서버 규칙(pending/{attemptId}/q{n}.webm)")
     void issueUploadUrls_valid() {
         List<UploadUrlResponse> urls = service.issueUploadUrls("att-1", List.of(

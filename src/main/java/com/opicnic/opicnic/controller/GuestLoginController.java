@@ -2,6 +2,7 @@ package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.guest.GuestCreationThrottle;
 import com.opicnic.opicnic.service.guest.GuestProperties;
 import com.opicnic.opicnic.service.guest.GuestService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ public class GuestLoginController {
 
     private final GuestProperties properties;
     private final GuestService guestService;
+    private final GuestCreationThrottle creationThrottle;
     private final SurveyProfileRepository surveyProfileRepository;
     private final HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
@@ -38,6 +40,11 @@ public class GuestLoginController {
         Authentication current = SecurityContextHolder.getContext().getAuthentication();
         if (current != null && current.isAuthenticated() && !(current instanceof AnonymousAuthenticationToken)) {
             return "redirect:/";
+        }
+
+        // 같은 IP가 계속 새 게스트를 만들어 개인 한도를 우회하는 걸 막는다. 회원은 만들지 않는다
+        if (!creationThrottle.tryAcquire(GuestCreationThrottle.clientIp(request))) {
+            return "redirect:/auth/login?guestLimit";
         }
 
         Member guest = guestService.createGuest();

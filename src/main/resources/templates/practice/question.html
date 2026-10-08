@@ -91,6 +91,18 @@
     <p id="questionNumber" class="text-xs font-bold text-brand-500 tracking-widest mb-3">Q1</p>
     <p id="questionText" class="text-gray-900 text-xl leading-relaxed font-semibold">문제 내용</p>
 
+    <!-- 게스트 체험 한도 안내 (GuestQuotaService.addStartAttributes) -->
+    <div th:if="${guestRemaining != null and !guestBlocked}"
+         class="mt-4 flex items-center gap-2 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+        <i class="fa-solid fa-circle-info shrink-0"></i>
+        <span th:text="'오늘 체험 채점 ' + ${guestRemaining} + '문항 남았어요'"></span>
+    </div>
+    <div th:if="${guestBlocked == true}"
+         class="mt-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+        <i class="fa-solid fa-triangle-exclamation shrink-0"></i>
+        <span>오늘 체험 채점이 마감됐어요. 예시 기록은 계속 볼 수 있어요.</span>
+    </div>
+
     <!-- 인라인 에러 -->
     <div id="inlineError" class="hidden mt-4 flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
         <i class="fa-solid fa-circle-exclamation shrink-0"></i>
@@ -104,8 +116,8 @@
 <!-- 녹음 영역 -->
 <div class="flex flex-col items-center px-6 pt-8 pb-4 max-w-xl mx-auto w-full">
     <div class="relative">
-        <button id="recordButton"
-                class="relative w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 active:scale-95 transition-all text-2xl">
+        <button id="recordButton" th:disabled="${guestBlocked == true}"
+                class="relative w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 active:scale-95 transition-all text-2xl disabled:opacity-40 disabled:cursor-not-allowed">
             <i class="fa-solid fa-microphone"></i>
         </button>
     </div>

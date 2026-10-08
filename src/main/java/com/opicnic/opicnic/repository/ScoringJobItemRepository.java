@@ -55,4 +55,9 @@ public interface ScoringJobItemRepository extends JpaRepository<ScoringJobItem, 
     }
 
     long countByStatus(ScoringJobItemStatus status);
+
+    // 게스트 일일 한도: 문항(채점 요청) 단위. 접수 시각 = 잡의 createdAt
+    long countByJobMemberIdAndJobCreatedAtGreaterThanEqual(Long memberId, LocalDateTime since);
+
+    long countByJobMemberProviderAndJobCreatedAtGreaterThanEqual(String provider, LocalDateTime since);
 }

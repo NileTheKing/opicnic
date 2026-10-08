@@ -17,9 +17,11 @@ public class GuestProperties {
     private boolean enabled = false;
     // 예시 기록의 원본 회원. 비어 있으면 게스트는 빈 상태로 시작한다
     private Long sampleMemberId;
-    // 게스트 1명당 하루 접수(콤보·모의고사 1회 = 1건) 수
-    private int dailySubmissions = 2;
-    // 모든 게스트 합산 하루 접수 수 — 제공자 무료 한도 보호
-    private int globalDailySubmissions = 10;
+    // 게스트 1명당 하루 채점 문항 수(콤보 1회 = 3문항 안팎). 모의고사는 게스트에게 막혀 있다
+    private int dailyQuestions = 6;
+    // 모든 게스트 합산 하루 채점 문항 수 — 제공자 무료 한도 보호
+    private int globalDailyQuestions = 30;
+    // 같은 IP에서 시간당 만들 수 있는 게스트 수 — 새로고침·스크립트로 개인 한도를 우회하는 걸 막는다
+    private int ipHourlyCreations = 3;
     private int retentionDays = 7;
 }

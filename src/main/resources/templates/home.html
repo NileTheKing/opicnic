@@ -45,6 +45,14 @@
                 <i class="fas fa-chevron-right text-xs"></i>
             </a>
 
+            <!-- 게스트가 모의고사에 들어온 경우 (HomeController.mockExam이 돌려보낸다) -->
+            <div th:if="${param.guestMock != null}"
+                 class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>모의고사는 카카오 로그인 후 이용할 수 있어요.
+                    <a href="/auth/login" class="underline font-medium">로그인하기</a></span>
+            </div>
+
             <!-- 주제 미설정 경고 -->
             <div th:if="${selectedTopics == null or #lists.isEmpty(selectedTopics)}"
                  class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">

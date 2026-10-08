@@ -144,6 +144,11 @@ public class HomeController {
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new IllegalStateException("서베이 프로필이 없습니다."));
 
+        // 15문항이면 게스트 하루 한도를 한 번에 넘긴다 — 시작 전에 로그인 안내로 돌려보낸다
+        if (com.opicnic.opicnic.service.guest.GuestQuotaService.isGuest(member)) {
+            return "redirect:/?guestMock=true";
+        }
+
         try {
             List<QuestionDto> questions = mockExamService.createMockExam(profile);
             PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM, null, null);

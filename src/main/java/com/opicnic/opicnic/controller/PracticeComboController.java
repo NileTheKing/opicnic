@@ -38,6 +38,7 @@ public class PracticeComboController {
     private final SurveyProfileRepository surveyProfileRepository;
     private final TopicCatalog topicCatalog;
     private final PracticeAttemptService practiceAttemptService;
+    private final com.opicnic.opicnic.service.guest.GuestQuotaService guestQuotaService;
     private final Random random;
 
     @GetMapping(params = "topic")
@@ -88,6 +89,7 @@ public class PracticeComboController {
                 combo.comboPatternKey(), combo.comboCategory());
         model.addAttribute("questions", combo.questions());
         model.addAttribute("attemptId", attempt.attemptId());
+        guestQuotaService.addStartAttributes(memberId, combo.questions().size(), model);
         return "practice/question";
     }
 

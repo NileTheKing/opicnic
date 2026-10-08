@@ -33,6 +33,7 @@ public class PracticeTypeController {
     private final MemberRepository memberRepository;
     private final QuestionSetRepository questionSetRepository;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final com.opicnic.opicnic.service.guest.GuestQuotaService guestQuotaService;
     private final Random random;
 
     @GetMapping("/practice/type")
@@ -76,6 +77,7 @@ public class PracticeTypeController {
 
             model.addAttribute("questions", List.of(question));
             model.addAttribute("attemptId", attempt.attemptId());
+            guestQuotaService.addStartAttributes(memberId, 1, model);
             return "practice/question";
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("유형별 연습 시작 불가: {}", e.getMessage());

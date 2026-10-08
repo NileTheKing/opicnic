@@ -44,7 +44,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, new Random());
+                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");
@@ -84,7 +84,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, new Random());
+                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");
@@ -116,7 +116,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, new Random());
+                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");

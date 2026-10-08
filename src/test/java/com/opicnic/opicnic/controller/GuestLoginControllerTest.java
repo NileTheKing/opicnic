@@ -9,6 +9,7 @@ import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.CustomOAuth2UserService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import com.opicnic.opicnic.service.guest.GuestCreationThrottle;
 import com.opicnic.opicnic.service.guest.GuestProperties;
 import com.opicnic.opicnic.service.guest.GuestService;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = GuestLoginController.class)
-@Import({SecurityConfig.class, GuestProperties.class, GuestService.class})
+@Import({SecurityConfig.class, GuestProperties.class, GuestService.class, GuestCreationThrottle.class})
 class GuestLoginControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -104,5 +105,21 @@ class GuestLoginControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/question-sets").session(session))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void 같은_IP가_한도를_넘기면_회원을_만들지_않고_로그인_화면으로_보낸다() throws Exception {
+        properties.setEnabled(true);
+        properties.setIpHourlyCreations(1);
+        stubSave();
+        when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/auth/guest").with(csrf()).with(r -> { r.setRemoteAddr("9.9.9.9"); return r; }))
+                .andExpect(redirectedUrl("/onboarding"));
+        mockMvc.perform(post("/auth/guest").with(csrf()).with(r -> { r.setRemoteAddr("9.9.9.9"); return r; }))
+                .andExpect(redirectedUrl("/auth/login?guestLimit"));
+
+        verify(memberRepository, org.mockito.Mockito.times(1)).save(any(Member.class));
+        properties.setIpHourlyCreations(3);
     }
 }

@@ -77,6 +77,11 @@
             카카오로 시작하기
         </a>
 
+        <p th:if="${param.guestLimit != null}"
+           class="mt-3 text-center text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+            잠시 후 다시 시도해주세요. 체험 계정은 한 번에 많이 만들 수 없어요.
+        </p>
+
         <!-- 게스트 체험: POST + CSRF 토큰(th:action이 실어준다). 꺼져 있으면 버튼 자체를 숨긴다 -->
         <form th:if="${@guestProperties.enabled}" th:action="@{/auth/guest}" method="post" class="mt-3">
             <button type="submit"
