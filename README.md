@@ -59,9 +59,7 @@ OPIcnic은 이 판단들을 대신 내려 줍니다. 답변마다 등급과 고�
 <img src="docs/screenshots/coach-summary.png" alt="요약과 예상 등급" width="260"> <img src="docs/screenshots/coach-weak.png" alt="반복되는 버릇과 실제 문장 예시" width="260"> <img src="docs/screenshots/coach-types.png" alt="유형별 약점과 이번 주 과제" width="260">
 </p>
 
-- 문항을 채점할 때 버릇 태그(감정 누락, 기본 어휘 위주 등)를 함께 붙이고, 리포트를 만들 때 코드가 태그를 답변 단위로 셉니다. 3개 이상의 답변에서 나온 태그만 약점으로 올리고, 화면에도 "12개 중 8개 답변"처럼 그 횟수를 보여 줍니다. LLM은 집계 결과를 문장으로 쓰는 데만 쓰고, 예시 문장은 코드가 실제 답변에서 고릅니다.
-- 예상 등급은 최근 답변 15개의 등급 중앙값입니다. 실제 시험처럼 IH 이상이면 롤플레이 문제 해결(12번), AL이면 비교와 이슈(14, 15번)에서도 그 수준이 나와야 인정합니다.
-- 등급 기준은 등급이 공개된 실제 답변 사례로 다시 잡았습니다. 정답 범위를 정해 둔 예시 답변 21개(검증용)에서 19개가 범위 안에 들었습니다(1회 측정, [보정 기록](docs/performance/2026-10-07-grading-calibration/README.md)).
+버릇은 3개 이상의 답변에서 반복된 것만 "12개 중 8개 답변"처럼 횟수와 실제 문장을 붙여 보여 줍니다. 예상 등급은 실제 시험처럼 IH 이상이면 롤플레이 문제 해결(12번), AL이면 비교와 이슈(14, 15번)에서도 그 수준이 나와야 인정합니다. 등급 기준을 잡은 과정은 [채점 보정 기록](docs/performance/2026-10-07-grading-calibration/README.md)에 있습니다.
 
 ### 3. 시험 준비
 
@@ -71,9 +69,15 @@ OPIcnic은 이 판단들을 대신 내려 줍니다. 답변마다 등급과 고�
 <img src="docs/screenshots/plan.png" alt="시험 준비: D-day와 학습 계획" width="260"> <img src="docs/screenshots/history.png" alt="기록: 항목별 평균과 유형별 점수" width="260">
 </p>
 
-### 4. 출제
+### 4. 주제 선택과 출제
 
-온보딩에서 고득점에 불리한 배경설문 선택지(직업 관련 등)는 처음부터 빼고 보여 줍니다. 연습은 아래 단위 중에서 고르고, 어떤 단위든 실제 시험 출제 규칙대로 문제가 나옵니다.
+온보딩에서 고득점에 불리한 배경설문 선택지(직업 관련 등)는 처음부터 빼고, 남은 21개 주제를 준비 부담과 함께 보여 줍니다. 목표 등급을 고르면 연습 난이도도 맞춰집니다.
+
+<p align="center">
+<img src="docs/screenshots/onboarding-intro.png" alt="온보딩 시작 화면" width="260"> <img src="docs/screenshots/onboarding-profile.png" alt="거주 형태와 목표 등급, 권장 난이도" width="260"> <img src="docs/screenshots/onboarding-topics.png" alt="고득점에 유리한 21개 주제 선택" width="260">
+</p>
+
+연습은 아래 단위 중에서 고르고, 어떤 단위든 실제 시험 출제 규칙대로 문제가 나옵니다.
 
 | 단위 | 구성 |
 |---|---|
@@ -119,10 +123,6 @@ OPIcnic은 이 판단들을 대신 내려 줍니다. 답변마다 등급과 고�
 <td align="center">
 <strong>270s → 54s</strong><br>
 <sub>장애 복구 후 채점 완료(429 33% → 0.4%)<br>full jitter + 워커 동시성 제한</sub>
-</td>
-<td align="center">
-<strong>19 / 21</strong><br>
-<sub>예시 답변 등급이 정답 범위 안<br>실제 등급 사례로 기준 재보정</sub>
 </td>
 </tr>
 </table>
