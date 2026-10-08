@@ -1,5 +1,5 @@
 # 채점 보정 실험 — 등급을 미리 정한 답변(anchors.json)을 운영과 같은 프롬프트로 채점해 등급이 맞게 나오는지 본다.
-# 프롬프트는 GroqService.java에서 그대로 뽑고(SYSTEM_PROMPT + exampleInstruction), 등급 계산도 FeedbackService와 같게 한다.
+# 프롬프트는 LlmService.java에서 그대로 뽑고(SYSTEM_PROMPT + exampleInstruction), 등급 계산도 FeedbackService와 같게 한다.
 # 사용: set -a; . ./.env; set +a; python3 run.py groq|gemini [모델] [--level v1] [--set test]
 #   → results-<provider>[-<level>][-<set>].jsonl (이어 돌리면 끝난 건 건너뜀)
 #   --level vN: level-vN.md를 프롬프트에 덧붙여 LLM이 등급(level)을 직접 판단하고, 서버 규칙(word_cap)으로 상한만 건다
@@ -8,10 +8,22 @@ import json, os, re, sys, time, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "../../.."))
-PROVIDERS = {
-    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY", "openai/gpt-oss-120b", 65),
-    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY", "gemini-3.5-flash-lite", 6),
-}
+# 공급자 설정은 운영과 같은 파일(src/main/resources/application-<공급자>.yml)에서 읽는다 — 실험한 설정 = 운영 설정
+GAP = {"groq": 65}  # 호출 간격(초). Groq 무료는 채점 1건이 TPM 8K를 거의 다 잡아 분당 1건
+
+
+def preset(provider):
+    conf = {}
+    for line in open(os.path.join(ROOT, f"src/main/resources/application-{provider}.yml")):
+        line = line.split(" #")[0].strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        k, v = (x.strip() for x in line.split(":", 1))
+        v = v.strip('"')
+        conf[k] = re.sub(r"\$\{(\w+)}", lambda m: os.environ.get(m.group(1), ""), v)
+    return {"url": conf["spring.ai.openai.base-url"] + conf["spring.ai.openai.chat.completions-path"],
+            "key": conf["spring.ai.openai.api-key"], "model": conf["spring.ai.openai.chat.options.model"],
+            "reasoning_effort": conf.get("opicnic.llm.reasoning-effort", "")}
 
 
 def java_string(src, start):
@@ -21,7 +33,7 @@ def java_string(src, start):
 
 
 def system_prompt():
-    src = open(os.path.join(ROOT, "src/main/java/com/opicnic/opicnic/service/GroqService.java")).read()
+    src = open(os.path.join(ROOT, "src/main/java/com/opicnic/opicnic/service/LlmService.java")).read()
     return java_string(src, "SYSTEM_PROMPT =") + java_string(src, "String exampleInstruction =")
 
 
@@ -34,13 +46,13 @@ def fluency(text):
 def grade(scores):
     s = [x for x in scores if x is not None]
     avg = sum(s) / len(s)
-    for g, cut in (("AL", 4.5), ("IH", 3.8), ("IM3", 3.2), ("IM2", 2.6), ("IM1", 2.0)):
+    for g, cut in (("AL", 4.5), ("IH", 3.8), ("IM3", 3.2), ("IM2", 2.6), ("IM1", 2.0)):  # 예전 규칙은 IL이 바닥
         if avg >= cut:
             return g, avg
     return "IL", avg
 
 
-ORDER = ["IL", "IM1", "IM2", "IM3", "IH", "AL"]
+ORDER = ["NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"]
 # 서버 안전장치: 짧은 답이 문단 수준 등급을 받지 못하게 상한만 건다(올려 주지는 않는다)
 WORD_CAPS = ((35, "IM1"), (60, "IM2"), (90, "IM3"), (120, "IH"))
 
@@ -52,14 +64,14 @@ def word_cap(level, words):
     return level
 
 
-def call(provider, model, system, user):
-    url, key_env, _, _ = PROVIDERS[provider]
-    body = {"model": model, "temperature": 0.0, "response_format": {"type": "json_object"},
+def call(conf, model, system, user):
+    # 운영 채점 호출(LlmService.callOpicFeedback)과 같은 옵션
+    body = {"model": model, "temperature": 0.0, "response_format": {"type": "json_object"}, "max_tokens": 3000,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-    if provider == "groq":
-        body |= {"reasoning_effort": "low", "max_tokens": 3000}
-    req = urllib.request.Request(url, json.dumps(body).encode(), {
-        "Authorization": "Bearer " + os.environ[key_env], "Content-Type": "application/json",
+    if conf["reasoning_effort"]:
+        body["reasoning_effort"] = conf["reasoning_effort"]
+    req = urllib.request.Request(conf["url"], json.dumps(body).encode(), {
+        "Authorization": "Bearer " + conf["key"], "Content-Type": "application/json",
         "User-Agent": "opicnic-calibration/1.0"})
     while True:
         t0 = time.time()
@@ -81,8 +93,9 @@ def main():
     level_tag, set_tag = opt("--level"), opt("--set")
     pos = [a for i, a in enumerate(args) if not a.startswith("--") and (i == 0 or not args[i - 1].startswith("--"))]
     provider = pos[0]
-    model = pos[1] if len(pos) > 1 else PROVIDERS[provider][2]
-    gap = PROVIDERS[provider][3]
+    conf = preset(provider)
+    model = pos[1] if len(pos) > 1 else conf["model"]
+    gap = GAP.get(provider, 6)
     data = json.load(open(os.path.join(HERE, f"anchors-{set_tag}.json" if set_tag else "anchors.json")))
     out_path = os.path.join(HERE, "-".join(["results", provider] + [t for t in (level_tag, set_tag) if t]) + ".jsonl")
     done = set()
@@ -98,7 +111,7 @@ def main():
         user = f"문제 유형: {q['type']}\n질문: {q['content']}\n사용자 응답: {a['text']}"
         rec = {"model": model, "q": a["q"], "level": a["level"], "words": len(a["text"].split())}
         try:
-            resp, secs = call(provider, model, system, user)
+            resp, secs = call(conf, model, system, user)
             raw = resp["choices"][0]["message"]["content"]
             rec |= {"secs": round(secs, 1), "usage": resp.get("usage"), "raw": raw}
             fb = json.loads(raw)

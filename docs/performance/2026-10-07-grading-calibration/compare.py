@@ -2,7 +2,7 @@
 import json, os, re, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORDER = ["IL", "IM1", "IM2", "IM3", "IH", "AL"]
+ORDER = ["NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"]
 A = {(a["q"], a["level"]): a["text"] for f in ("anchors.json", "anchors-test.json")
      for a in json.load(open(os.path.join(HERE, f)))["anchors"]}
 norm = lambda s: re.sub(r"[^a-z0-9 ]", "", (s or "").lower().replace("...", " ")).split()
