@@ -35,7 +35,9 @@ import java.util.UUID;
 //   ./gradlew test --tests '*GuestSampleGenerator*'
 // 이야기: 3주 동안 콤보 4번, IM1 → IM2 → IM3 → IH로 올라가는 학습자. 질문 id는 운영과 같은 question 테이블 기준.
 @SpringBootTest
-@EnabledIfEnvironmentVariable(named = "GENERATE_GUEST_SAMPLE", matches = "true")
+// 코칭만 다시: GENERATE_GUEST_SAMPLE=coaching — 채점 결과는 sample.json 그대로 두고 리포트만 현재 코드로 다시 만든다
+//   (채점을 다시 하면 등급이 바뀌어 README 사진과 어긋난다)
+@EnabledIfEnvironmentVariable(named = "GENERATE_GUEST_SAMPLE", matches = "true|coaching")
 class GuestSampleGenerator {
 
     @Autowired private MemberRepository memberRepository;
@@ -47,6 +49,8 @@ class GuestSampleGenerator {
     @Autowired private CoachingService coachingService;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private TransactionTemplate tx;
+    @Autowired private GuestSampleSource sampleSource;
+    @Autowired private GuestSampleCopier sampleCopier;
 
     private record Answer(long questionId, String text) {}
 
@@ -75,6 +79,10 @@ class GuestSampleGenerator {
 
     @Test
     void generate() throws Exception {
+        if ("coaching".equals(System.getenv("GENERATE_GUEST_SAMPLE"))) {
+            regenerateCoaching();
+            return;
+        }
         Thread.sleep(60_000);   // 직전 호출이 남긴 분당 한도가 비워질 때까지
         Member member = memberRepository.save(Member.builder()
                 .provider("sample-gen").providerId(UUID.randomUUID().toString()).nickname("예시").role(Role.USER).build());
@@ -110,5 +118,21 @@ class GuestSampleGenerator {
         objectMapper.copy().enable(SerializationFeature.INDENT_OUTPUT).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .writeValue(out.toFile(), sample);
         System.out.println("[sample] wrote " + out.toAbsolutePath() + " results=" + results.size());
+    }
+
+    private void regenerateCoaching() throws Exception {
+        GuestSample old = sampleSource.get().orElseThrow();
+        Member member = memberRepository.save(Member.builder()
+                .provider("sample-gen").providerId(UUID.randomUUID().toString()).nickname("예시").role(Role.USER).build());
+        tx.executeWithoutResult(st -> sampleCopier.copy(old, member, LocalDateTime.now()));   // 운영에선 GuestService 트랜잭션 안. 결과·태그를 그대로 넣는다(옛 리포트도 같이 들어가지만 새로 만든다)
+        CoachingReport report = coachingService.generate(member);
+        write(new GuestSample(old.results(), new GuestSample.Report(report.getContent(), report.getBasedOnCount())));
+    }
+
+    private void write(GuestSample sample) throws Exception {
+        Path out = Path.of("src/main/resources", GuestSampleSource.PATH);
+        objectMapper.copy().enable(SerializationFeature.INDENT_OUTPUT).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .writeValue(out.toFile(), sample);
+        System.out.println("[sample] wrote " + out.toAbsolutePath() + " results=" + sample.results().size());
     }
 }

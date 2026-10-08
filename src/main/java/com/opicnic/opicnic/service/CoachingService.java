@@ -87,6 +87,7 @@ public class CoachingService {
             Map.entry("OPINION_MISSING", "본인 의견이 빠져 있어서"),
             Map.entry("REASON_LACKING", "이유 제시가 부족해서")
     );
+    // TAG_REASON에 없는 태그는 이유를 비워 둔다 — "반복적으로 나타나는 패턴이라서" 같은 빈말을 붙이지 않는다
 
     private static final Map<String, String> TYPE_PRACTICE_FOCUS = Map.ofEntries(
             Map.entry("TYPE_1", "감각적 형용사로 묘사를 풍부하게 전개하는 연습"),
@@ -116,7 +117,9 @@ public class CoachingService {
 
     private record Candidate(Long resultId, String quote, String fix) {}
     private record ExampleItem(String before, String after, String why) {}
-    private record ElementSections(String text, Map<String, String> byElement, Map<String, List<ExampleItem>> examplesByElement) {}
+    // answerCountByElement: 그 요소의 버릇 태그가 하나라도 붙은 서로 다른 답변 수 — 화면 배지("12개 중 N개 답변")의 근거
+    private record ElementSections(String text, Map<String, String> byElement, Map<String, List<ExampleItem>> examplesByElement,
+                                   Map<String, Integer> answerCountByElement) {}
     private record TypeSections(String text, Map<String, String> byType) {}
 
     public CoachingReport generate(Member member) {
@@ -149,7 +152,7 @@ public class CoachingService {
                 + typeSections.text();
 
         String content = llmService.getCoachingReport(summary, targetGrade);
-        content = fillGapsAndPostProcess(content, elementSections, elementScores, typeSections, typeStats, targetGrade);
+        content = fillGapsAndPostProcess(content, elementSections, elementScores, typeSections, typeStats, targetGrade, results.size());
 
         return coachingReportRepository.save(CoachingReport.builder()
                 .member(member)
@@ -168,7 +171,7 @@ public class CoachingService {
         Map<String, List<Candidate>> candidates = new LinkedHashMap<>();
 
         for (FeedbackTag t : tags) {
-            if (t.getTag().endsWith("_GOOD")) continue;
+            if (FeedbackTagVocabulary.isPositive(t.getTag())) continue;
             FeedbackResult r = resultById.get(t.getFeedbackResult().getId());
             if (r == null || r.getQuestionType() == null) continue;
             if (t.getCategory().equals("imagery") && !GROUP_A.contains(r.getQuestionType().name())) continue;
@@ -194,6 +197,7 @@ public class CoachingService {
         StringBuilder sb = new StringBuilder();
         Map<String, String> byElement = new LinkedHashMap<>();
         Map<String, List<ExampleItem>> examplesByElement = new LinkedHashMap<>();
+        Map<String, Integer> answerCount = new LinkedHashMap<>();
         for (String element : ELEMENT_ORDER) {
             List<String> keys = keysByElement.get(element);
             if (keys == null || keys.isEmpty()) continue; // 데이터 없는 요소는 헤더 자체를 안 만듦
@@ -204,22 +208,35 @@ public class CoachingService {
             for (String key : keys) {
                 String tag = key.split("\\.")[1];
                 int count = resultIdsByKey.get(key).size();
-                List<Candidate> cs = candidates.getOrDefault(key, List.of());
+                // 예시 문장은 그 답변의 요소 인용(표현력이면 expressionQuote 하나)이라, 같은 요소에 버릇 태그가 여럿 붙은
+                // 답변이면 인용이 다른 버릇을 가리킬 수 있다(감각적 묘사 부족 태그에 시제를 고친 문장). 이 태그만 붙은 답변을 먼저 고른다
+                List<Candidate> cs = candidates.getOrDefault(key, List.of()).stream()
+                        .sorted(Comparator.comparingInt(c -> weakKeysInElement(element, c.resultId(), resultIdsByKey)))
+                        .toList();
                 Candidate chosen = cs.stream().filter(c -> !usedInElement.contains(c.resultId())).findFirst()
                         .orElse(cs.isEmpty() ? null : cs.get(0));
                 if (chosen != null) {
                     usedInElement.add(chosen.resultId());
-                    examples.add(new ExampleItem(chosen.quote(), chosen.fix(),
-                            TAG_REASON.getOrDefault(tag, "반복적으로 나타나는 패턴이라서")));
+                    examples.add(new ExampleItem(chosen.quote(), chosen.fix(), TAG_REASON.getOrDefault(tag, "")));
                 }
                 String example = chosen != null ? "'" + chosen.quote() + "' -> '" + chosen.fix() + "'" : "null";
                 lines.append("- ").append(tag).append(": ").append(count).append("건 example=").append(example).append("\n");
             }
             byElement.put(element, lines.toString());
             examplesByElement.put(element, examples);
+            answerCount.put(element, (int) resultIdsByKey.entrySet().stream()
+                    .filter(e -> element.equals(CATEGORY_TO_ELEMENT.get(e.getKey().split("\\.")[0])))
+                    .flatMap(e -> e.getValue().stream()).distinct().count());
             sb.append("【").append(element).append("】\n").append(lines).append("\n");
         }
-        return new ElementSections(sb.toString(), byElement, examplesByElement);
+        return new ElementSections(sb.toString(), byElement, examplesByElement, answerCount);
+    }
+
+    // 이 답변에 붙은, 같은 요소의 버릇 태그 종류 수
+    private static int weakKeysInElement(String element, Long resultId, Map<String, Set<Long>> resultIdsByKey) {
+        return (int) resultIdsByKey.entrySet().stream()
+                .filter(e -> element.equals(CATEGORY_TO_ELEMENT.get(e.getKey().split("\\.")[0])) && e.getValue().contains(resultId))
+                .count();
     }
 
     // 유형별(TYPE_1~10) 집계 — 같은 태그 데이터를 questionType 축으로 한 번 더 그룹핑. 새 LLM 호출 아님.
@@ -233,7 +250,7 @@ public class CoachingService {
         // FeedbackResult id 개수로 비율의 분자를 구한다.
         Map<String, Set<Long>> resultIdsByKey = new LinkedHashMap<>(); // "TYPE_9|category.tag" -> result id 집합
         for (FeedbackTag t : tags) {
-            if (t.getTag().endsWith("_GOOD")) continue;
+            if (FeedbackTagVocabulary.isPositive(t.getTag())) continue;
             FeedbackResult r = resultById.get(t.getFeedbackResult().getId());
             if (r == null || r.getQuestionType() == null) continue;
             if (t.getCategory().equals("imagery") && !GROUP_A.contains(r.getQuestionType().name())) continue;
@@ -291,7 +308,8 @@ public class CoachingService {
     // (3) criteria는 weakCriteria 모양(score+examples[])으로 코드가 재조립하고, types는 label/strategy를 코드가 붙이고
     // 자격 없는(비율 판정 미통과) 항목은 걸러낸다. score/examples 전부 코드 — LLM은 analysis/advice 텍스트만 씀.
     private String fillGapsAndPostProcess(String reportJson, ElementSections elementSections, Map<String, Double> elementScores,
-                                           TypeSections typeSections, List<ExamPlanService.TypeStat> typeStats, String targetGrade) {
+                                           TypeSections typeSections, List<ExamPlanService.TypeStat> typeStats, String targetGrade,
+                                           int totalCount) {
         try {
             Map<String, String> typeLabels = typeStats.stream()
                     .collect(Collectors.toMap(ExamPlanService.TypeStat::typeKey, ExamPlanService.TypeStat::typeLabel));
@@ -309,6 +327,9 @@ public class CoachingService {
                 ObjectNode entry = objectMapper.createObjectNode();
                 entry.put("name", name);
                 entry.put("score", elementScores.getOrDefault(name, 0.0));
+                // 약점은 점수가 아니라 "버릇이 답변 3개 이상에서 반복"으로 뽑힌다 — 화면은 점수 대신 이 횟수를 보여준다
+                entry.put("answerCount", elementSections.answerCountByElement().getOrDefault(name, 0));
+                entry.put("totalCount", totalCount);
                 entry.put("analysis", item.path("analysis").asText(""));
                 entry.put("advice", item.path("advice").asText(""));
                 ArrayNode examples = objectMapper.createArrayNode();

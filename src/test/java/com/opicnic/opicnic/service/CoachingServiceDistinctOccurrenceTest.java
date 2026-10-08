@@ -123,4 +123,20 @@ class CoachingServiceDistinctOccurrenceTest {
         // 서로 다른 답변은 2개뿐이라(< MIN_PATTERN_COUNT=3) 여전히 패턴으로 보고되면 안 된다.
         assertThat(byElement).doesNotContainKey("정확성");
     }
+
+    // 표현력의 잘한 점 태그(VOCAB_RICH 등)는 _GOOD로 끝나지 않는다 — 약점으로 세면 "다양한 어휘"가 반복 약점이 된다
+    @Test
+    void positiveExpressionTagsAreNotCountedAsWeakPatterns() throws Exception {
+        CoachingService service = newService();
+        FeedbackResult r1 = resultWithId(1L), r2 = resultWithId(2L), r3 = resultWithId(3L);
+        Map<Long, FeedbackResult> resultById = new HashMap<>(Map.of(1L, r1, 2L, r2, 3L, r3));
+
+        List<FeedbackTag> tags = List.of(
+                tagFor(r1, "vocab", "VOCAB_RICH"), tagFor(r2, "vocab", "VOCAB_RICH"), tagFor(r3, "vocab", "VOCAB_RICH"),
+                tagFor(r1, "sentence", "SENTENCE_VARIED"), tagFor(r2, "sentence", "SENTENCE_VARIED"), tagFor(r3, "sentence", "SENTENCE_VARIED"),
+                tagFor(r1, "imagery", "IMAGERY_VIVID"), tagFor(r2, "imagery", "IMAGERY_VIVID"), tagFor(r3, "imagery", "IMAGERY_VIVID")
+        );
+
+        assertThat(byElementOf(invokeBuildElementSections(service, resultById, tags))).doesNotContainKey("표현력");
+    }
 }

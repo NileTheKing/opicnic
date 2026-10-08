@@ -55,8 +55,9 @@
             <div th:each="item : ${parsed['weakCriteria']}" class="bg-white rounded-2xl p-4 shadow-sm space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-bold text-gray-900" th:text="${item['name']}"></span>
+                    <!-- 약점은 점수가 아니라 반복 횟수로 뽑힌다. 예전 리포트(answerCount 없음)만 점수 -->
                     <span class="text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-2.5 py-1 tabular-nums"
-                          th:text="${item['score']} + ' / 5'"></span>
+                          th:text="${item['answerCount'] != null} ? ${item['totalCount']} + '개 중 ' + ${item['answerCount']} + '개 답변' : ${item['score']} + ' / 5'"></span>
                 </div>
                 <p class="text-xs text-gray-400 leading-relaxed" th:text="${item['analysis']}"></p>
                 <p th:if="${item['advice'] != null}" class="text-sm text-gray-700 leading-relaxed" th:text="${item['advice']}"></p>
@@ -71,7 +72,7 @@
                             <span class="text-rose-700 font-mono text-[13px]" th:text="'&quot;' + ${ex['before']} + '&quot;'"></span><br>
                             <span class="text-gray-400">→</span>
                             <span class="text-emerald-700 font-mono text-[13px]" th:text="'&quot;' + ${ex['after']} + '&quot;'"></span>
-                            <p class="text-xs text-gray-400 mt-1.5 pl-3 border-l border-gray-200" th:text="${ex['why']}"></p>
+                            <p th:if="${ex['why'] != null and !#strings.isEmpty(ex['why'])}" class="text-xs text-gray-400 mt-1.5 pl-3 border-l border-gray-200" th:text="${ex['why']}"></p>
                         </div>
                     </div>
                 </div>

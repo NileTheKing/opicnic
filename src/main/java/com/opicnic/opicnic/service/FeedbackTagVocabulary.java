@@ -15,6 +15,12 @@ public final class FeedbackTagVocabulary {
     public static final Set<String> EXPRESSION_VOCAB = Set.of("VOCAB_BASIC", "VOCAB_RICH");
     public static final Set<String> EXPRESSION_SENTENCE = Set.of("SENTENCE_SIMPLE", "SENTENCE_VARIED");
     public static final Set<String> EXPRESSION_IMAGERY = Set.of("IMAGERY_FLAT", "IMAGERY_VIVID");
+    // 잘한 점 태그. 대부분 _GOOD로 끝나지만 표현력 3개는 이름이 다르다 — endsWith("_GOOD")만 보면 이 셋이
+    // 약점으로 세어져 "다양한 어휘를 썼다"가 코칭의 반복 약점이 됐다
+    public static boolean isPositive(String tag) {
+        return tag.endsWith("_GOOD") || tag.equals("VOCAB_RICH") || tag.equals("SENTENCE_VARIED") || tag.equals("IMAGERY_VIVID");
+    }
+
     public static final Set<String> ACCURACY = Set.of(
             "TENSE_ERROR", "ARTICLE_ERROR", "PREPOSITION_ERROR", "SUBJECT_VERB_ERROR");
 
