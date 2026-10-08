@@ -44,18 +44,18 @@ public class CoachingService {
     private static final Set<String> GROUP_A = Set.of("TYPE_1", "TYPE_2", "TYPE_3", "TYPE_4", "TYPE_8");
 
     private static final Map<String, String> CATEGORY_TO_ELEMENT = Map.of(
-            "mainPoint", "메인포인트",
+            "mainPoint", "핵심전달",
             "vocab", "표현력", "sentence", "표현력", "imagery", "표현력",
             "accuracy", "정확성",
-            "content", "내용 구성"
+            "content", "내용구성"
     );
-    private static final List<String> ELEMENT_ORDER = List.of("메인포인트", "표현력", "정확성", "내용 구성");
+    private static final List<String> ELEMENT_ORDER = List.of("핵심전달", "표현력", "정확성", "내용구성");
 
     private static final Map<String, java.util.function.Function<FeedbackResult, Integer>> ELEMENT_SCORE_GETTER = Map.of(
-            "메인포인트", FeedbackResult::getMainPointScore,
+            "핵심전달", FeedbackResult::getMainPointScore,
             "표현력", FeedbackResult::getExpressionScore,
             "정확성", FeedbackResult::getAccuracyScore,
-            "내용 구성", FeedbackResult::getContentScore
+            "내용구성", FeedbackResult::getContentScore
     );
 
     // 태그 -> "왜 약점인지" 짧은 이유. examples[].why를 코드가 채우는 데 씀 (LLM 판단 아님).
@@ -158,7 +158,7 @@ public class CoachingService {
                 .build());
     }
 
-    // 요소별(메인포인트/표현력/정확성/내용구성) 집계 — 태그를 코드가 세고, LLM은 이 결과만 문장으로 씀
+    // 요소별(핵심전달/표현력/정확성/내용구성) 집계 — 태그를 코드가 세고, LLM은 이 결과만 문장으로 씀
     private ElementSections buildElementSections(Map<Long, FeedbackResult> resultById, List<FeedbackTag> tags) {
         // FU-06: "category.tag" -> 이 태그가 붙은 서로 다른 FeedbackResult id 집합. row 개수가 아니라
         // 답변(FeedbackResult) 단위로 세야 한다 — addTags()가 답변 하나 안에서는 이제 같은 태그를

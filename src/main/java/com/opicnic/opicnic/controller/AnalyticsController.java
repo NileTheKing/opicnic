@@ -32,7 +32,7 @@ public class AnalyticsController {
     private static final LinkedHashMap<String, String> SCORE_LABELS = new LinkedHashMap<>();
     static {
         SCORE_LABELS.put("mainPoint",   "핵심전달");
-        SCORE_LABELS.put("content",     "내용전개");
+        SCORE_LABELS.put("content",     "내용구성");
         SCORE_LABELS.put("expression",  "표현력");
         SCORE_LABELS.put("fluency",     "발화량");
         SCORE_LABELS.put("accuracy",    "정확성");

@@ -45,7 +45,8 @@ public class TodayController {
     @GetMapping
     public String today(@AuthenticationPrincipal OAuth2User oAuth2User, Model model) {
         Member member = resolveMember(oAuth2User);
-        Optional<ExamSchedule> scheduleOpt = examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId());
+        Optional<ExamSchedule> scheduleOpt = examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId())
+                .filter(s -> !ExamPlanService.isOver(s));
         model.addAttribute("hasSchedule", scheduleOpt.isPresent());
         if (scheduleOpt.isEmpty()) {
             return "today";

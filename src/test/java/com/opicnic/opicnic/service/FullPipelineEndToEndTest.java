@@ -129,12 +129,12 @@ class FullPipelineEndToEndTest {
 
         // 원본 태깅 카테고리(6개, flat) -> 실제 리포트 상위 요소(4개)로 코드가 직접 그룹핑.
         Map<String, String> categoryToElement = Map.of(
-                "mainPoint", "메인포인트",
+                "mainPoint", "핵심전달",
                 "vocab", "표현력", "sentence", "표현력", "imagery", "표현력",
                 "accuracy", "정확성",
-                "content", "내용 구성"
+                "content", "내용구성"
         );
-        List<String> elementOrder = List.of("메인포인트", "표현력", "정확성", "내용 구성");
+        List<String> elementOrder = List.of("핵심전달", "표현력", "정확성", "내용구성");
 
         // 요소별 섹션: 요소 안에서만 예시 분산배정 (요소 간 재사용 회피, 요소 내 하위태그 겹침은 허용)
         Map<String, List<String>> keysByElement = new LinkedHashMap<>();

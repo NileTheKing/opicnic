@@ -156,7 +156,7 @@ public class FeedbackService {
     }
 
     private static String computeOverallText(String grade, Integer... scores) {
-        String[] labels = {"핵심전달", "표현력", "정확성", "발화량", "내용전개"};
+        String[] labels = {"핵심전달", "표현력", "정확성", "발화량", "내용구성"};
         int minScore = 5;
         String weakest = null;
         for (int i = 0; i < scores.length; i++) {

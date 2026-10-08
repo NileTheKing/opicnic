@@ -4,6 +4,8 @@ import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.enums.Role;
 import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
+import com.opicnic.opicnic.domain.ExamSchedule;
+import com.opicnic.opicnic.repository.ExamScheduleRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.SurveyTopicPolicy;
@@ -32,7 +34,8 @@ class GuestServiceTest {
     private final GuestProperties properties = new GuestProperties();
     private final SurveyProfileRepository surveyProfileRepository = mock(SurveyProfileRepository.class);
     private final GuestSampleSource sampleSource = mock(GuestSampleSource.class);
-    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, sampleSource, surveyProfileRepository);
+    private final ExamScheduleRepository examScheduleRepository = mock(ExamScheduleRepository.class);
+    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, sampleSource, surveyProfileRepository, examScheduleRepository);
 
     GuestServiceTest() {
         when(sampleSource.get()).thenReturn(Optional.empty());
@@ -94,5 +97,15 @@ class GuestServiceTest {
         assertThat(p.getResidenceType()).isEqualTo(SurveyProfile.ResidenceType.ALONE);
         assertThat(new SurveyTopicPolicy().isValid(SurveyTopicPolicy.allTopics())).isTrue();
         assertThat(p.getSelectedTopics()).containsAll(SurveyTopicPolicy.allTopics()).contains(SurveyTopic.LIVING_ALONE);
+    }
+
+    @Test
+    void 시험_일정은_만든_날부터_3주_뒤라_언제_들어와도_지나지_않는다() {
+        service.createGuest();
+
+        ArgumentCaptor<ExamSchedule> saved = ArgumentCaptor.forClass(ExamSchedule.class);
+        verify(examScheduleRepository).save(saved.capture());
+        assertThat(saved.getValue().getExamDate()).isEqualTo(java.time.LocalDate.now().plusDays(21));
+        assertThat(saved.getValue().getTargetGrade()).isEqualTo(SurveyProfile.TargetGrade.IH);
     }
 }

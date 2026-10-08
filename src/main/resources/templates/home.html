@@ -134,7 +134,7 @@
                         <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
                             <i class="fa-solid fa-list-check text-gray-500 text-sm"></i>
                         </div>
-                        <span class="text-xs font-bold text-brand-600" th:text="'D-' + ${daysLeft}"></span>
+                        <span class="text-xs font-bold text-brand-600" th:text="${daysLeft == 0} ? 'D-Day' : 'D-' + ${daysLeft}"></span>
                     </div>
                     <p class="text-sm font-bold text-gray-800">오늘 할 일</p>
                     <p class="text-xs text-gray-400 mt-0.5">

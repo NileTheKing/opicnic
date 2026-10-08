@@ -1,11 +1,13 @@
 package com.opicnic.opicnic.service.guest;
 
+import com.opicnic.opicnic.domain.ExamSchedule;
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.NotificationSetting;
 import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.domain.enums.Role;
+import com.opicnic.opicnic.repository.ExamScheduleRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.SurveyTopicPolicy;
@@ -18,6 +20,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +32,14 @@ import java.util.UUID;
 public class GuestService {
 
     static final String NICKNAME = "게스트";
+    static final int EXAM_IN_DAYS = 21;
 
     private final MemberRepository memberRepository;
     private final GuestProperties properties;
     private final GuestSampleCopier sampleCopier;
     private final GuestSampleSource sampleSource;
     private final SurveyProfileRepository surveyProfileRepository;
+    private final ExamScheduleRepository examScheduleRepository;
 
     // 방문자마다 새 회원 — 다른 방문자의 녹음·답변이 섞이면 안 된다. 권한은 항상 USER(ADMIN 불가).
     @Transactional
@@ -55,7 +60,19 @@ public class GuestService {
         sampleSource.get().ifPresent(sample -> sampleCopier.copy(sample, saved, LocalDateTime.now()));
         // 둘러보러 온 사람에게 2분 설정을 먼저 시키지 않는다 — 온보딩 "전체 선택"과 같은 기본값. 바꾸고 싶으면 마이페이지에서
         surveyProfileRepository.save(defaultProfile(guest));
+        // 시험 준비·오늘 할 일 화면이 비어 보이지 않게 — 날짜를 고정하면 언젠가 지나므로 만들 때마다 3주 뒤
+        examScheduleRepository.save(defaultSchedule(guest, LocalDate.now()));
         return guest;
+    }
+
+    static ExamSchedule defaultSchedule(Member guest, LocalDate today) {
+        return ExamSchedule.builder()
+                .member(guest)
+                .examDate(today.plusDays(EXAM_IN_DAYS))
+                .targetGrade(SurveyProfile.TargetGrade.IH)
+                .dailyMinutes(60)
+                .studyDaysPerWeek(5)
+                .build();
     }
 
     static SurveyProfile defaultProfile(Member guest) {

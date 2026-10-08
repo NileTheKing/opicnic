@@ -77,7 +77,8 @@ public class HomeController {
     // B(오늘 할 일) 요약 위젯 — 일정이 있을 때만 노출, 실제 계산은 /today와 동일하게 ExamPlanService.buildPlan() 재사용
     private void addTodaySummary(Member member, Model model) {
         model.addAttribute("hasSchedule", false);
-        examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId()).ifPresent(schedule -> {
+        examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId())
+                .filter(s -> !ExamPlanService.isOver(s)).ifPresent(schedule -> {
             List<FeedbackResult> results = feedbackResultRepository.findSummaryByMemberId(member.getId());
             ExamPlanService.DiagnosisResult diagnosis = examPlanService.diagnose(results);
             int dailyMinutes = schedule.getDailyMinutes() != null ? schedule.getDailyMinutes() : 60;

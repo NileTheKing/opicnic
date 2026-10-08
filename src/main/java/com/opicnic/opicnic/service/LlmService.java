@@ -123,7 +123,7 @@ public class LlmService {
                         new SocketTimeoutException("Read timed out"));
             }
             log.info("[MOCK] LLM 호출 스킵, 고정 응답 반환 (delay={}ms)", mockDelayMs);
-            String mock = "{\"mainPoint\":\"메인포인트가 명확합니다.\",\"mainPointScore\":3,\"mainPointQuote\":\"\",\"mainPointFix\":\"\"," +
+            String mock = "{\"mainPoint\":\"핵심전달가 명확합니다.\",\"mainPointScore\":3,\"mainPointQuote\":\"\",\"mainPointFix\":\"\"," +
                     "\"expression\":\"어휘 사용이 적절합니다.\",\"expressionScore\":3,\"expressionQuote\":\"\",\"expressionFix\":\"\"," +
                     "\"accuracy\":\"시제가 올바릅니다.\",\"accuracyScore\":3,\"accuracyQuote\":\"\",\"accuracyFix\":\"\"," +
                     "\"fluencyScore\":0," +
@@ -231,9 +231,9 @@ public class LlmService {
     // Call 2: 구조화된 태그 집계 결과만으로 코칭 리포트 작성 (Call1 없이, 글쓰기 전용)
     public String getCoachingReport(String tagSummary, String targetGrade) {
         if (!aiEnabled) {
-            return "{\"summary\":\"메인포인트 전달이 가장 약합니다. 최근 답변 다수에서 이유/감정 표현 없이 사실만 나열하는 패턴이 보입니다.\"," +
+            return "{\"summary\":\"핵심전달 전달이 가장 약합니다. 최근 답변 다수에서 이유/감정 표현 없이 사실만 나열하는 패턴이 보입니다.\"," +
                     "\"strength\":\"문법 오류는 거의 없어 정확성 면에서는 안정적입니다.\"," +
-                    "\"criteria\":[{\"name\":\"메인포인트\",\"analysis\":\"이유나 감정 표현 없이 사실만 나열하는 경우가 많습니다.\",\"advice\":\"답변 초반에 이유를 붙이는 연습을 해보세요. 한 문장이 길어지면 duration을 놓치기 쉬우니 두 문장으로 나눠보세요.\"}]," +
+                    "\"criteria\":[{\"name\":\"핵심전달\",\"analysis\":\"이유나 감정 표현 없이 사실만 나열하는 경우가 많습니다.\",\"advice\":\"답변 초반에 이유를 붙이는 연습을 해보세요. 한 문장이 길어지면 duration을 놓치기 쉬우니 두 문장으로 나눠보세요.\"}]," +
                     "\"types\":[{\"typeKey\":\"TYPE_9\",\"pattern\":\"비교 프레임 없이 대상만 나열하는 경우가 반복됩니다.\"}]}";
         }
 
@@ -247,7 +247,7 @@ public class LlmService {
                 "  5. 최종 출력 직전에 summary/strength/analysis/advice/pattern 텍스트 전체를 다시 훑어서, WHY_MISSING·VOCAB_BASIC처럼 대문자와 밑줄로 된 태그 코드가 그대로 남아있는지 확인해라. 남아있으면 그 문장을 자연스러운 한국어로 다시 써서 교체해라.\n\n" +
                 "규칙:\n" +
                 "- criteria는 입력에 등장한 【요소명】 섹션당 정확히 1개씩만 만들어라. 섹션이 2개면 criteria도 2개, 섹션이 없으면 criteria도 없다. 입력에 없는 섹션(예: 【정확성】 헤더가 안 보이면)은 criteria에 절대 추가하지 마라 — 좋다는 말도, 빈 advice도 넣지 말고 그냥 통째로 빼라.\n" +
-                "- criteria의 name은 섹션 헤더에 있는 요소명을 정확히 그대로 써라 (예: '메인포인트', '표현력', '정확성', '내용 구성') — 절대 다른 표현으로 바꾸거나 풀어쓰지 마라.\n" +
+                "- criteria의 name은 섹션 헤더에 있는 요소명을 정확히 그대로 써라 (예: '핵심전달', '표현력', '정확성', '내용구성') — 절대 다른 표현으로 바꾸거나 풀어쓰지 마라.\n" +
                 "- types는 입력에 등장한 【유형: ...】 섹션당 정확히 1개씩만 만들어라. 섹션이 하나도 없으면 types도 반드시 빈 배열. **입력에 등장하지 않은 유형은 네가 알고 있는 지식이 있더라도 절대 추가하지 마라** — types의 개수는 입력의 【유형: ...】 섹션 개수와 정확히 같아야 한다.\n" +
                 "- types의 typeKey는 섹션 헤더에 있는 TYPE_9 같은 코드를 그대로 써라 (한글 이름으로 바꾸지 마라). pattern은 해당 유형 섹션의 태그/카운트를 근거로 새로 쓴 한국어 문장이어야 한다 — 'TAG_NAME: n/m건' 같은 원본 형식을 그대로 붙여넣지 마라. strategy 필드는 절대 만들지 마라 — 그건 코드가 붙인다.\n" +
                 "- 한 섹션 안에 태그가 여러 개면 analysis 한 문장 안에서 같이 언급해라.\n" +
@@ -264,7 +264,7 @@ public class LlmService {
                 "{\n" +
                 "  \"summary\": \"전체 패턴 2문장 요약\",\n" +
                 "  \"strength\": \"잘하고 있는 점 1가지\",\n" +
-                "  \"criteria\": [{\"name\": \"메인포인트\", \"analysis\": \"...\", \"advice\": \"...\"}],\n" +
+                "  \"criteria\": [{\"name\": \"핵심전달\", \"analysis\": \"...\", \"advice\": \"...\"}],\n" +
                 "  \"types\": [{\"typeKey\": \"TYPE_9\", \"pattern\": \"...\"}]\n" +
                 "}"
         );

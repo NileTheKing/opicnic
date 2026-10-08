@@ -37,6 +37,11 @@
             <span>저장하지 못했어요. 시험일은 오늘 이후로, 하루 공부 시간/주 공부 일수는 화면에 제공된 값 중에서 선택해주세요.</span>
         </div>
 
+        <!-- 지난 시험: 계획 대신 다음 일정 등록 안내 -->
+        <div th:if="${pastExamDate != null}" class="bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-700" th:text="${pastExamDate} + ' 시험이 끝났어요. 다음 시험 일정을 등록하면 계획을 다시 세워 드려요.'"></p>
+        </div>
+
         <!-- D-day 헤더 + 학습 계획 (시험 등록 후) -->
         <div th:if="${plan != null}">
 
@@ -45,7 +50,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-brand-200 text-xs font-medium mb-0.5" th:text="${schedule.examDate} + ' 시험'"></p>
-                        <p class="text-4xl font-black" th:text="'D-' + ${plan.daysLeft()}"></p>
+                        <p class="text-4xl font-black" th:text="${plan.daysLeft() == 0} ? 'D-Day' : 'D-' + ${plan.daysLeft()}"></p>
                     </div>
                     <div class="text-right">
                         <p class="text-brand-200 text-xs mb-0.5">목표</p>

@@ -63,7 +63,7 @@ public class ExamPlanService {
         // 표본이 없는 항목은 overall 평균과 scoreAvgs(최약점 판정용)에서 아예 제외한다.
         Map<String, Double> rawAvgs = new LinkedHashMap<>();
         rawAvgs.put("핵심전달", weightedAvg(results, r -> r.getMainPointScore()));
-        rawAvgs.put("내용전개",  weightedAvg(results, r -> r.getContentScore()));
+        rawAvgs.put("내용구성",  weightedAvg(results, r -> r.getContentScore()));
         rawAvgs.put("표현력",     weightedAvg(results, r -> r.getExpressionScore()));
         rawAvgs.put("발화량",     weightedAvg(results, r -> r.getFluencyScore()));
         rawAvgs.put("정확성",     weightedAvg(results, r -> r.getAccuracyScore()));
@@ -85,7 +85,7 @@ public class ExamPlanService {
                                LocalDate examDate, int dailyMinutes, int studyDaysPerWeek,
                                List<FeedbackResult> results) {
         long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), examDate);
-        if (daysLeft <= 0) {
+        if (daysLeft < 0) {  // 화면은 isOver로 걸러 여기까지 오지 않는다. 시험 당일(0)은 D-Day로 계획을 보여준다
             return new StudyPlan(0, 0, 0, List.of(), List.of(), "시험일이 이미 지났어요.");
         }
 
@@ -97,6 +97,11 @@ public class ExamPlanService {
 
         return new StudyPlan(daysLeft, dailyComboTarget, weeklyComboTarget,
                 weakCombos, weakTypes, buildMessage(daysLeft, target));
+    }
+
+    // 시험일이 지난 일정은 없는 것으로 본다 — 계획(D-day, 하루 목표, 막바지 추천)이 전부 의미가 없어진다
+    public static boolean isOver(com.opicnic.opicnic.domain.ExamSchedule schedule) {
+        return schedule.getExamDate() == null || schedule.getExamDate().isBefore(LocalDate.now());
     }
 
     public List<ComboStat> buildWeakCombos(List<FeedbackResult> results) {

@@ -57,7 +57,9 @@ public class ExamController {
                 .map(com.opicnic.opicnic.service.ComboPattern::category)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
-        Optional<ExamSchedule> schedule = examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId());
+        Optional<ExamSchedule> latest = examScheduleRepository.findTopByMemberIdOrderByCreatedAtDesc(member.getId());
+        latest.filter(ExamPlanService::isOver).ifPresent(s -> model.addAttribute("pastExamDate", s.getExamDate()));
+        Optional<ExamSchedule> schedule = latest.filter(s -> !ExamPlanService.isOver(s));
         schedule.ifPresent(s -> {
             int dailyMinutes = s.getDailyMinutes() != null ? s.getDailyMinutes() : 60;
             int studyDaysPerWeek = s.getStudyDaysPerWeek() != null ? s.getStudyDaysPerWeek() : 5;

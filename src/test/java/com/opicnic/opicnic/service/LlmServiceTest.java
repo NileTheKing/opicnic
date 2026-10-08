@@ -90,7 +90,7 @@ class LlmServiceTest {
     @Test
     @DisplayName("mock 모드에서 코칭 리포트는 summary/strength/criteria/types를 반환해야 한다")
     void mockMode_getCoachingReport_returnsExpectedSchema() throws Exception {
-        String json = llmService.getCoachingReport("【메인포인트】\n- WHY_MISSING: 3/10건", "IH");
+        String json = llmService.getCoachingReport("【핵심전달】\n- WHY_MISSING: 3/10건", "IH");
         JsonNode node = objectMapper.readTree(json);
 
         assertThat(node.has("summary")).isTrue();
