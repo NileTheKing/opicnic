@@ -31,7 +31,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
 
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        response.getWriter().write("시간당 문항 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
+        response.getWriter().write("시간당 문항 한도를 넘었어요. 잠시 후 다시 시도해 주세요.");
         return false;
     }
 }

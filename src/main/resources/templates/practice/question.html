@@ -55,7 +55,7 @@
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
     </svg>
-    <p class="text-brand-700 font-semibold">피드백 분석 중입니다. 잠시만 기다려 주세요...</p>
+    <p class="text-brand-700 font-semibold">피드백을 분석하고 있어요. 잠시만 기다려 주세요...</p>
 </div>
 
 <!-- 종료 확인 모달 -->
@@ -239,25 +239,25 @@
     // → ③ 접수(잡 생성, 202) → ④ 결과 URL로. 접수 뒤엔 이 탭을 닫아도 서버가 끝까지 채점한다.
     async function submitAsync(indexes) {
         document.getElementById('loading').classList.remove('hidden');
-        document.querySelector('#loading p').textContent = '답변을 올리는 중입니다...';
+        document.querySelector('#loading p').textContent = '답변을 올리고 있어요...';
         submitButton.disabled = true;
         try {
             const files = indexes.map(index => ({ index, size: recordings[index].size, contentType: 'audio/webm' }));
             const urlRes = await fetch(`/api/practice-attempts/${encodeURIComponent(attemptId)}/upload-urls`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken }, body: JSON.stringify(files) });
-            if (!urlRes.ok) throw new Error((await urlRes.json().catch(() => ({}))).message || '업로드 준비에 실패했습니다.');
+            if (!urlRes.ok) throw new Error((await urlRes.json().catch(() => ({}))).message || '업로드 준비에 실패했어요.');
             const urls = await urlRes.json();
 
             await Promise.all(urls.map(async ({ index, url }) => {
                 // 서명에 박힌 크기·타입과 정확히 같아야 한다 — Blob 그대로, Content-Type 그대로
                 const put = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'audio/webm' }, body: recordings[index] });
-                if (!put.ok) throw new Error(`Q${index + 1} 업로드에 실패했습니다. (${put.status})`);
+                if (!put.ok) throw new Error(`Q${index + 1} 업로드에 실패했어요. (${put.status})`);
             }));
 
             document.querySelector('#loading p').textContent = '접수 중...';
             const jobRes = await fetch('/api/scoring-jobs', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken }, body: JSON.stringify({ attemptId }) });
-            if (jobRes.status !== 202) throw new Error((await jobRes.json().catch(() => ({}))).message || '접수에 실패했습니다.');
+            if (jobRes.status !== 202) throw new Error((await jobRes.json().catch(() => ({}))).message || '접수에 실패했어요.');
             const job = await jobRes.json();
             submissionComplete = true;
             window.location.href = `/practice/result/${encodeURIComponent(job.id)}`;

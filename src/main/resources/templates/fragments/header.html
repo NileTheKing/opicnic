@@ -43,14 +43,14 @@
                                     <div class="flex items-start">
                                         <div class="flex-shrink-0 w-2 h-2 mt-2 bg-blue-500 rounded-full" th:if="${!notification.read}"></div>
                                         <div class="ml-3">
-                                            <p class="text-sm text-gray-800" th:text="${notification.message}">새로운 메시지가 도착했습니다.</p>
+                                            <p class="text-sm text-gray-800" th:text="${notification.message}">새로운 메시지가 도착했어요.</p>
                                             <p class="text-xs text-gray-500 mt-1" th:text="${notification.createdAt}">방금 전</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div th:if="${notifications == null || notifications.isEmpty()}" class="px-4 py-3 text-sm text-gray-600 text-center">
-                                새 알림이 없습니다.
+                                새 알림이 없어요.
                             </div>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-100 text-center">

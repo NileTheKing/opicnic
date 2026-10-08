@@ -99,7 +99,7 @@ public class ScoringJobViewController {
                         .sttText(item.getSttText()).unscorable(true).build(), FeedbackService.UNSCORABLE_MESSAGE);
             }
             return new ResultCard(item.getQuestionIndex(), number, "DONE", FeedbackDTO.builder().question(question)
-                    .sttText(item.getSttText()).overall("자기소개는 채점 대상이 아닙니다. 수고하셨어요!").build(), null);
+                    .sttText(item.getSttText()).overall("자기소개는 채점하지 않아요. 수고하셨어요!").build(), null);
         }
         FeedbackResult r = results.get(item.getFeedbackResultId());
         return r == null
