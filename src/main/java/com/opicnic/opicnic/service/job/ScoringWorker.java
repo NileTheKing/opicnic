@@ -7,13 +7,16 @@ import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
 import com.opicnic.opicnic.domain.job.ScoringJobItemStatus;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.AudioNotFoundException;
+import com.opicnic.opicnic.exception.ExternalCallException;
+import com.opicnic.opicnic.exception.ExternalCallException.Reason;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import com.opicnic.opicnic.repository.ScoringJobItemRepository;
 import com.opicnic.opicnic.repository.ScoringJobRepository;
 import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import com.opicnic.opicnic.storage.AudioStorage;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +27,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.client.HttpClientErrorException;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -196,7 +197,7 @@ public class ScoringWorker {
             log.info("[Worker] 문항 {} DONE ({}ms = read {} + stt {} + grade {} + save {}, 시도 {})", ctx.questionIndex(),
                     System.currentTimeMillis() - start, tRead, tStt, tGrade, tSave, ctx.attempts());
         } catch (Exception e) {
-            boolean rateLimited = FeedbackService.isRateLimited(e);
+            boolean rateLimited = isRateLimited(e);
             FailureKind kind = classify(e);
             Duration backoff = backoffEnabled ? backoff(ctx.attempts(), rateLimited) : Duration.ZERO;
             ScoringJobItemStatus after = tx.execute(s -> {
@@ -252,16 +253,22 @@ public class ScoringWorker {
     //  PERMANENT: 녹음 파일이 스토리지에 없음, 제공자가 파일 자체를 거절(400·413·415·422) — 몇 번을 해도 같다
     //  INVALID_OUTPUT: LLM 응답이 형식을 어김(점수 누락·범위 밖, JSON 파싱 실패) — 몇 번은 다시 해볼 만하다
     //  TRANSIENT: 나머지(429·5xx·타임아웃·제공자 인증/모델 문제) — 운영자가 고치면 풀리므로 예산까지 기다린다
+    // 우리 예외만 본다 — 클라이언트 예외(S3·RestClient·Spring AI)는 경계(스토리지 구현, ExternalCallMetrics)에서 이미 옮겨져 온다.
+    // 2026-10-08: 예전엔 여기서 RestClient 예외만 알아봐서, Spring AI 경로(채점·태깅)의 400·422가 일시적으로 분류돼 30분간 재시도됐다
     static FailureKind classify(Throwable e) {
         for (Throwable c = e; c != null; c = c.getCause()) {
-            if (c instanceof NoSuchKeyException || c instanceof java.util.NoSuchElementException) return FailureKind.PERMANENT;
-            if (c instanceof HttpClientErrorException http) {
-                int code = http.getStatusCode().value();
-                if (code == 400 || code == 413 || code == 415 || code == 422) return FailureKind.PERMANENT;
-            }
-            if (c instanceof IllegalStateException || c instanceof JsonProcessingException) return FailureKind.INVALID_OUTPUT;
+            if (c instanceof AudioNotFoundException) return FailureKind.PERMANENT;
+            if (c instanceof ExternalCallException x && x.reason() == Reason.BAD_REQUEST) return FailureKind.PERMANENT;
+            if (c instanceof InvalidModelOutputException) return FailureKind.INVALID_OUTPUT;
         }
         return FailureKind.TRANSIENT;
+    }
+
+    static boolean isRateLimited(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ExternalCallException x && x.reason() == Reason.RATE_LIMITED) return true;
+        }
+        return false;
     }
 
     @PreDestroy

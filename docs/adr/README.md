@@ -7,6 +7,7 @@
 | # | 제목 | 상태 |
 |---|---|---|
 | [0001](0001-async-r2.md) | 음성 채점 비동기화 + 오브젝트 스토리지(R2) | Implemented 2026-09-22 (운영 배포). 결과·실측은 9절 |
+| [0002](0002-translate-external-errors-at-boundary.md) | 외부 호출 예외는 경계에서 우리 예외로 옮긴다 (ACL) | Accepted 2026-10-08 |
 
 기각한 기술 선택(Kafka/Redis/ES 등)은 `../hold.md`에 있다. ADR로 옮길 가치가 있는 건 다시 검토될 때 그때 옮긴다.
 

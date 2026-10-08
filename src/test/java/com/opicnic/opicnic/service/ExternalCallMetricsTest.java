@@ -3,13 +3,20 @@ package com.opicnic.opicnic.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.ExternalCallException;
+import com.opicnic.opicnic.exception.ExternalCallException.Reason;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.ai.retry.TransientAiException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
@@ -106,5 +113,46 @@ class ExternalCallMetricsTest {
         assertThat(ExternalCallMetrics.outcomeOf(new TransientAiException("503 - Service Unavailable"))).isEqualTo("5xx");
         assertThat(ExternalCallMetrics.outcomeOf(new NonTransientAiException("parse failed near 429 - x"))).isEqualTo("error");
         assertThat(ExternalCallMetrics.outcomeOf(new RuntimeException("wrap", new NonTransientAiException(REAL_LLM_429)))).isEqualTo("429");
+    }
+
+    @Test
+    @DisplayName("번역: 클라이언트·공급자별 예외를 우리 예외의 이유로 옮긴다 — STT(RestClient)와 채점·태깅(Spring AI)이 같은 이유가 된다")
+    void translate_mapsBothClientShapesToSameReason() {
+        assertThat(reasonOf(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "bad", HttpHeaders.EMPTY, null, null))).isEqualTo(Reason.BAD_REQUEST);
+        assertThat(reasonOf(new NonTransientAiException("HTTP 400 - {\"error\":{\"message\":\"bad request\"}}"))).isEqualTo(Reason.BAD_REQUEST);
+        assertThat(reasonOf(new NonTransientAiException("HTTP 422 - unprocessable"))).isEqualTo(Reason.BAD_REQUEST);
+        assertThat(reasonOf(new RuntimeException("stt", HttpClientErrorException.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "415", HttpHeaders.EMPTY, null, null))))
+                .isEqualTo(Reason.BAD_REQUEST);
+
+        assertThat(reasonOf(HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "429", HttpHeaders.EMPTY, null, null))).isEqualTo(Reason.RATE_LIMITED);
+        assertThat(reasonOf(new NonTransientAiException(REAL_LLM_429))).isEqualTo(Reason.RATE_LIMITED);
+        assertThat(reasonOf(new TransientAiException(REAL_LLM_429))).isEqualTo(Reason.RATE_LIMITED);
+
+        assertThat(reasonOf(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "503", HttpHeaders.EMPTY, null, null))).isEqualTo(Reason.UNAVAILABLE);
+        assertThat(reasonOf(new TransientAiException("HTTP 503 - Service Unavailable"))).isEqualTo(Reason.UNAVAILABLE);
+        assertThat(reasonOf(new ResourceAccessException("I/O", new SocketTimeoutException()))).isEqualTo(Reason.UNAVAILABLE);
+
+        assertThat(reasonOf(new NonTransientAiException("HTTP 404 - {\"error\":{\"message\":\"The model does not exist\"}}"))).isEqualTo(Reason.PROVIDER_ERROR);
+    }
+
+    @Test
+    @DisplayName("번역: HTTP 응답·타임아웃이 아닌 실패(응답 파싱 등)는 그대로 둔다")
+    void translate_leavesNonHttpFailuresAlone() {
+        var parse = new InvalidModelOutputException("LLM 응답 파싱 중 오류가 발생했습니다.");
+        assertThat(ExternalCallMetrics.translate(parse)).isSameAs(parse);
+    }
+
+    @Test
+    @DisplayName("record()가 번역해서 던지고, 지표 outcome은 원래 예외로 센다")
+    void record_throwsTranslatedAndCountsOriginalOutcome() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        assertThatThrownBy(() -> ExternalCallMetrics.record(registry, "score", () -> {
+            throw new NonTransientAiException(REAL_LLM_429);
+        })).isInstanceOfSatisfying(ExternalCallException.class, e -> assertThat(e.reason()).isEqualTo(Reason.RATE_LIMITED));
+        assertThat(count(registry, "score", "429")).isEqualTo(1);
+    }
+
+    static Reason reasonOf(RuntimeException e) {
+        return ((ExternalCallException) ExternalCallMetrics.translate(e)).reason();
     }
 }

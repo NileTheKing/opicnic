@@ -7,11 +7,11 @@ import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 
 
 
@@ -121,14 +121,6 @@ public class FeedbackService {
                 .tags(tags)
                 .build();
 
-    }
-
-    // STT는 RestClient가 HttpClientErrorException(429)을 던지지만, 채점/태깅은 Spring AI ChatModel을
-    // 거치면서 Spring AI 예외("HTTP 429 - …")로 바뀌고 원인 체인이 없다. 예외 타입만 보면
-    // 실제 LLM 429가 rate-limit 분기(긴 백오프)를 못 타고 일반 백오프로 떨어진다 — 2026-09-18 계측
-    // 작업 중 발견. ExternalCallMetrics.outcomeOf()가 두 경로를 다 판정하므로 그걸 재사용한다.
-    public static boolean isRateLimited(Throwable e) {
-        return "429".equals(ExternalCallMetrics.outcomeOf(e));
     }
 
     private static FeedbackDTO selfIntroductionDto(QuestionDto question, String speechText) {
@@ -306,7 +298,7 @@ public class FeedbackService {
             try { parsed = Integer.parseInt(v.toString()); } catch (NumberFormatException ignored) { }
         }
         if (parsed == null || parsed < 1 || parsed > 5) {
-            throw new IllegalStateException("AI 응답의 점수 필드가 유효하지 않습니다: " + key + "=" + v);
+            throw new InvalidModelOutputException("AI 응답의 점수 필드가 유효하지 않습니다: " + key + "=" + v);
         }
         return parsed;
     }

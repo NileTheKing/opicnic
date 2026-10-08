@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.opicnic.opicnic.exception.ExternalCallException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -26,35 +27,38 @@ class STTServiceMockFailureInjectionTest {
     }
 
     @Test
-    @DisplayName("STT_MOCK_429_RATE=1.0이면 항상 429(HttpClientErrorException)를 던진다")
+    @DisplayName("STT_MOCK_429_RATE=1.0이면 항상 429(HttpClientErrorException)를 원인으로 담아 던진다 — 경계에서 ExternalCallException으로 옮겨진다")
     void rate429One_alwaysThrows429() {
         STTService sttService = newMockSttService(1.0, 0.0);
 
         assertThatThrownBy(() -> sttService.sendStreamToStt(new byte[]{1}, "a.webm"))
-                .isInstanceOf(HttpClientErrorException.class)
-                .satisfies(e -> assertThat(((HttpClientErrorException) e).getStatusCode())
+                .isInstanceOf(ExternalCallException.class)
+                .hasCauseInstanceOf(HttpClientErrorException.class)
+                .satisfies(e -> assertThat(((HttpClientErrorException) e.getCause()).getStatusCode())
                         .isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
     }
 
     @Test
-    @DisplayName("STT_MOCK_5XX_RATE=1.0이면 항상 503(HttpServerErrorException)을 던진다")
+    @DisplayName("STT_MOCK_5XX_RATE=1.0이면 항상 503(HttpServerErrorException)을 원인으로 담아 던진다 — 경계에서 ExternalCallException으로 옮겨진다")
     void rate5xxOne_alwaysThrows5xx() {
         STTService sttService = newMockSttService(0.0, 1.0);
 
         assertThatThrownBy(() -> sttService.sendStreamToStt(new byte[]{1}, "a.webm"))
-                .isInstanceOf(HttpServerErrorException.class)
-                .satisfies(e -> assertThat(((HttpServerErrorException) e).getStatusCode())
+                .isInstanceOf(ExternalCallException.class)
+                .hasCauseInstanceOf(HttpServerErrorException.class)
+                .satisfies(e -> assertThat(((HttpServerErrorException) e.getCause()).getStatusCode())
                         .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
     }
 
     @Test
-    @DisplayName("STT_MOCK_TIMEOUT_RATE=1.0이면 항상 read-timeout 형태(ResourceAccessException ← SocketTimeoutException)를 던진다")
+    @DisplayName("STT_MOCK_TIMEOUT_RATE=1.0이면 항상 read-timeout 형태(ResourceAccessException ← SocketTimeoutException)를 원인으로 담아 던진다 — 경계에서 ExternalCallException으로 옮겨진다")
     void rateTimeoutOne_alwaysThrowsTimeout() {
         STTService sttService = newMockSttService(0.0, 0.0, 1.0);
 
         assertThatThrownBy(() -> sttService.sendStreamToStt(new byte[]{1}, "a.webm"))
-                .isInstanceOf(ResourceAccessException.class)
-                .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
+                .isInstanceOf(ExternalCallException.class)
+                .hasCauseInstanceOf(ResourceAccessException.class)
+                .hasRootCauseInstanceOf(java.net.SocketTimeoutException.class);
     }
 
     @Test

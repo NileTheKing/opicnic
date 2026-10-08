@@ -1,19 +1,14 @@
 package com.opicnic.opicnic.service.job;
 
 import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
+import com.opicnic.opicnic.exception.AudioNotFoundException;
+import com.opicnic.opicnic.exception.ExternalCallException;
+import com.opicnic.opicnic.exception.ExternalCallException.Reason;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.ai.retry.NonTransientAiException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-
 import java.time.Duration;
-import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,32 +41,36 @@ class ScoringWorkerTest {
     }
 
     @Test
-    @DisplayName("분류: 기다리면 풀리는가 — 파일 문제는 영구, LLM 형식 오류는 따로, 나머지는 일시적")
+    @DisplayName("분류: 기다리면 풀리는가 — 파일 없음·요청 거절은 영구, 모델 형식 오류는 따로, 나머지는 일시적")
     void classifyByWhetherWaitingHelps() {
-        assertThat(ScoringWorker.classify(NoSuchKeyException.builder().message("no key").build())).isEqualTo(FailureKind.PERMANENT);
-        assertThat(ScoringWorker.classify(new NoSuchElementException("객체 없음"))).isEqualTo(FailureKind.PERMANENT);
-        assertThat(ScoringWorker.classify(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "bad audio", HttpHeaders.EMPTY, null, null)))
-                .isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(new AudioNotFoundException("k", null))).isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(failure(Reason.BAD_REQUEST))).isEqualTo(FailureKind.PERMANENT);
 
-        assertThat(ScoringWorker.classify(new IllegalStateException("contentScore 누락"))).isEqualTo(FailureKind.INVALID_OUTPUT);
+        assertThat(ScoringWorker.classify(new InvalidModelOutputException("contentScore 누락"))).isEqualTo(FailureKind.INVALID_OUTPUT);
 
-        assertThat(ScoringWorker.classify(HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "429", HttpHeaders.EMPTY, null, null)))
-                .isEqualTo(FailureKind.TRANSIENT);
-        assertThat(ScoringWorker.classify(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "503", HttpHeaders.EMPTY, null, null)))
-                .isEqualTo(FailureKind.TRANSIENT);
-        assertThat(ScoringWorker.classify(new ResourceAccessException("Read timed out"))).isEqualTo(FailureKind.TRANSIENT);
-        // 원인 체인 안쪽까지 본다 — STT 래핑 RuntimeException 안의 파일 거절
-        assertThat(ScoringWorker.classify(new RuntimeException("stt", HttpClientErrorException.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "415", HttpHeaders.EMPTY, null, null))))
-                .isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(failure(Reason.RATE_LIMITED))).isEqualTo(FailureKind.TRANSIENT);
+        assertThat(ScoringWorker.classify(failure(Reason.UNAVAILABLE))).isEqualTo(FailureKind.TRANSIENT);
+        assertThat(ScoringWorker.classify(failure(Reason.PROVIDER_ERROR))).isEqualTo(FailureKind.TRANSIENT);
+        // 원인 체인 안쪽까지 본다
+        assertThat(ScoringWorker.classify(new RuntimeException("wrap", failure(Reason.BAD_REQUEST)))).isEqualTo(FailureKind.PERMANENT);
     }
 
     @Test
-    @DisplayName("분류: 채점·태깅(Spring AI) 경로의 요청 거절도 STT와 똑같이 영구로 본다")
-    void classifyLlmRejectionAsPermanent() {
-        assertThat(ScoringWorker.classify(new NonTransientAiException("HTTP 400 - {\"error\":{\"message\":\"bad request\"}}")))
-                .isEqualTo(FailureKind.PERMANENT);
-        assertThat(ScoringWorker.classify(new NonTransientAiException("HTTP 422 - {\"error\":{\"message\":\"unprocessable\"}}")))
-                .isEqualTo(FailureKind.PERMANENT);
+    @DisplayName("분류: 우리 코드의 일반 버그(IllegalStateException)는 모델 형식 오류로 오인하지 않는다")
+    void plainBugIsNotInvalidOutput() {
+        assertThat(ScoringWorker.classify(new IllegalStateException("세션이 만료되었습니다."))).isEqualTo(FailureKind.TRANSIENT);
+    }
+
+    @Test
+    @DisplayName("429만 rate-limit(긴 백오프)으로 본다")
+    void rateLimitedOnlyFor429() {
+        assertThat(ScoringWorker.isRateLimited(failure(Reason.RATE_LIMITED))).isTrue();
+        assertThat(ScoringWorker.isRateLimited(new RuntimeException("wrap", failure(Reason.RATE_LIMITED)))).isTrue();
+        assertThat(ScoringWorker.isRateLimited(failure(Reason.UNAVAILABLE))).isFalse();
+    }
+
+    private static ExternalCallException failure(Reason reason) {
+        return new ExternalCallException(reason, reason.name(), null);
     }
 
     @Test

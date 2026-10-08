@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -347,7 +348,7 @@ public class LlmService {
                     .readValue(response);
         } catch (Exception e) {
             log.error("LLM JSON 파싱 오류: {}", e.getMessage());
-            throw new RuntimeException("LLM 응답 파싱 중 오류가 발생했습니다.", e);
+            throw new InvalidModelOutputException("LLM 응답 파싱 중 오류가 발생했습니다.", e);
         }
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -51,7 +52,7 @@ class FeedbackServiceScoreValidationTest {
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         // 범위 밖 점수는 조용히 저장되지 않고 예외로 끝나야 한다(워커가 FAILED/재시도로 처리)
         assertThatThrownBy(() -> feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"), question))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("expressionScore");
+                .isInstanceOf(InvalidModelOutputException.class).hasMessageContaining("expressionScore");
     }
 
     @Test
@@ -73,9 +74,9 @@ class FeedbackServiceScoreValidationTest {
         when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        // 예외로 끝나야 워커가 문항을 FAILED/재시도로 처리한다 — NPE가 아니라 원인이 읽히는 IllegalStateException
+        // 예외로 끝나야 워커가 문항을 FAILED/재시도로 처리한다 — NPE가 아니라 원인이 읽히는 InvalidModelOutputException
         assertThatThrownBy(() -> feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"), question))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("contentScore");
+                .isInstanceOf(InvalidModelOutputException.class).hasMessageContaining("contentScore");
     }
 
     @Test

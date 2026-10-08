@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.storage;
 
+import com.opicnic.opicnic.exception.AudioNotFoundException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -44,7 +45,11 @@ public class R2AudioStorage implements AudioStorage {
 
     @Override
     public byte[] read(String key) {
-        return s3.getObjectAsBytes(GetObjectRequest.builder().bucket(bucket).key(key).build()).asByteArray();
+        try {
+            return s3.getObjectAsBytes(GetObjectRequest.builder().bucket(bucket).key(key).build()).asByteArray();
+        } catch (NoSuchKeyException e) {
+            throw new AudioNotFoundException(key, e);
+        }
     }
 
     @Override
