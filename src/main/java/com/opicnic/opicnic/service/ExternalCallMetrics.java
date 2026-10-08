@@ -1,5 +1,7 @@
 package com.opicnic.opicnic.service;
 
+import com.opicnic.opicnic.exception.ExternalCallException;
+import com.opicnic.opicnic.exception.ExternalCallException.Reason;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.ai.retry.NonTransientAiException;
@@ -17,6 +19,9 @@ import java.util.regex.Pattern;
 // + 분위수(Duration)를 준다. 실제 경로와 mock 경로 둘 다 통과시켜 S2 호출 증폭을 지표 나눗셈으로 잰다.
 //
 //   opicnic_external_call_seconds{provider="groq", kind="stt|score|tag", outcome="ok|429|5xx|timeout|error"}
+//
+// 모든 외부 AI 호출이 record()를 지나므로, 클라이언트 예외를 우리 예외(ExternalCallException)로 옮기는 경계도 여기다.
+// 클라이언트·공급자별 예외 모양은 이 파일만 안다.
 final class ExternalCallMetrics {
 
     static final String TIMER_NAME = "opicnic.external.call";
@@ -30,7 +35,7 @@ final class ExternalCallMetrics {
             return call.get();
         } catch (RuntimeException e) {
             outcome = outcomeOf(e);
-            throw e;
+            throw translate(e);
         } finally {
             sample.stop(Timer.builder(TIMER_NAME)
                     .tag("provider", "groq")
@@ -62,6 +67,25 @@ final class ExternalCallMetrics {
             cause = cause.getCause();
         }
         return "error";
+    }
+
+    // HTTP 응답·타임아웃에서 온 실패만 옮긴다. 응답 파싱 실패(InvalidModelOutputException) 같은 나머지는 그대로 둔다
+    static RuntimeException translate(RuntimeException e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ResourceAccessException || c instanceof SocketTimeoutException) {
+                return new ExternalCallException(Reason.UNAVAILABLE, e.getMessage(), e);
+            }
+            Integer status = statusOf(c);
+            if (status != null) return new ExternalCallException(reasonOf(status), e.getMessage(), e);
+        }
+        return e;
+    }
+
+    private static Reason reasonOf(int status) {
+        if (status == 429) return Reason.RATE_LIMITED;
+        if (status >= 500) return Reason.UNAVAILABLE;
+        if (status == 400 || status == 413 || status == 415 || status == 422) return Reason.BAD_REQUEST;
+        return Reason.PROVIDER_ERROR;
     }
 
     private static final Pattern SPRING_AI_STATUS = Pattern.compile("^(?:HTTP )?(\\d{3}) - ");

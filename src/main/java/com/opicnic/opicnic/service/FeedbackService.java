@@ -7,11 +7,11 @@ import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.FeedbackDTO;
 import com.opicnic.opicnic.dto.FeedbackTagDto;
 import com.opicnic.opicnic.dto.QuestionDto;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 
 
 
@@ -123,14 +123,6 @@ public class FeedbackService {
 
     }
 
-    // STT는 RestClient가 HttpClientErrorException(429)을 던지지만, 채점/태깅은 Spring AI ChatModel을
-    // 거치면서 Spring AI 예외("HTTP 429 - …")로 바뀌고 원인 체인이 없다. 예외 타입만 보면
-    // 실제 LLM 429가 rate-limit 분기(긴 백오프)를 못 타고 일반 백오프로 떨어진다 — 2026-09-18 계측
-    // 작업 중 발견. ExternalCallMetrics.outcomeOf()가 두 경로를 다 판정하므로 그걸 재사용한다.
-    public static boolean isRateLimited(Throwable e) {
-        return "429".equals(ExternalCallMetrics.outcomeOf(e));
-    }
-
     private static FeedbackDTO selfIntroductionDto(QuestionDto question, String speechText) {
         return FeedbackDTO.builder()
                 .question(question)
@@ -139,18 +131,16 @@ public class FeedbackService {
                 .build();
     }
 
-    // FU-02: 5단어 미만 "무응답" 조기 반환은 questionType을 보지 않고 mainPointScore=1을 항상 넣었다.
-    // 정상 길이 응답은 이미 isRoleplayType()으로 TYPE_5~7의 MP를 null(평가 제외)로 처리하는데(SCORE-02),
-    // 짧은 응답만 이 규칙을 우회해 롤플레이 무응답도 "핵심전달 1점" 표본으로 잘못 쌓였다.
+    // 5단어 미만은 "채점 불가"다. 판단할 말이 없는 것이라 IL이나 1점을 주면 사실이 아니고, 저장하면 문항 통계·코칭에 1점 표본으로 섞인다
+    // (ETS SpeechRater도 채점 전에 말이 거의 없는 답을 걸러 따로 처리한다). 그래서 등급·점수 없이 돌려주고 저장하지 않는다
+    public static final String UNSCORABLE_MESSAGE = "답변이 거의 들리지 않아 채점하지 않았어요. 한 문장이라도 말해 보세요.";
+
     private static FeedbackDTO noResponseDto(QuestionDto question, String speechText) {
-        Integer mainPointScore = isRoleplayType(question.getQuestionType()) ? null : 1;
         return FeedbackDTO.builder()
                 .question(question)
                 .sttText(speechText)
-                .overall("응답이 감지되지 않았습니다.")
-                .overallGrade("IL")
-                .mainPointScore(mainPointScore).expressionScore(1).accuracyScore(1).fluencyScore(1).contentScore(1)
-                .improvements("답변을 녹음해주세요.")
+                .unscorable(true)
+                .overall(UNSCORABLE_MESSAGE)
                 .build();
     }
 
@@ -306,7 +296,7 @@ public class FeedbackService {
             try { parsed = Integer.parseInt(v.toString()); } catch (NumberFormatException ignored) { }
         }
         if (parsed == null || parsed < 1 || parsed > 5) {
-            throw new IllegalStateException("AI 응답의 점수 필드가 유효하지 않습니다: " + key + "=" + v);
+            throw new InvalidModelOutputException("AI 응답의 점수 필드가 유효하지 않습니다: " + key + "=" + v);
         }
         return parsed;
     }

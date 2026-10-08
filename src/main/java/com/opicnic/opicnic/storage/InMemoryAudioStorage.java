@@ -1,10 +1,11 @@
 package com.opicnic.opicnic.storage;
 
+import com.opicnic.opicnic.exception.AudioNotFoundException;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
 // 테스트·R2 미설정 로컬용. presignPut은 실제로 올릴 수 없는 URL을 돌려주므로 put()으로 직접 넣는다.
@@ -28,7 +29,7 @@ public class InMemoryAudioStorage implements AudioStorage {
     @Override
     public byte[] read(String key) {
         byte[] bytes = objects.get(key);
-        if (bytes == null) throw new NoSuchElementException("객체 없음: " + key);
+        if (bytes == null) throw new AudioNotFoundException(key, null);
         return bytes;
     }
 

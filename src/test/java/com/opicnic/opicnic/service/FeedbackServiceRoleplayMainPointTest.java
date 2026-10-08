@@ -69,47 +69,39 @@ class FeedbackServiceRoleplayMainPointTest {
         );
     }
 
-    // FU-02 회귀 테스트: 5단어 미만 "무응답" 조기 반환(noResponseDto)이 questionType을 보지 않고
-    // mainPointScore=1을 항상 넣던 문제. TYPE_5~7의 짧은/빈 답변도 정상 길이 응답과 동일하게
-    // MP는 null(평가 제외)이어야 하고, 나머지 4개 점수는 1, 등급은 IL을 유지해야 한다.
+    // 5단어 미만은 채점 불가 — 유형과 상관없이 등급·점수를 매기지 않고(예전엔 IL + 1점) LLM도 부르지 않는다.
+    // 롤플레이(TYPE_5~7)도 같다: 예전 FU-02(롤플레이 무응답에 MP 1점이 쌓이던 문제)는 점수 자체가 없어져 해소된다
     @ParameterizedTest
     @MethodSource("roleplayShortAnswers")
-    void roleplayShortOrEmptyAnswerStillExcludesMainPointScore(QuestionType type, String sttText) {
-        ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
+    void shortOrEmptyAnswerIsUnscorable(QuestionType type, String sttText) {
         STTService sttService = Mockito.mock(STTService.class);
         LlmService llmService = Mockito.mock(LlmService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
-
+        FeedbackService feedbackService = new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, llmService, new ObjectMapper());
         when(sttService.sendStreamToStt(any(), any())).thenReturn(sttText);
 
-        QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", type);
-        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), roleplayQuestion);
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"),
+                new QuestionDto(1L, "content", "topic", type));
+
+        assertThat(result.isUnscorable()).isTrue();
+        assertThat(result.getOverallGrade()).isNull();
         assertThat(result.getMainPointScore()).isNull();
-        assertThat(result.getExpressionScore()).isEqualTo(1);
-        assertThat(result.getAccuracyScore()).isEqualTo(1);
-        assertThat(result.getFluencyScore()).isEqualTo(1);
-        assertThat(result.getContentScore()).isEqualTo(1);
-        assertThat(result.getOverallGrade()).isEqualTo("IL");
-        // 무응답 조기 반환 경로이므로 채점/태깅 LLM은 호출되지 않아야 한다.
+        assertThat(result.getExpressionScore()).isNull();
+        assertThat(result.getFluencyScore()).isNull();
+        assertThat(result.getOverall()).isEqualTo(FeedbackService.UNSCORABLE_MESSAGE);
         verify(llmService, never()).getOpicFeedback(any(), any());
         verify(llmService, never()).extractFeedbackTags(any(), any(), any(), any(), any());
     }
 
-    // 비교 대조군: 롤플레이가 아닌 유형의 짧은 답변은 기존처럼 MP=1을 유지해야 한다(회귀 방지).
     @Test
-    void nonRoleplayShortAnswerKeepsMainPointScoreAtOne() {
-        ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
+    void nonRoleplayShortAnswerIsAlsoUnscorable() {
         STTService sttService = Mockito.mock(STTService.class);
-        LlmService llmService = Mockito.mock(LlmService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
-
+        FeedbackService feedbackService = new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, Mockito.mock(LlmService.class), new ObjectMapper());
         when(sttService.sendStreamToStt(any(), any())).thenReturn("no idea");
 
-        QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
-        List<byte[]> streams = List.of(new byte[]{1, 2, 3});
-        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(streams.get(0), "a.webm"), question);
-        assertThat(result.getMainPointScore()).isEqualTo(1);
-        assertThat(result.getOverallGrade()).isEqualTo("IL");
+        FeedbackDTO result = feedbackService.gradeWithSpeech(feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"),
+                new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1));
+
+        assertThat(result.isUnscorable()).isTrue();
+        assertThat(result.getOverallGrade()).isNull();
     }
 }

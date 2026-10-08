@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.opicnic.opicnic.exception.ExternalCallException.Reason;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.retry.TransientAiException;
 import org.springframework.ai.retry.autoconfigure.SpringAiRetryAutoConfiguration;
@@ -36,7 +37,7 @@ class SpringAiErrorFormatTest {
             assertThat(e).isInstanceOf(TransientAiException.class);
             assertThat(e.getMessage()).startsWith("HTTP 429 - ");
             assertThat(ExternalCallMetrics.outcomeOf(e)).isEqualTo("429");
-            assertThat(FeedbackService.isRateLimited(e)).isTrue();
+            assertThat(ExternalCallMetricsTest.reasonOf((RuntimeException) e)).isEqualTo(Reason.RATE_LIMITED);
         });
     }
 
@@ -46,6 +47,10 @@ class SpringAiErrorFormatTest {
             ResponseErrorHandler handler = ctx.getBean(ResponseErrorHandler.class);
             assertThat(ExternalCallMetrics.outcomeOf(handle(handler, HttpStatus.SERVICE_UNAVAILABLE, "down"))).isEqualTo("5xx");
             assertThat(ExternalCallMetrics.outcomeOf(handle(handler, HttpStatus.NOT_FOUND, "no model"))).isEqualTo("error");
+            // 2026-10-08: 채점·태깅의 요청 거절이 일시적으로 분류돼 30분간 재시도되던 버그 — 실제 처리기 형식으로 고정
+            assertThat(ExternalCallMetricsTest.reasonOf((RuntimeException) handle(handler, HttpStatus.BAD_REQUEST, "bad request"))).isEqualTo(Reason.BAD_REQUEST);
+            assertThat(ExternalCallMetricsTest.reasonOf((RuntimeException) handle(handler, HttpStatus.UNPROCESSABLE_ENTITY, "unprocessable"))).isEqualTo(Reason.BAD_REQUEST);
+            assertThat(ExternalCallMetricsTest.reasonOf((RuntimeException) handle(handler, HttpStatus.NOT_FOUND, "no model"))).isEqualTo(Reason.PROVIDER_ERROR);
         });
     }
 }

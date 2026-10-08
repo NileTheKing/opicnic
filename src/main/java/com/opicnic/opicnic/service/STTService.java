@@ -2,6 +2,7 @@ package com.opicnic.opicnic.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -130,12 +131,12 @@ public class STTService {
         try {
             Map<String, Object> response = objectMapper.readValue(responseBody, new TypeReference<>() {});
             if (response == null || !response.containsKey("text")) {
-                throw new RuntimeException("Groq STT 응답이 유효하지 않습니다: " + responseBody);
+                throw new InvalidModelOutputException("Groq STT 응답이 유효하지 않습니다: " + responseBody);
             }
             log.info("[GROQ STT] 변환 완료");
             return (String) response.get("text");
         } catch (Exception e) {
-            throw new RuntimeException("Groq STT 응답 파싱 실패: " + responseBody, e);
+            throw new InvalidModelOutputException("Groq STT 응답 파싱 실패: " + responseBody, e);
         }
     }
 }
