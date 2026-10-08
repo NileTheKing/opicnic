@@ -2,8 +2,13 @@ package com.opicnic.opicnic.service.guest;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.NotificationSetting;
+import com.opicnic.opicnic.domain.SurveyProfile;
+import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.domain.enums.Role;
 import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.SurveyTopicPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +33,7 @@ public class GuestService {
     private final MemberRepository memberRepository;
     private final GuestProperties properties;
     private final GuestSampleCopier sampleCopier;
+    private final SurveyProfileRepository surveyProfileRepository;
 
     // 방문자마다 새 회원 — 다른 방문자의 녹음·답변이 섞이면 안 된다. 권한은 항상 USER(ADMIN 불가).
     @Transactional
@@ -46,7 +53,25 @@ public class GuestService {
         if (properties.getSampleMemberId() != null) {
             sampleCopier.copy(properties.getSampleMemberId(), guest, LocalDateTime.now());
         }
+        // 둘러보러 온 사람에게 2분 설정을 먼저 시키지 않는다 — 예시 설문이 없으면 온보딩 "전체 선택"과 같은 기본값.
+        // 바꾸고 싶으면 마이페이지에서
+        if (surveyProfileRepository.findByMemberId(guest.getId()).isEmpty()) {
+            surveyProfileRepository.save(defaultProfile(guest));
+        }
         return guest;
+    }
+
+    static SurveyProfile defaultProfile(Member guest) {
+        List<SurveyTopic> topics = new ArrayList<>(SurveyTopicPolicy.allTopics());
+        topics.add(SurveyTopic.LIVING_ALONE);  // 온보딩이 거주 형태 주제를 자동으로 붙이는 것과 같게
+        return SurveyProfile.builder()
+                .member(guest)
+                .occupationType(SurveyProfile.OccupationType.NO_WORK_EXPERIENCE)
+                .residenceType(SurveyProfile.ResidenceType.ALONE)
+                .targetGrade(SurveyProfile.TargetGrade.IH)
+                .preferredDifficulty(SurveyDifficulty.LEVEL_5)
+                .selectedTopics(topics)
+                .build();
     }
 
     // 카카오 로그인(CustomOAuth2UserService)이 만드는 principal과 같은 모양: authority는 role 이름,
@@ -57,7 +82,9 @@ public class GuestService {
         OAuth2User principal = new DefaultOAuth2User(authorities,
                 Map.of("provider", GuestProperties.PROVIDER,
                         "providerId", guest.getProviderId(),
-                        "nickname", guest.getNickname()),
+                        "nickname", guest.getNickname(),
+                        // 헤더·사이드바가 이름을 카카오 응답 모양(kakao_account.profile.nickname)으로 읽는다
+                        "kakao_account", Map.of("profile", Map.of("nickname", guest.getNickname()))),
                 "providerId");
         return new OAuth2AuthenticationToken(principal, authorities, GuestProperties.PROVIDER);
     }

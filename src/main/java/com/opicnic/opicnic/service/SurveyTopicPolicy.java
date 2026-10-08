@@ -46,6 +46,11 @@ public class SurveyTopicPolicy {
         return groups;
     }
 
+    // 온보딩의 "전체 선택"과 같은 목록(그룹 순서). 게스트 기본 설문이 쓴다
+    public static List<SurveyTopic> allTopics() {
+        return GROUPS.values().stream().flatMap(List::stream).toList();
+    }
+
     // 토글 API가 주제 하나를 새로 추가할 때 쓴다 — 추가는 최소 개수 완성 전 단계에서도
     // 호출되므로 isValid()(총 개수 12 이상 요구)를 그대로 쓸 수 없다. 허용 목록 여부만 확인한다.
     public boolean isAllowedTopic(SurveyTopic topic) {

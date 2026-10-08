@@ -2,13 +2,19 @@ package com.opicnic.opicnic.service.guest;
 
 import com.opicnic.opicnic.domain.Member;
 import com.opicnic.opicnic.domain.enums.Role;
+import com.opicnic.opicnic.domain.SurveyProfile;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
+import com.opicnic.opicnic.service.SurveyTopicPolicy;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +30,8 @@ class GuestServiceTest {
     private final MemberRepository memberRepository = mock(MemberRepository.class);
     private final GuestSampleCopier sampleCopier = mock(GuestSampleCopier.class);
     private final GuestProperties properties = new GuestProperties();
-    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier);
+    private final SurveyProfileRepository surveyProfileRepository = mock(SurveyProfileRepository.class);
+    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, surveyProfileRepository);
 
     GuestServiceTest() {
         when(memberRepository.save(any(Member.class))).thenAnswer(inv -> {
@@ -70,5 +77,29 @@ class GuestServiceTest {
         properties.setSampleMemberId(5L);
         Member guest = service.createGuest();
         verify(sampleCopier).copy(eq(5L), eq(guest), any(LocalDateTime.class));
+    }
+
+    @Test
+    void 설문이_없으면_온보딩_전체선택과_같은_기본_설문을_만든다() {
+        when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.empty());
+
+        service.createGuest();
+
+        ArgumentCaptor<SurveyProfile> saved = ArgumentCaptor.forClass(SurveyProfile.class);
+        verify(surveyProfileRepository).save(saved.capture());
+        SurveyProfile p = saved.getValue();
+        assertThat(p.getTargetGrade()).isEqualTo(SurveyProfile.TargetGrade.IH);
+        assertThat(p.getResidenceType()).isEqualTo(SurveyProfile.ResidenceType.ALONE);
+        assertThat(new SurveyTopicPolicy().isValid(SurveyTopicPolicy.allTopics())).isTrue();
+        assertThat(p.getSelectedTopics()).containsAll(SurveyTopicPolicy.allTopics()).contains(SurveyTopic.LIVING_ALONE);
+    }
+
+    @Test
+    void 예시_설문이_복사됐으면_기본_설문을_만들지_않는다() {
+        when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.of(SurveyProfile.builder().build()));
+
+        service.createGuest();
+
+        verify(surveyProfileRepository, never()).save(any());
     }
 }

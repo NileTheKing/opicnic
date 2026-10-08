@@ -82,7 +82,7 @@ class GuestLoginControllerTest {
 
         MvcResult result = mockMvc.perform(post("/auth/guest").with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/onboarding"))
+                .andExpect(redirectedUrl("/"))
                 .andReturn();
 
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
@@ -115,7 +115,7 @@ class GuestLoginControllerTest {
         when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/auth/guest").with(csrf()).with(r -> { r.setRemoteAddr("9.9.9.9"); return r; }))
-                .andExpect(redirectedUrl("/onboarding"));
+                .andExpect(redirectedUrl("/"));
         mockMvc.perform(post("/auth/guest").with(csrf()).with(r -> { r.setRemoteAddr("9.9.9.9"); return r; }))
                 .andExpect(redirectedUrl("/auth/login?guestLimit"));
 

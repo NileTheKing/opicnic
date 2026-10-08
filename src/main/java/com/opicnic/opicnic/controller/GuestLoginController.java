@@ -1,7 +1,6 @@
 package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.Member;
-import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.guest.GuestCreationThrottle;
 import com.opicnic.opicnic.service.guest.GuestProperties;
 import com.opicnic.opicnic.service.guest.GuestService;
@@ -27,7 +26,6 @@ public class GuestLoginController {
     private final GuestProperties properties;
     private final GuestService guestService;
     private final GuestCreationThrottle creationThrottle;
-    private final SurveyProfileRepository surveyProfileRepository;
     private final HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @PostMapping("/auth/guest")
@@ -58,8 +56,7 @@ public class GuestLoginController {
         SecurityContextHolder.setContext(context);
         securityContextRepository.saveContext(context, request, response);
 
-        // OAuth2LoginSuccessHandler와 같은 분기. 예시 설문이 복사됐으면 바로 홈
-        boolean hasProfile = surveyProfileRepository.findByMemberId(guest.getId()).isPresent();
-        return hasProfile ? "redirect:/" : "redirect:/onboarding";
+        // 게스트는 설문이 항상 채워져 있다(GuestService.createGuest) — 온보딩 없이 바로 홈
+        return "redirect:/";
     }
 }
