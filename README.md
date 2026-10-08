@@ -6,12 +6,15 @@
 
 [![Java](https://img.shields.io/badge/Java_21-Virtual_Threads-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/projects/loom/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Groq](https://img.shields.io/badge/Groq-Whisper_%7C_LLM-412991?style=flat-square)](https://groq.com)
+[![Gemini](https://img.shields.io/badge/Gemini-채점_LLM-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
+[![Groq](https://img.shields.io/badge/Groq-Whisper_STT-412991?style=flat-square)](https://groq.com)
 [![Deploy](https://img.shields.io/badge/opicnic.xyz-live-22c55e?style=flat-square)](https://opicnic.xyz)
 
 [**라이브 데모 →**](https://opicnic.xyz)
 
-<img src="docs/screenshots/feedback.gif" alt="OPIcnic 개별 피드백 데모" width="720">
+<img src="docs/screenshots/feedback-score.png" alt="문항 피드백 — 답변 수준과 항목별 점수" width="260"> <img src="docs/screenshots/feedback-fix.png" alt="문항 피드백 — 내 문장과 고친 문장" width="260"> <img src="docs/screenshots/feedback-model.png" alt="문항 피드백 — 이렇게 말해보세요와 모범 답안" width="260">
+
+<sub>로그인 없이 둘러보기로 들어가면 바로 보이는 예시 기록입니다(실제 채점 결과).</sub>
 
 </div>
 
@@ -50,17 +53,15 @@ OPIcnic은 주제 선택부터 문제, 피드백, 코칭, 학습 계획까지 �
 
 ## 주요 화면
 
-**1. 온보딩 — 배경설문**
-<br>고득점에 불리한 선택지는 처음부터 제외하고, 남은 것 중에서만 고르면 됩니다.
-<img src="docs/screenshots/onboarding.gif" alt="온보딩 — 배경설문" width="600">
+**1. 문항 피드백** (맨 위 사진)
+<br>답변마다 실제 등급 이름으로 수준(IM2 등)을 알려주고, 항목별로 약한 문장을 그대로 인용해 고친 문장을 붙입니다. 마지막엔 가장 두드러진 버릇 하나와, 내 답을 한 단계 올린 모범 답안을 줍니다.
 
-**2. 연습 — 문제 풀이 · 녹음**
-<br>실제 시험 콤보 규칙 그대로 재현된 문제로 연습합니다.
-<img src="docs/screenshots/practice.png" alt="연습 — 문제 풀이/녹음" width="600">
+**2. 기록 · AI 코칭 · 연습 시작**
+<br>쌓인 답변으로 항목별 평균과 약한 유형을 보여주고, AI 코칭은 반복되는 패턴과 답변 수준으로 본 예상 등급을 정리합니다.
 
-**3. 코칭 리포트**
-<br>누적된 답변에서 반복되는 패턴을 잡아냅니다.
-<img src="docs/screenshots/coaching.gif" alt="코칭 리포트" width="600">
+<p align="center">
+<img src="docs/screenshots/history.png" alt="기록 — 최근 기록과 항목별 평균" width="260"> <img src="docs/screenshots/coaching.png" alt="AI 코칭 — 반복 패턴과 예상 등급" width="260"> <img src="docs/screenshots/home.png" alt="연습 시작 화면" width="260">
+</p>
 
 ---
 
@@ -238,7 +239,7 @@ OPIcnic은 주제 선택부터 문제, 피드백, 코칭, 학습 계획까지 �
 |---|---|
 | **Language / Runtime** | Java 21, Virtual Threads |
 | **Framework** | Spring Boot 3.4, Spring AI, Spring Security OAuth2 |
-| **AI / STT** | Groq Whisper (STT), gpt-oss-120b (채점, 코칭 작성), gpt-oss-20b (태깅). 모델 ID는 설정값으로 분리 |
+| **AI / STT** | Groq Whisper (STT), Gemini 3.5 Flash-Lite (채점, 코칭 작성, 태깅 — 무료 등급). 공급자·모델은 `application-<공급자>.yml`로 분리해 `LLM_PROVIDER` 하나로 바꾼다 |
 | **Database** | MySQL 8.0, Spring Data JPA (채점 작업 큐 겸용) |
 | **Storage** | Cloudflare R2 (S3 API, presigned URL 직접 업로드) |
 | **Cache** | Caffeine (제출 전 연습 상태), ConcurrentHashMap (문제 세트) |
