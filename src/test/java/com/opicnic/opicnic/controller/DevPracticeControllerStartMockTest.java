@@ -6,7 +6,7 @@ import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
-import com.opicnic.opicnic.service.GroqService;
+import com.opicnic.opicnic.service.LlmService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
@@ -48,7 +48,7 @@ class DevPracticeControllerStartMockTest {
         when(attemptService.createAttempt(any(), any(), any(), any(), any())).thenReturn(attempt);
 
         DevPracticeController controller = new DevPracticeController(attemptService, feedbackService, mockExamService,
-                Mockito.mock(STTService.class), Mockito.mock(GroqService.class));
+                Mockito.mock(STTService.class), Mockito.mock(LlmService.class));
 
         ResponseEntity<?> response = controller.startMockAttempt();
 

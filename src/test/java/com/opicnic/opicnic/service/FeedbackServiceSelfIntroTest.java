@@ -21,8 +21,8 @@ class FeedbackServiceSelfIntroTest {
     void selfIntroductionWithValidAnswerCompletesWithoutGradingCall() {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any()))
                 .thenReturn("My name is Yang and I am a software engineer who enjoys jogging on weekends.");
@@ -36,6 +36,6 @@ class FeedbackServiceSelfIntroTest {
         assertThat(result.getOverallGrade()).isNull();
         assertThat(result.getOverall()).isNotBlank();
 
-        verifyNoInteractions(groqService);
+        verifyNoInteractions(llmService);
     }
 }

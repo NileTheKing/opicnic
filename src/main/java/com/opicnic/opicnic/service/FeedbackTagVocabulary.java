@@ -3,9 +3,9 @@ package com.opicnic.opicnic.service;
 import java.util.List;
 import java.util.Set;
 
-// REVIEW-09: FeedbackService가 GroqService.extractFeedbackTags()의 LLM 응답을 저장 전에 검증할 때 쓰는
-// category별 태그 allowlist. GroqService의 프롬프트가 적어주는 "선택 가능 태그" 목록과 값 자체는
-// 같아야 한다 — 프롬프트(GroqService.extractFeedbackTags())를 바꾸면 여기도 같이 바꿔야 한다.
+// REVIEW-09: FeedbackService가 LlmService.extractFeedbackTags()의 LLM 응답을 저장 전에 검증할 때 쓰는
+// category별 태그 allowlist. LlmService의 프롬프트가 적어주는 "선택 가능 태그" 목록과 값 자체는
+// 같아야 한다 — 프롬프트(LlmService.extractFeedbackTags())를 바꾸면 여기도 같이 바꿔야 한다.
 // 프롬프트 생성 코드 자체는 이번 변경 범위가 아니라 손대지 않았다.
 public final class FeedbackTagVocabulary {
 

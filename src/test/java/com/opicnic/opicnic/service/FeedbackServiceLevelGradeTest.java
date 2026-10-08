@@ -29,6 +29,11 @@ class FeedbackServiceLevelGradeTest {
     }
 
     @Test
+    void NH도_등급으로_받는다() {
+        assertThat(FeedbackService.capByLength("NH", words(20))).isEqualTo("NH");
+    }
+
+    @Test
     void 상한은_올려_주지_않는다() {
         assertThat(FeedbackService.capByLength("IL", words(20))).isEqualTo("IL");
         assertThat(FeedbackService.capByLength("IM1", words(300))).isEqualTo("IM1");
@@ -37,13 +42,13 @@ class FeedbackServiceLevelGradeTest {
     @Test
     void level이_없거나_이상하면_null_예전_계산으로() {
         assertThat(FeedbackService.capByLength(null, words(100))).isNull();
-        assertThat(FeedbackService.capByLength("NH", words(100))).isNull();
+        assertThat(FeedbackService.capByLength("NL", words(100))).isNull();
         assertThat(FeedbackService.capByLength("", words(100))).isNull();
     }
 
     @Test
-    void 운영_프롬프트는_실험에서_잰_level_v1과_같다() throws Exception {
-        String measured = Files.readString(Path.of("docs/performance/2026-10-07-grading-calibration/level-v1.md")).stripTrailing();
-        assertThat(GroqService.LEVEL_PROMPT).isEqualTo(measured);
+    void 운영_프롬프트는_실험에서_잰_level_v3과_같다() throws Exception {
+        String measured = Files.readString(Path.of("docs/performance/2026-10-07-grading-calibration/level-v3.md")).stripTrailing();
+        assertThat(LlmService.LEVEL_PROMPT).isEqualTo(measured);
     }
 }

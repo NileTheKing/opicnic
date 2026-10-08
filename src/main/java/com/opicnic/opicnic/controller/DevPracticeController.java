@@ -5,7 +5,7 @@ import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
-import com.opicnic.opicnic.service.GroqService;
+import com.opicnic.opicnic.service.LlmService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.MockProvider;
 import com.opicnic.opicnic.service.STTService;
@@ -35,7 +35,7 @@ public class DevPracticeController {
     private final FeedbackService feedbackService;
     private final MockExamService mockExamService;
     private final STTService sttService;
-    private final GroqService groqService;
+    private final LlmService llmService;
 
     // 측정 스크립트는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/api/scoring-jobs 등)는 CSRF를 그대로
     // 강제해야 하므로(SEC-06), 여기서 토큰을 미리 발급받아 이후 POST에 실어 보내게 한다.
@@ -52,7 +52,7 @@ public class DevPracticeController {
                                                @RequestParam(defaultValue = "0") double rate5xx,
                                                @RequestParam(defaultValue = "0") double rateTimeout) {
         sttService.setMockFailureRates(rate429, rate5xx, rateTimeout);
-        groqService.setMockFailureRates(rate429, rate5xx, rateTimeout);
+        llmService.setMockFailureRates(rate429, rate5xx, rateTimeout);
         log.warn("[DEV] mock 실패 주입률 변경: 429={} 5xx={} timeout={}", rate429, rate5xx, rateTimeout);
         return Map.of("rate429", rate429, "rate5xx", rate5xx, "rateTimeout", rateTimeout);
     }

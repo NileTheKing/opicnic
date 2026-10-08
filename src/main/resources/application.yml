@@ -1,6 +1,9 @@
 spring:
   profiles:
     default: dev
+    # LLM 공급자 묶음(주소·모델·옵션)은 application-<공급자>.yml에 있다. .env의 LLM_PROVIDER로 하나를 고른다.
+    # 바꾸기 전에 docs/performance/2026-10-07-grading-calibration의 보정 실험을 그 공급자로 돌려 볼 것 — 모델마다 등급이 다르게 나온다
+    include: ${LLM_PROVIDER:groq}
   threads:
     virtual:
       enabled: true
@@ -42,23 +45,11 @@ spring:
     stt:
       api-key: ${GROQ_API_KEY}
       enabled: ${STT_ENABLED:true}
-    tagging:
-      # 태깅 전용 모델. 채점 모델(아래 chat.options.model)과 일부러 분리 — Groq 한도는 모델별로 따로 적용돼서
-      # 나눠 쓰면 TPD를 두 배로 쓸 수 있다.
-      model: ${LLM_TAGGING_MODEL:openai/gpt-oss-20b}
+    # 공급자별 값(api-key, base-url, completions-path, model, tagging.model)은 application-<공급자>.yml
     openai:
-      # LLM 공급자는 OpenAI 호환 주소면 무엇이든 된다. 기본값은 Groq, .env로 Gemini로 바꾼다(STT는 위 stt 설정으로 Groq 유지):
-      #   LLM_API_KEY=${GEMINI_API_KEY}  LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-      #   LLM_COMPLETIONS_PATH=/chat/completions  LLM_MODEL=gemini-3.5-flash-lite  LLM_TAGGING_MODEL=gemini-3.5-flash-lite
-      #   LLM_REASONING_EFFORT=   (빈 값 — 보정 실험의 Gemini 측정 조건)
-      api-key: ${LLM_API_KEY:${GROQ_API_KEY}}
-      base-url: ${LLM_BASE_URL:https://api.groq.com/openai}
       enabled: ${LLM_ENABLED:true}
       chat:
-        completions-path: ${LLM_COMPLETIONS_PATH:/v1/chat/completions}
         options:
-          # Groq이 모델을 내리는 일이 반복됨(2026-07-31 llama-4-scout, 2026-08-31 llama-3.3-70b + llama-3.1-8b) — 죽으면 여기부터 확인
-          model: ${LLM_MODEL:openai/gpt-oss-120b}
           stream-usage: false
   mvc:
     async:
@@ -103,9 +94,6 @@ management:
 opicnic:
   coaching:
     min-count: 3
-  llm:
-    # 채점 호출의 reasoning_effort. Groq gpt-oss는 low, Gemini는 빈 값(보내지 않음)
-    reasoning-effort: ${LLM_REASONING_EFFORT:low}
   # 비동기 채점 워커 (ADR-0001, service/job/ScoringWorker). 값은 코드 기본값과 같다 — 운영에서 환경변수로 덮는다.
   worker:
     enabled: ${WORKER_ENABLED:true}

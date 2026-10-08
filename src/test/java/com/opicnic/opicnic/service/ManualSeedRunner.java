@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// 로컬 DB 코칭 화면 수동 검증용 1회성 시더. 실제 GroqService(getOpicFeedback+extractFeedbackTags)를 호출해
+// 로컬 DB 코칭 화면 수동 검증용 1회성 시더. 실제 LlmService(getOpicFeedback+extractFeedbackTags)를 호출해
 // 정식 파이프라인과 동일하게 FeedbackResult+FeedbackTag를 채운다. 검증 끝나면 이 파일은 삭제할 것.
 @SpringBootTest
 class ManualSeedRunner {
@@ -34,7 +34,7 @@ class ManualSeedRunner {
         System.out.println(report.getContent());
     }
 
-    @Autowired private GroqService groqService;
+    @Autowired private LlmService llmService;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private FeedbackResultRepository feedbackResultRepository;
     @Autowired private FeedbackTagRepository feedbackTagRepository;
@@ -90,14 +90,14 @@ class ManualSeedRunner {
 
         for (Sample s : samples()) {
             QuestionDto q = new QuestionDto(s.qId(), s.question(), s.topic(), s.type());
-            Map<String, Object> fb = groqService.getOpicFeedback(s.answer(), q);
+            Map<String, Object> fb = llmService.getOpicFeedback(s.answer(), q);
 
             String mainPointDiag = str(fb.get("mainPoint"));
             String expressionDiag = str(fb.get("expression"));
             String accuracyDiag = str(fb.get("accuracy"));
             String contentDiag = str(fb.get("content"));
 
-            String tagsJson = groqService.extractFeedbackTags(
+            String tagsJson = llmService.extractFeedbackTags(
                     s.type().name(), mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
 
             int fluencyScore = fluencyScore(s.answer());

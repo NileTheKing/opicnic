@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// 수동 측정 전용. 채점 호출(GroqService.getOpicFeedback) 1건의 completion 토큰이 maxTokens 상한에
+// 수동 측정 전용. 채점 호출(LlmService.getOpicFeedback) 1건의 completion 토큰이 maxTokens 상한에
 // 얼마나 붙는지를 "최악 케이스(2분 발화 분량 ~280단어)"로 재는 것이 목적이다.
 // STT는 태우지 않고 하드코딩 transcript를 쓴다. -Dmanual.scoringtokens=true 로만 켜진다.
 // 실제 Groq API를 호출하므로 임의 실행 금지.
@@ -48,9 +48,9 @@ public class ManualScoringTokenMeasurementTest {
             without it I think my life would be much more stressful than now. That's basically all about it.
             """;
 
-    // Spring 컨텍스트/DB 없이 GroqService만 직접 조립한다 — 재려는 건 채점 호출 1건의 토큰뿐이라
+    // Spring 컨텍스트/DB 없이 LlmService만 직접 조립한다 — 재려는 건 채점 호출 1건의 토큰뿐이라
     // 애플리케이션 전체를 띄울 이유가 없다. 모델/base-url은 application.yml과 동일하게 맞춘다.
-    private GroqService newGroqService() {
+    private LlmService newLlmService() {
         OpenAiApi api = OpenAiApi.builder()
                 .baseUrl("https://api.groq.com/openai")
                 .apiKey(System.getProperty("GROQ_API_KEY"))
@@ -59,7 +59,7 @@ public class ManualScoringTokenMeasurementTest {
                 .openAiApi(api)
                 .defaultOptions(OpenAiChatOptions.builder().model("openai/gpt-oss-120b").build())
                 .build();
-        GroqService service = new GroqService(chatModel, new ObjectMapper(), new SimpleMeterRegistry());
+        LlmService service = new LlmService(chatModel, new ObjectMapper(), new SimpleMeterRegistry());
         ReflectionTestUtils.setField(service, "aiEnabled", true);
         ReflectionTestUtils.setField(service, "mockDelayMs", 0L);
         ReflectionTestUtils.setField(service, "taggingModel", "openai/gpt-oss-20b");
@@ -74,7 +74,7 @@ public class ManualScoringTokenMeasurementTest {
                         + "Please describe the park you often go to in as much detail as possible.",
                 "공원 가기", QuestionType.TYPE_1);
 
-        Logger groqLogger = (Logger) LoggerFactory.getLogger(GroqService.class);
+        Logger groqLogger = (Logger) LoggerFactory.getLogger(LlmService.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         groqLogger.setLevel(Level.INFO);
@@ -84,7 +84,7 @@ public class ManualScoringTokenMeasurementTest {
         Exception thrown = null;
         long start = System.currentTimeMillis();
         try {
-            result = newGroqService().getOpicFeedback(LONG_TRANSCRIPT, question);
+            result = newLlmService().getOpicFeedback(LONG_TRANSCRIPT, question);
         } catch (Exception e) {
             thrown = e;
         }

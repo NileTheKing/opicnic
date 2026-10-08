@@ -16,16 +16,16 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class GroqServiceTest {
+class LlmServiceTest {
 
-    private GroqService groqService;
+    private LlmService llmService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        groqService = new GroqService(mock(ChatModel.class), objectMapper, new SimpleMeterRegistry());
-        ReflectionTestUtils.setField(groqService, "aiEnabled", false);
-        ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
+        llmService = new LlmService(mock(ChatModel.class), objectMapper, new SimpleMeterRegistry());
+        ReflectionTestUtils.setField(llmService, "aiEnabled", false);
+        ReflectionTestUtils.setField(llmService, "mockDelayMs", 0L);
     }
 
     @Test
@@ -33,7 +33,7 @@ class GroqServiceTest {
     void mockMode_returnsScoreFieldsAsInteger() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = llmService.getOpicFeedback("I like hiking.", question);
 
         assertThat(result.get("expressionScore")).isInstanceOf(Integer.class);
         assertThat(result.get("accuracyScore")).isInstanceOf(Integer.class);
@@ -47,7 +47,7 @@ class GroqServiceTest {
     void mockMode_scoresAreInRange() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = llmService.getOpicFeedback("I like hiking.", question);
 
         for (String key : new String[]{"expressionScore", "accuracyScore", "mainPointScore", "contentScore"}) {
             int score = (Integer) result.get(key);
@@ -61,7 +61,7 @@ class GroqServiceTest {
     void mockMode_returnsAllTextAndExampleFields() {
         QuestionDto question = new QuestionDto(1L, "Tell me about your hobby.", "취미", QuestionType.TYPE_1);
 
-        Map<String, Object> result = groqService.getOpicFeedback("I like hiking.", question);
+        Map<String, Object> result = llmService.getOpicFeedback("I like hiking.", question);
 
         for (String key : new String[]{
                 "mainPoint", "expression", "accuracy", "content", "improvements",
@@ -75,7 +75,7 @@ class GroqServiceTest {
     @Test
     @DisplayName("mock 모드에서 태그 추출은 중첩 스키마(expression.vocab/sentence/imagery)를 반환해야 한다")
     void mockMode_extractFeedbackTags_returnsNestedSchema() throws Exception {
-        String json = groqService.extractFeedbackTags("TYPE_1", "진단", "진단", "진단", "진단");
+        String json = llmService.extractFeedbackTags("TYPE_1", "진단", "진단", "진단", "진단");
         JsonNode node = objectMapper.readTree(json);
 
         assertThat(node.has("mainPoint")).isTrue();
@@ -90,7 +90,7 @@ class GroqServiceTest {
     @Test
     @DisplayName("mock 모드에서 코칭 리포트는 summary/strength/criteria/types를 반환해야 한다")
     void mockMode_getCoachingReport_returnsExpectedSchema() throws Exception {
-        String json = groqService.getCoachingReport("【메인포인트】\n- WHY_MISSING: 3/10건", "IH");
+        String json = llmService.getCoachingReport("【메인포인트】\n- WHY_MISSING: 3/10건", "IH");
         JsonNode node = objectMapper.readTree(json);
 
         assertThat(node.has("summary")).isTrue();

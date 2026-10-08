@@ -30,7 +30,7 @@ public class FeedbackService {
 
     private final ComboPracticeService comboPracticeService;
     private final STTService sttService;
-    private final GroqService groqService;
+    private final LlmService llmService;
     private final ObjectMapper objectMapper;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
@@ -54,14 +54,14 @@ public class FeedbackService {
         if (question.getQuestionType() == null) {
             return selfIntroductionDto(question, speechText);
         }
-        var feedbackMap = groqService.getOpicFeedback(speechText, question);
+        var feedbackMap = llmService.getOpicFeedback(speechText, question);
 
         String mainPointDiag = str(feedbackMap, "mainPoint");
         String expressionDiag = str(feedbackMap, "expression");
         String accuracyDiag = str(feedbackMap, "accuracy");
         String contentDiag = str(feedbackMap, "content");
 
-        String tagsJson = groqService.extractFeedbackTags(
+        String tagsJson = llmService.extractFeedbackTags(
                 question.getQuestionType().name(),
                 mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
         List<FeedbackTagDto> tags = parseTags(tagsJson, question.getQuestionType().name());
@@ -193,17 +193,18 @@ public class FeedbackService {
         return type == QuestionType.TYPE_5 || type == QuestionType.TYPE_6 || type == QuestionType.TYPE_7;
     }
 
-    static final List<String> LEVELS = List.of("IL", "IM1", "IM2", "IM3", "IH", "AL");
+    static final List<String> LEVELS = List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL");
     // 짧은 답은 문단 수준 등급을 보여줄 수 없다 — 상한만 걸고 올려 주지는 않는다. 값은 보정 실험에서 기준점을 자르지 않는 선
-    private static final int[][] WORD_CAPS = {{35, 1}, {60, 2}, {90, 3}, {120, 4}};  // {이 단어 수 미만이면, LEVELS 인덱스까지}
+    private static final List<Map.Entry<Integer, String>> WORD_CAPS =  // 이 단어 수 미만이면 이 등급까지
+            List.of(Map.entry(35, "IM1"), Map.entry(60, "IM2"), Map.entry(90, "IM3"), Map.entry(120, "IH"));
 
     static String capByLength(String level, String text) {
         if (level == null) return null;
         int idx = LEVELS.indexOf(level.trim().toUpperCase());
         if (idx < 0) return null;
         int words = text == null || text.isBlank() ? 0 : text.trim().split("\\s+").length;
-        for (int[] cap : WORD_CAPS) {
-            if (words < cap[0]) return LEVELS.get(Math.min(idx, cap[1]));
+        for (var cap : WORD_CAPS) {
+            if (words < cap.getKey()) return LEVELS.get(Math.min(idx, LEVELS.indexOf(cap.getValue())));
         }
         return LEVELS.get(idx);
     }

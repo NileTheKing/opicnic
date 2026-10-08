@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FullPipelineEndToEndTest {
 
     @Autowired
-    private GroqService groqService;
+    private LlmService llmService;
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -75,14 +75,14 @@ class FullPipelineEndToEndTest {
         for (int i = 0; i < samples.size(); i++) {
             Sample s = samples.get(i);
             QuestionDto q = new QuestionDto(s.qId(), s.question(), s.topic(), s.type());
-            Map<String, Object> callA = groqService.getOpicFeedback(s.answer(), q);
+            Map<String, Object> callA = llmService.getOpicFeedback(s.answer(), q);
             typeAttempts.merge(s.type(), 1, Integer::sum);
 
             System.out.println("--- [" + i + "] " + s.type() + " (" + s.topic() + ") ---");
             System.out.println("scores: MP=" + callA.get("mainPointScore") + " EX=" + callA.get("expressionScore")
                     + " AC=" + callA.get("accuracyScore") + " CT=" + callA.get("contentScore"));
 
-            String tagsJson = groqService.extractFeedbackTags(
+            String tagsJson = llmService.extractFeedbackTags(
                     s.type().name(), str(callA.get("mainPoint")), str(callA.get("expression")),
                     str(callA.get("accuracy")), str(callA.get("content")));
             JsonNode node = objectMapper.readTree(tagsJson);
@@ -188,7 +188,7 @@ class FullPipelineEndToEndTest {
         // TYPE_9는 3건 중 2건이 프레임 없는 약한 답변이라 비율(0.4) 조건을 넘겨 유형 섹션이 생겨야 함
         assertThat(summary.toString()).contains("【유형: TYPE_9】");
 
-        String finalReport = groqService.getCoachingReport(summary.toString(), "IH");
+        String finalReport = llmService.getCoachingReport(summary.toString(), "IH");
         System.out.println("=====FINAL COACHING REPORT=====");
         System.out.println(finalReport);
 

@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+// 채점·태깅·코칭 LLM 호출. OpenAI 호환 주소면 공급자는 상관없다 — 어떤 공급자를 쓸지는 application-<공급자>.yml(LLM_PROVIDER).
+// 예전 이름 GroqService (2026-10-08 Gemini 전환 준비로 이름을 바꿈)
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GroqService {
+public class LlmService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
@@ -69,7 +71,7 @@ public class GroqService {
     private String reasoningEffort;
 
     // 등급 판단 — 코칭 점수와 별개로 ACTFL 기준 근거를 먼저 적고 level을 고르게 한다.
-    // docs/performance/2026-10-07-grading-calibration/level-v1.md 와 같은 내용(실험에서 잰 그대로 옮김)
+    // docs/performance/2026-10-07-grading-calibration/level-v3.md 와 같은 내용(실험에서 잰 그대로 옮김)
     static final String LEVEL_PROMPT =
             "【추가: 등급(level) 판단 — 위 코칭 점수와 별개로】\n" +
             "위 점수들(mainPoint/expression/accuracy/content)은 \"무엇을 고칠지\"를 위한 코칭 기준이다. 등급은 그 점수와 무관하게, 실제 OPIc 채점자처럼 \"이 사람이 영어로 무엇을 해낼 수 있는가\"로 판단하라.\n" +
@@ -83,8 +85,9 @@ public class GroqService {
             "5. errors — 오류의 성격: 이해를 방해 / 잦지만 이해 가능 / 가끔, 복잡한 문장에서 / 드물고 패턴 없음\n" +
             "\n" +
             "등급 기술 (가장 잘 맞는 하나를 고르되, 경계에서는 낮은 쪽):\n" +
-            "- IL: 단어·구·외운 표현 위주, 문장이 거의 완성되지 않음. 매우 짧다.\n" +
-            "- IM1: 스스로 단문을 만든다. 몇 문장 수준, 기본 어휘, 거의 현재 시제, 세부 정보가 적다.\n" +
+            "- NH: 단어·구·외운 표현 위주. 문장을 만들려는 시도는 있지만 대부분 완성되지 않는다.\n" +
+            "- IL: 짧은 단문을 스스로 만든다. 문장이 짧고 뚝뚝 끊기며, 질문에 기본 정보 몇 개로만 답한다. 오류가 잦지만 뜻은 통한다.\n" +
+            "- IM1: 단문 여러 개로 질문에 답한다. 기본 어휘, 거의 현재 시제, 세부 정보가 적다.\n" +
             "- IM2: 단문을 여러 개 이어 질문에 충실히 답한다. and/so/because 정도의 연결, 약간의 세부 정보. 여전히 문장 단위.\n" +
             "- IM3: 더 길고 구체적인 문장 나열, 복문을 가끔 쓴다. 과거 이야기를 대체로 맞는 시제로 하지만 흐름은 문장 단위이고, 구성(도입-전개-마무리)이 약하거나 어휘가 일반적이다.\n" +
             "- IH: 문단 수준으로 말하려 하고 대부분 성공한다. 시제를 오가며 서술하지만 길어지면 가끔 흔들리거나 단순해진다. 어휘가 구체적이고 연결 장치가 다양하다.\n" +
@@ -96,7 +99,7 @@ public class GroqService {
             "\n" +
             "JSON에 아래 두 필드를 추가하라 (기존 필드는 그대로):\n" +
             "  \"levelEvidence\": {\"textType\": \"...\", \"timeFrames\": \"...\", \"cohesion\": \"...\", \"vocabulary\": \"...\", \"errors\": \"...\"},\n" +
-            "  \"level\": \"IL|IM1|IM2|IM3|IH|AL 중 하나\"";
+            "  \"level\": \"NH|IL|IM1|IM2|IM3|IH|AL 중 하나 (NH보다 낮아 보여도 NH)\"";
 
     // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
     private static final String MOCK_429_BODY =
