@@ -1,0 +1,610 @@
+{
+  "results" : [ {
+    "questionId" : 51,
+    "attemptId" : "39a2029a-1df3-467a-8b03-e56a47a3dd6f",
+    "questionType" : "TYPE_1",
+    "surveyTopicName" : "PARK_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "Describe a park you often visit. What does it look like and what facilities does it have?",
+    "sttText" : "There is a park near my house. It is big. There are many trees and a small lake. There is a bench and a playground. I like this park. I go there on weekend. It is quiet and the air is good. So I like it.",
+    "mainPoint" : "답변 초반에 What은 있지만, 구체적인 Feeling과 Why가 빠져 있어요.\n예) 'There is a park near my house. It is big.' -> 'The park near my house is honestly my favorite place because it always helps me clear my head.'",
+    "mainPointScore" : 2,
+    "mainPointQuote" : "There is a park near my house. It is big.",
+    "mainPointFix" : "The park near my house is honestly my favorite place because it always helps me clear my head.",
+    "expression" : "기본적인 단어와 짧은 단문 위주로 구성되어 있어 묘사가 다소 단조로워요.\n예) 'It is quiet and the air is good.' -> 'It is super peaceful, and the fresh air just makes me feel so relaxed.'",
+    "expressionScore" : 2,
+    "expressionQuote" : "It is quiet and the air is good.",
+    "expressionFix" : "It is super peaceful, and the fresh air just makes me feel so relaxed.",
+    "accuracy" : "문법적 오류 없이 기본적인 문장들을 잘 만들었어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "공원의 모습과 시설에 대한 질문에 알맞게 답하고 있어요.",
+    "contentScore" : 4,
+    "contentQuote" : "There are many trees and a small lake. There is a bench and a playground.",
+    "contentFix" : "",
+    "fluency" : "46단어. 더 길게 말하는 연습이 필요해요. (목표: 60단어+)",
+    "fluencyScore" : 2,
+    "overall" : "IL 수준이에요. 핵심전달 개선이 다음 목표예요.",
+    "overallGrade" : "IL",
+    "improvements" : "단순한 사실 나열 대신 구체적인 감정과 이유를 함께 말해 보세요.\n예) 'I like this park. I go there on weekend.' -> 'I go there every weekend because spending time in nature is the best way for me to recharge.'",
+    "modelAnswer" : "The park near my house is honestly my favorite place because it always helps me clear my head. There are many tall trees and a small, quiet lake, along with a cozy bench and a playground for kids. It is super peaceful, and the fresh air just makes me feel so relaxed. I usually go there every weekend because spending time in nature is the best way for me to recharge. I really love this park so much.",
+    "modelAnswerComment" : "핵심전달 피드백을 반영해 첫 문장에 What과 Feeling, Why를 담았고, 표현력 피드백을 반영해 공원의 분위기를 더 생생하고 자연스러운 구어체로 묘사했어요.",
+    "createdAt" : "2026-09-18T21:02:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "FEELING_MISSING"
+    }, {
+      "category" : "mainPoint",
+      "tag" : "WHY_MISSING"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 52,
+    "attemptId" : "39a2029a-1df3-467a-8b03-e56a47a3dd6f",
+    "questionType" : "TYPE_2",
+    "surveyTopicName" : "PARK_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "What do you usually do when you visit the park? Describe your typical routine. Where do you usually do this, and who do you usually do it with?",
+    "sttText" : "I usually go to the park on Saturday. I walk with my dog. I walk about one hour. Sometimes I sit on the bench and listen to music. I go alone or with my sister. After walk, I buy coffee. It is my routine.",
+    "mainPoint" : "처음부터 루틴을 말하기 시작하지만 감정이나 왜 그 루틴을 즐기는지에 대한 설명이 빠져 있어요.\n예) 'I usually go to the park on Saturday.' -> 'Going to the park on Saturdays is honestly my favorite weekend routine to clear my head.'",
+    "mainPointScore" : 2,
+    "mainPointQuote" : "I usually go to the park on Saturday.",
+    "mainPointFix" : "Going to the park on Saturdays is honestly my favorite weekend routine to clear my head.",
+    "expression" : "기본적인 동사와 단문 위주로 표현해서 문장이 조금 뚝뚝 끊겨요.\n예) 'I walk about one hour.' -> 'I usually take a nice one-hour walk around the neighborhood.'",
+    "expressionScore" : 2,
+    "expressionQuote" : "I walk about one hour.",
+    "expressionFix" : "I usually take a nice one-hour walk around the neighborhood.",
+    "accuracy" : "전반적으로 문법 오류가 적고 의미가 잘 통해요.",
+    "accuracyScore" : 4,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문에서 요구한 방문 시기, 장소, 함께 가는 사람, 그리고 전반적인 루틴을 모두 잘 포함했어요.\n예) 'I go alone or with my sister. After walk, I buy coffee.' -> 'I usually go alone or sometimes with my sister, and we grab some coffee afterwards.'",
+    "contentScore" : 4,
+    "contentQuote" : "I go alone or with my sister. After walk, I buy coffee.",
+    "contentFix" : "I usually go alone or sometimes with my sister, and we grab some coffee afterwards.",
+    "fluency" : "44단어. 더 길게 말하는 연습이 필요해요. (목표: 60단어+)",
+    "fluencyScore" : 2,
+    "overall" : "IM2 수준이에요. 핵심전달 개선이 다음 목표예요.",
+    "overallGrade" : "IM2",
+    "improvements" : "핵심 감정과 이유 없이 바로 행동 나열로 시작해요.\n예) 'I usually go to the park on Saturday.' -> 'Going to the park on Saturdays is honestly my favorite routine to recharge.'",
+    "modelAnswer" : "Going to the park on Saturdays is honestly my favorite routine to recharge. I usually go to the park near my house on Saturday morning. I walk about one hour with my dog to get some fresh air. Sometimes I just sit on the bench and listen to my favorite music. I usually go alone or with my sister when she is free. After the walk, I always buy an iced coffee on my way home. It is a really relaxing time for me.",
+    "modelAnswerComment" : "핵심전달 항목에서 부족했던 감정과 이유를 첫 문장에 넣어 답변의 시작을 부드럽게 만들었어요. 또한 표현력 항목을 반영해 단순한 문장들을 조금 더 자연스러운 구어체로 다듬었습니다.",
+    "createdAt" : "2026-09-18T21:04:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "FEELING_MISSING"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 53,
+    "attemptId" : "39a2029a-1df3-467a-8b03-e56a47a3dd6f",
+    "questionType" : "TYPE_3",
+    "surveyTopicName" : "PARK_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "Tell me about how you first started visiting parks regularly. How has your routine changed since then?",
+    "sttText" : "I started going to the park when I was university student. I was stressed. My friend said walking is good. So I started. Before, I go one time a week. Now I go two or three times. Because I have a dog now. It is good for health.",
+    "mainPoint" : "핵심 감정과 이유가 부족하고 단문 위주로 나열되어 있어요.\n예) 'I started going to the park when I was university student. I was stressed.' -> 'I honestly started visiting parks regularly back when I was a university student because I was so stressed out.'",
+    "mainPointScore" : 2,
+    "mainPointQuote" : "I started going to the park when I was university student. I was stressed.",
+    "mainPointFix" : "I honestly started visiting parks regularly back when I was a university student because I was so stressed out.",
+    "expression" : "기본적인 단어와 짧은 단문만 반복해서 표현력이 다소 아쉬워요.\n예) 'Before, I go one time a week. Now I go two or three times.' -> 'Back then, I used to go just once a week, but now I visit two or three times a week.'",
+    "expressionScore" : 2,
+    "expressionQuote" : "Before, I go one time a week. Now I go two or three times.",
+    "expressionFix" : "Back then, I used to go just once a week, but now I visit two or three times a week.",
+    "accuracy" : "시제 일치와 관사 사용에서 사소한 문법 오류가 있어요.\n예) 'I started going to the park when I was university student.' -> 'I started going to the park when I was a university student.'",
+    "accuracyScore" : 3,
+    "accuracyQuote" : "I started going to the park when I was university student.",
+    "accuracyFix" : "I started going to the park when I was a university student.",
+    "content" : "공원 방문을 시작한 계기와 루틴의 변화라는 주제에는 잘 맞지만 전개가 단순해요.\n예) 'Because I have a dog now. It is good for health.' -> 'That routine changed because I have a dog now, and it is so good for both of our health.'",
+    "contentScore" : 3,
+    "contentQuote" : "Because I have a dog now. It is good for health.",
+    "contentFix" : "That routine changed because I have a dog now, and it is so good for both of our health.",
+    "fluency" : "48단어. 더 길게 말하는 연습이 필요해요. (목표: 60단어+)",
+    "fluencyScore" : 2,
+    "overall" : "IM1 수준이에요. 핵심전달 개선이 다음 목표예요.",
+    "overallGrade" : "IM1",
+    "improvements" : "핵심 감정과 이유를 초반에 확실히 말해 보세요.\n예) 'I started going to the park when I was university student. I was stressed.' -> 'I honestly started visiting parks regularly back when I was a university student because I was so stressed out.'",
+    "modelAnswer" : "I honestly started visiting parks regularly back when I was a university student because I was so stressed out. A close friend of mine suggested that walking would clear my head, so I just gave it a try. Back then, I used to go just once a week, but now I visit two or three times a week. That routine changed because I have a dog now, and walking together is so good for both of our health.",
+    "modelAnswerComment" : "핵심전달 항목에서 부족했던 감정과 이유를 첫 문장에 분명하게 넣었어요. 또한 단순했던 루틴 변화와 반려견이라는 이유를 자연스러운 복문으로 연결하여 표현력을 높였답니다.",
+    "createdAt" : "2026-09-18T21:06:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "WHY_MISSING"
+    }, {
+      "category" : "mainPoint",
+      "tag" : "FEELING_MISSING"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "accuracy",
+      "tag" : "TENSE_ERROR"
+    }, {
+      "category" : "accuracy",
+      "tag" : "ARTICLE_ERROR"
+    }, {
+      "category" : "content",
+      "tag" : "STORY_STRUCTURE_WEAK"
+    } ]
+  }, {
+    "questionId" : 31,
+    "attemptId" : "bf1423b6-3126-48d8-92f9-6e100171e4ed",
+    "questionType" : "TYPE_1",
+    "surveyTopicName" : "MOVIE_WATCHING",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "Describe the type of movies you enjoy watching. What genres do you prefer and why?",
+    "sttText" : "I like action movies and comedy movies. Action movies are exciting because there are many fight scenes and car chases. When I watch them, I feel my stress is going away. Comedy movies are also good because I can laugh a lot. I don't like horror movies because they are too scary for me and I can't sleep after watching. So usually I choose action or comedy when I go to the theater with my friends.",
+    "mainPoint" : "좋아하는 영화 장르를 먼저 말하고 감정과 이유를 덧붙였지만, 첫 문장의 감정 표현이 다소 단순해요.\n예) 'I like action movies and comedy movies.' -> 'Action and comedy movies are honestly my absolute favorites to watch.'",
+    "mainPointScore" : 3,
+    "mainPointQuote" : "I like action movies and comedy movies.",
+    "mainPointFix" : "Action and comedy movies are honestly my absolute favorites to watch.",
+    "expression" : "기본적인 어휘와 단문 위주로 구성되어 있어 조금 더 다채로운 형용사와 표현을 섞어 쓰면 좋아요.\n예) 'Action movies are exciting because there are many fight scenes and car chases.' -> 'Action movies are so thrilling because they are packed with intense fight scenes and high-speed car chases.'",
+    "expressionScore" : 3,
+    "expressionQuote" : "Action movies are exciting because there are many fight scenes and car chases.",
+    "expressionFix" : "Action movies are so thrilling because they are packed with intense fight scenes and high-speed car chases.",
+    "accuracy" : "문법 오류 없이 문장 구조를 아주 잘 통제했어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "좋아하는 장르와 싫어하는 장르를 명확히 나누고 그 이유를 충실히 잘 설명했어요.\n예) 'I don't like horror movies because they are too scary for me and I can't sleep after watching.' -> 'On the other hand, I really avoid horror movies because they are just too terrifying and keep me awake all night.'",
+    "contentScore" : 4,
+    "contentQuote" : "I don't like horror movies because they are too scary for me and I can't sleep after watching.",
+    "contentFix" : "On the other hand, I really avoid horror movies because they are just too terrifying and keep me awake all night.",
+    "fluency" : "76단어. 발화량을 더 늘려보세요. (목표: 90단어+)",
+    "fluencyScore" : 3,
+    "overall" : "IM2 수준이에요. 핵심전달 개선이 다음 목표예요.",
+    "overallGrade" : "IM2",
+    "improvements" : "단순한 I like 표현 대신 구체적인 감정과 이유를 초반에 확실히 드러내 보세요.\n예) 'I like action movies and comedy movies.' -> 'Action and comedy movies are honestly my absolute favorites because they really help me unwind.'",
+    "modelAnswer" : "Action and comedy movies are honestly my absolute favorites because they really help me unwind. Action movies are so thrilling because they are packed with intense fight scenes and high-speed car chases, which make me feel all my stress just melt away. Comedy movies are also amazing because laughing out loud instantly boosts my mood. On the other hand, I really avoid horror movies because they are just too terrifying and keep me awake all night. So whenever I head to the theater with my friends, we almost always pick an action or comedy film.",
+    "modelAnswerComment" : "핵심전달 피드백을 반영해 첫 문장에 영화를 좋아하는 이유와 감정을 더 생생하게 담았고, 표현력 피드백을 살려 thrilling, intense 같은 구어체 형용사를 추가하여 답변을 한 단계 더 자연스럽게 완성했어요.",
+    "createdAt" : "2026-09-25T21:02:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 33,
+    "attemptId" : "bf1423b6-3126-48d8-92f9-6e100171e4ed",
+    "questionType" : "TYPE_3",
+    "surveyTopicName" : "MOVIE_WATCHING",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "Tell me about how you first became interested in movies. How has your taste in movies changed since then?",
+    "sttText" : "I became interested in movies when I was in middle school. My father liked movies, so we watched movies together every Friday night. At that time I liked animation movies like Disney movies. But when I became a high school student, I started to like action movies, like Marvel movies. Now I am an adult, and I also watch drama movies sometimes. My taste changed a lot, but I still love watching movies.",
+    "mainPoint" : "과거에 영화에 빠지게 된 계기와 취향의 변화를 시간순으로 잘 전달했어요. 다만 초반에 강한 감정 표현이 조금 더 드러나면 좋겠어요.\n예) 'I became interested in movies when I was in middle school.' -> 'I actually got totally hooked on movies back when I was in middle school.'",
+    "mainPointScore" : 4,
+    "mainPointQuote" : "I became interested in movies when I was in middle school.",
+    "mainPointFix" : "I actually got totally hooked on movies back when I was in middle school.",
+    "expression" : "기본적인 단문 위주로 서술되어 있어서, 다양한 형용사나 부사를 더해 묘사를 풍부하게 만들면 더 좋아 보여요.\n예) 'My father liked movies, so we watched movies together every Friday night.' -> 'My dad was a huge movie buff, so we ended up watching movies together every single Friday night.'",
+    "expressionScore" : 3,
+    "expressionQuote" : "My father liked movies, so we watched movies together every Friday night.",
+    "expressionFix" : "My dad was a huge movie buff, so we ended up watching movies together every single Friday night.",
+    "accuracy" : "시제와 문장 구조가 안정적이고 전반적인 문법 오류가 거의 없어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문에서 요구한 영화에 관심을 갖게 된 계기와 취향의 변화를 모두 충실하게 잘 담아냈어요.\n예) 'My taste changed a lot, but I still love watching movies.' -> 'My taste has shifted quite a bit over the years, but my love for movies is still going strong.'",
+    "contentScore" : 4,
+    "contentQuote" : "My taste changed a lot, but I still love watching movies.",
+    "contentFix" : "My taste has shifted quite a bit over the years, but my love for movies is still going strong.",
+    "fluency" : "73단어. 발화량을 더 늘려보세요. (목표: 90단어+)",
+    "fluencyScore" : 3,
+    "overall" : "IM3 수준이에요. 표현력 개선이 다음 목표예요.",
+    "overallGrade" : "IM3",
+    "improvements" : "단순한 사실 나열에서 벗어나 감정과 느낌을 더 풍부하게 표현해 보세요.\n예) 'At that time I liked animation movies like Disney movies.' -> 'Back then, I was absolutely obsessed with Disney animations.'",
+    "modelAnswer" : "I actually got totally hooked on movies back when I was in middle school. My dad was a huge movie buff, so we ended up watching movies together every single Friday night. Back then, I was absolutely obsessed with Disney animations. But when I became a high school student, my taste started to shift and I got really into action-packed Marvel movies. Now that I am an adult, I also enjoy watching emotional drama movies from time to time. My taste has changed a lot over the years, but my love for watching movies is still going strong.",
+    "modelAnswerComment" : "핵심전달 항목에서 아버지와의 추억을 더 생생하게 살리고, 표현력 항목에서 'huge movie buff'와 'obsessed with' 같은 자연스러운 어휘를 반영해 모범 답안을 작성했어요.",
+    "createdAt" : "2026-09-25T21:04:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "FEELING_MISSING"
+    }, {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 34,
+    "attemptId" : "bf1423b6-3126-48d8-92f9-6e100171e4ed",
+    "questionType" : "TYPE_4",
+    "surveyTopicName" : "MOVIE_WATCHING",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "What is the most memorable movie you have ever seen? When did you watch it, who were you with, what was it about, and why was it so special?",
+    "sttText" : "The most memorable movie is Avengers Endgame. I watched it in 2019 with my best friend. We went to the theater on the first day, so there were many people. The movie was about the heroes fighting Thanos to save the world. The ending was very sad because Iron Man died. I cried a lot and my friend also cried. It was memorable because I watched Marvel movies for ten years and it was the final.",
+    "mainPoint" : "기억에 남는 영화에 대한 질문에 대해 처음부터 왜 이 영화가 특별한지 이유를 잘 짚어주었어요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "",
+    "mainPointFix" : "",
+    "expression" : "기본적인 단문 위주로 서술되어 있어서, 좀 더 다채로운 형용사와 자연스러운 연결 표현을 쓰면 훨씬 생생한 답변이 돼요.\n예) 'The ending was very sad because Iron Man died.' -> 'The emotional climax at the ending was heartbreaking because Iron Man tragically passed away.'",
+    "expressionScore" : 3,
+    "expressionQuote" : "The ending was very sad because Iron Man died.",
+    "expressionFix" : "The emotional climax at the ending was heartbreaking because Iron Man tragically passed away.",
+    "accuracy" : "전반적인 시제와 문장 구조가 안정적이지만, 마지막 문장 표현에서 약간의 어색함이 있어요.\n예) 'It was memorable because I watched Marvel movies for ten years and it was the final.' -> 'It was truly memorable because I had followed the Marvel series for ten years, and this was the epic finale.'",
+    "accuracyScore" : 4,
+    "accuracyQuote" : "It was memorable because I watched Marvel movies for ten years and it was the final.",
+    "accuracyFix" : "It was truly memorable because I had followed the Marvel series for ten years, and this was the epic finale.",
+    "content" : "질문에서 요구하는 영화 제목, 관람 시기, 함께 본 사람, 줄거리, 그리고 특별한 이유까지 빠짐없이 잘 담겨 있어요.",
+    "contentScore" : 5,
+    "contentQuote" : "",
+    "contentFix" : "",
+    "fluency" : "76단어. 발화량을 더 늘려보세요. (목표: 90단어+)",
+    "fluencyScore" : 3,
+    "overall" : "IM3 수준이에요. 표현력 개선이 다음 목표예요.",
+    "overallGrade" : "IM3",
+    "improvements" : "단순한 문장 나열에서 벗어나 감정과 인상을 더 강렬하게 표현해 보세요.\n예) 'I cried a lot and my friend also cried.' -> 'Both my friend and I were literally in tears by the end of the movie.'",
+    "modelAnswer" : "The most memorable movie I have ever seen is definitely Avengers: Endgame. I watched it in 2019 with my best friend, and we made sure to go to the theater on opening day. The movie was about the heroes fighting Thanos to save the universe. The emotional climax at the ending was heartbreaking because Iron Man tragically passed away, and both my friend and I were literally in tears. It was truly memorable because I had followed the Marvel series for ten years, and this was the epic finale that tied everything together.",
+    "modelAnswerComment" : "사용자가 제공한 답변의 뼈대와 세부 정보를 그대로 살리면서, 표현력 항목에서 지적한 단조로운 문장을 감정이 묻어나는 구어체 표현으로 업그레이드했어요. 또한 정확성 항목에서 어색했던 마지막 문장을 자연스럽고 완성도 높게 다듬었습니다.",
+    "createdAt" : "2026-09-25T21:06:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 91,
+    "attemptId" : "9023f80f-56fb-40f1-9100-80d5dfadaf7c",
+    "questionType" : "TYPE_1",
+    "surveyTopicName" : "COFFEE_SHOP_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "Describe your favorite coffee shop. What does it look like and what do you like about it?",
+    "sttText" : "My favorite coffee shop is a small cafe called Daily Beans, which is about five minutes from my apartment. When you walk in, you can smell the coffee beans right away, and the interior is really cozy with wooden tables and warm lights. There is a big window, so I can see people walking outside. What I like most is that it is quiet, so I can focus when I study or read a book. Also the owner remembers my order, which makes me feel like a regular. The latte there is not too sweet and really smooth. I think it is the best cafe in my neighborhood.",
+    "mainPoint" : "초반에 What과 감정, 이유가 잘 드러나 있어 핵심 전달력이 훌륭해요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "My favorite coffee shop is a small cafe called Daily Beans, which is about five minutes from my apartment.",
+    "mainPointFix" : "",
+    "expression" : "다양한 형용사와 관계대명사를 활용해 묘사력이 아주 좋아요.",
+    "expressionScore" : 5,
+    "expressionQuote" : "The latte there is not too sweet and really smooth.",
+    "expressionFix" : "",
+    "accuracy" : "문법적 오류 없이 정확한 문장 구조를 보여줘요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문의 요구사항인 카페의 생김새와 좋아하는 이유를 구체적으로 잘 담아냈어요.",
+    "contentScore" : 5,
+    "contentQuote" : "",
+    "contentFix" : "",
+    "fluency" : "108단어. 조금 더 말하면 만점이에요. (목표: 130단어+)",
+    "fluencyScore" : 4,
+    "overall" : "IH 수준이에요. 발화량 개선이 다음 목표예요.",
+    "overallGrade" : "IH",
+    "improvements" : "이미 훌륭한 답변이지만, 마지막에 감상을 더 강하게 표현하면 완벽해요.\n예) 'I think it is the best cafe in my neighborhood.' -> 'Honestly, finding a place like this in the neighborhood is such a rare treat, and it truly feels like my second home.'",
+    "modelAnswer" : "My absolute favorite coffee shop is a small cafe called Daily Beans, which is just about five minutes from my apartment. The moment you walk in, you are greeted by the rich smell of coffee beans, and the interior is so cozy with warm wooden tables and soft lighting. There is a large window that lets me watch people walking by outside. What I love most is the peaceful vibe — it is so quiet that I can fully focus when studying or reading a book. Plus, the owner always remembers my usual order, making me feel truly valued as a regular. Their latte is perfectly balanced, not too sweet, and incredibly smooth. Honestly, having a place like this nearby makes my daily routine so much brighter.",
+    "modelAnswerComment" : "사용자의 탄탄한 기본 구성과 뛰어난 표현력을 그대로 살리면서, 마지막 마무리 문장을 조금 더 감성적이고 풍부하게 다듬어 IH 수준에 맞게 완성했어요.",
+    "createdAt" : "2026-10-02T21:02:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_RICH"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_VARIED"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_VIVID"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 92,
+    "attemptId" : "9023f80f-56fb-40f1-9100-80d5dfadaf7c",
+    "questionType" : "TYPE_2",
+    "surveyTopicName" : "COFFEE_SHOP_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "How often do you go to coffee shops and what do you usually do there? Where do you usually do this, and who do you usually do it with?",
+    "sttText" : "I go to coffee shops almost every day, usually after work around seven. Most of the time I go to the cafe near my apartment, because it is close and the seats are comfortable. I usually order an iced americano and then I study English or check my emails on my laptop. I stay there for about two hours. On weekends, I go to bigger cafes with my friends and we talk about our week and eat some desserts like cheesecake. Going to cafe is kind of my way to relax after a busy day, so I really look forward to it.",
+    "mainPoint" : "처음부터 카페에 가는 시간과 장소를 명확하게 말하고, 마지막에 왜 카페를 가는지 감정과 이유를 잘 덧붙였어요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "",
+    "mainPointFix" : "",
+    "expression" : "기본적인 어휘와 문장 구조를 잘 활용하고 있으나, 감정이나 묘사를 더 풍부하게 만들면 표현력이 더욱 좋아져요.\n예) 'Going to cafe is kind of my way to relax after a busy day, so I really look forward to it.' -> 'Heading to a cozy cafe is honestly my ultimate way to unwind after a hectic day, so I truly look forward to it.'",
+    "expressionScore" : 4,
+    "expressionQuote" : "Going to cafe is kind of my way to relax after a busy day, so I really look forward to it.",
+    "expressionFix" : "Heading to a cozy cafe is honestly my ultimate way to unwind after a hectic day, so I truly look forward to it.",
+    "accuracy" : "문법과 시제 사용이 매우 정확해서 오류를 찾기 어려워요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문에서 요구하는 빈도, 장소, 하는 일, 함께 가는 사람까지 빠짐없이 충실하게 잘 답변했어요.",
+    "contentScore" : 5,
+    "contentQuote" : "",
+    "contentFix" : "",
+    "fluency" : "102단어. 조금 더 말하면 만점이에요. (목표: 130단어+)",
+    "fluencyScore" : 4,
+    "overall" : "IM3 수준이에요. 표현력 개선이 다음 목표예요.",
+    "overallGrade" : "IM3",
+    "improvements" : "핵심 감정과 이유를 더 생생한 표현으로 다듬어 보세요.\n예) 'Going to cafe is kind of my way to relax after a busy day, so I really look forward to it.' -> 'Heading to a cozy cafe is honestly my ultimate way to unwind after a hectic day, so I truly look forward to it.'",
+    "modelAnswer" : "I go to coffee shops almost every day, usually after work around seven. Heading to a cozy cafe is honestly my ultimate way to unwind after a hectic day, so I truly look forward to it. Most of the time I visit the cafe near my apartment because it is close and the seats are super comfortable. I usually order an iced americano and then I study English or check my emails on my laptop for about two hours. On weekends, I tend to go to bigger cafes with my friends. We usually catch up on our week and share some delicious desserts like cheesecake.",
+    "modelAnswerComment" : "사용자가 제공한 알찬 정보와 루틴을 그대로 살리면서, 표현력 항목에서 다듬은 감정 표현과 생생한 어휘를 도입부에 자연스럽게 녹여내어 모범 답안을 완성했습니다.",
+    "createdAt" : "2026-10-02T21:04:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_BASIC"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 93,
+    "attemptId" : "9023f80f-56fb-40f1-9100-80d5dfadaf7c",
+    "questionType" : "TYPE_3",
+    "surveyTopicName" : "COFFEE_SHOP_GOING",
+    "comboPatternKey" : "TYPE_1,TYPE_2,TYPE_3",
+    "comboCategory" : "C1",
+    "questionContent" : "Tell me about how you first became interested in going to coffee shops. How has that habit changed over time?",
+    "sttText" : "I first became interested in coffee shops when I was a university student. At first I went there just to study, because the library was too quiet and I felt sleepy. But I gradually started to enjoy the atmosphere and the coffee itself. Back then I only drank sweet drinks like caramel macchiato. After I started working, I needed more caffeine, so I switched to americano. These days I also like to visit new cafes on weekends, because there are many unique cafes in Seoul. So my habit changed from studying in cafes to exploring them as a hobby.",
+    "mainPoint" : "처음 카페에 관심을 갖게 된 계기와 변화 과정을 첫 부분에 잘 담아냈어요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "I first became interested in coffee shops when I was a university student. At first I went there just to study, because the library was too quiet and I felt sleepy.",
+    "mainPointFix" : "",
+    "expression" : "기본적인 단문 위주이나 과거와 현재의 변화를 묘사하는 어휘 선택이 좋아요.\n예) 'Back then I only drank sweet drinks like caramel macchiato.' -> 'Back in those days, I used to only order super sweet drinks like a caramel macchiato.'",
+    "expressionScore" : 4,
+    "expressionQuote" : "Back then I only drank sweet drinks like caramel macchiato.",
+    "expressionFix" : "Back in those days, I used to only order super sweet drinks like a caramel macchiato.",
+    "accuracy" : "시제와 전치사 사용이 안정적이며 문법 오류가 거의 없어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문에서 요구한 처음 관심을 갖게 된 계기와 시간에 따른 변화를 모두 충실히 다뤘어요.",
+    "contentScore" : 5,
+    "contentQuote" : "",
+    "contentFix" : "",
+    "fluency" : "99단어. 조금 더 말하면 만점이에요. (목표: 130단어+)",
+    "fluencyScore" : 4,
+    "overall" : "IM3 수준이에요. 표현력 개선이 다음 목표예요.",
+    "overallGrade" : "IM3",
+    "improvements" : "단순한 문장 연결을 넘어 더 풍부한 감정과 묘사를 더해보세요.\n예) 'So my habit changed from studying in cafes to exploring them as a hobby.' -> 'So my cafe habit totally shifted from just finding a quiet spot to study into exploring unique places all over the city as a fun hobby.'",
+    "modelAnswer" : "I first became interested in coffee shops when I was a university student. At first I went there just to study, because the library was too quiet and I felt sleepy. But I gradually started to enjoy the cozy atmosphere and the coffee itself. Back in those days, I used to only order super sweet drinks like a caramel macchiato. After I started working, I needed a lot more caffeine, so I naturally switched to an americano. These days I also love to visit new cafes on weekends, because there are so many unique cafes in Seoul. So my cafe habit totally shifted from just finding a quiet spot to study into exploring unique places all over the city as a fun hobby.",
+    "modelAnswerComment" : "핵심전달 항목에서 언급한 대학생 시절의 기억과 시기에 따른 변화 흐름을 모범 답안에 그대로 반영했어요. 또한 표현력 항목을 보완하기 위해 'cozy atmosphere', 'totally shifted' 같은 생생한 표현을 더해 완성도를 높였답니다.",
+    "createdAt" : "2026-10-02T21:06:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_RICH"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_SIMPLE"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_FLAT"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 211,
+    "attemptId" : "dd5e0bc5-70ab-421c-b065-f4d0eab477ab",
+    "questionType" : "TYPE_1",
+    "surveyTopicName" : "DOMESTIC_TRAVEL",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "What are your favorite domestic travel destinations? Describe one place you enjoy visiting.",
+    "sttText" : "Honestly, my favorite place to travel in Korea is Gangneung, and I try to go there at least twice a year because it's the place where I can really recharge. It's on the east coast, so the first thing you notice is the ocean. The water is so clear and blue that it almost looks like a postcard. Along the beach there are lots of coffee shops, and Anmok Beach is actually famous for its coffee street, so I usually grab a latte and just walk along the sand for hours. Another thing I love is the food. You can eat fresh raw fish and a local tofu dish called sundubu, which is soft and really comforting. Whenever I feel burned out from work, I just take a train from Seoul, and in less than two hours I'm sitting by the sea. That's why Gangneung is my go-to place.",
+    "mainPoint" : "처음부터 강릉을 좋아하는 이유와 감정이 분명하게 드러나서 아주 좋아요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "Honestly, my favorite place to travel in Korea is Gangneung, and I try to go there at least twice a year because it's the place where I can really recharge.",
+    "mainPointFix" : "",
+    "expression" : "다양한 수식어와 구어체 표현을 풍부하게 써서 생생한 묘사가 돋보여요.",
+    "expressionScore" : 5,
+    "expressionQuote" : "The water is so clear and blue that it almost looks like a postcard.",
+    "expressionFix" : "",
+    "accuracy" : "문법적 오류를 찾아보기 어려울 정도로 정확하게 문장을 구사했어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문의 요구에 맞춰 좋아하는 국내 여행지인 강릉의 매력과 맛집, 방문 이유를 아주 충실하게 전개했어요.",
+    "contentScore" : 5,
+    "contentQuote" : "Another thing I love is the food. You can eat fresh raw fish and a local tofu dish called sundubu, which is soft and really comforting.",
+    "contentFix" : "",
+    "fluency" : "149단어. 발화량이 충분해요.",
+    "fluencyScore" : 5,
+    "overall" : "IH 수준이에요.",
+    "overallGrade" : "IH",
+    "improvements" : "이미 내용과 표현이 아주 훌륭해서 크게 고칠 부분이 없어요.",
+    "modelAnswer" : "Honestly, my favorite place to travel in Korea is Gangneung, and I try to go there at least twice a year because it's the place where I can really recharge. It's on the east coast, so the first thing you notice is the ocean. The water is so clear and blue that it almost looks like a postcard. Along the beach there are lots of coffee shops, and Anmok Beach is actually famous for its coffee street, so I usually grab a latte and just walk along the sand for hours. Another thing I love is the food. You can eat fresh raw fish and a local tofu dish called sundubu, which is soft and really comforting. Whenever I feel burned out from work, I just take a train from Seoul, and in less than two hours I'm sitting by the sea. That's why Gangneung is truly my go-to place.",
+    "modelAnswerComment" : "사용자의 완성도 높은 답변을 그대로 살리면서 마지막 문장에 강조 표현인 truly를 더해 핵심 메시지를 더욱 자연스럽게 마무리했어요.",
+    "createdAt" : "2026-10-07T21:02:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_RICH"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_VARIED"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_VIVID"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 213,
+    "attemptId" : "dd5e0bc5-70ab-421c-b065-f4d0eab477ab",
+    "questionType" : "TYPE_3",
+    "surveyTopicName" : "DOMESTIC_TRAVEL",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "Tell me about a trip you took when you were young. Where did you go and what was it like?",
+    "sttText" : "When I was about ten years old, my family went on a trip to Gyeongju, which is a historic city in the southeast of Korea. I still remember it pretty clearly because it was the first time we stayed at a hotel. We visited Bulguksa Temple and Seokguram, and my dad kept explaining the history, although honestly I was more interested in buying snacks back then. What I remember most is riding bikes around the old tombs in the evening. The weather was perfect and the sky turned orange, and my little brother and I raced each other while my parents laughed behind us. At that time I didn't really appreciate the culture, but looking back, it was a really special trip, and I think that's why I still love traveling around Korea today.",
+    "mainPoint" : "과거 여행에 대한 추억과 그것이 현재에 미치는 영향까지 첫머리와 전체 흐름에 잘 담겨 있어요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "",
+    "mainPointFix" : "",
+    "expression" : "다양한 접속사와 생생한 묘사 어휘를 사용하여 문장의 완성도가 높아요.",
+    "expressionScore" : 5,
+    "expressionQuote" : "",
+    "expressionFix" : "",
+    "accuracy" : "문법 오류 없이 시제와 문장 구조를 정확하게 구사했어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "어린 시절 경주 여행의 구체적인 기억과 감정이 풍부하게 잘 드러나 있어요.",
+    "contentScore" : 5,
+    "contentQuote" : "",
+    "contentFix" : "",
+    "fluency" : "134단어. 발화량이 충분해요.",
+    "fluencyScore" : 5,
+    "overall" : "IH 수준이에요.",
+    "overallGrade" : "IH",
+    "improvements" : "이미 훌륭한 구조를 갖추고 있어 큰 개선점은 없지만, 감정 표현을 조금 더 살리면 더욱 완벽해져요.\n예) 'At that time I didn't really appreciate the culture, but looking back, it was a really special trip' -> 'Back then I didn't really appreciate the culture, but looking back, it was honestly such a special trip that still warms my heart.'",
+    "modelAnswer" : "When I was about ten years old, my family went on a trip to Gyeongju, which is a historic city in the southeast of Korea. I still remember it pretty clearly because it was the first time we stayed at a hotel. We visited Bulguksa Temple and Seokguram, and my dad kept explaining the history, although honestly I was more interested in buying snacks back then. What I remember most is riding bikes around the old tombs in the evening. The weather was perfect and the sky turned orange, and my little brother and I raced each other while my parents laughed behind us. Back then I didn't really appreciate the culture, but looking back, it was honestly such a special trip, and I think that's why I still love traveling around Korea today.",
+    "modelAnswerComment" : "사용자의 훌륭한 답변 구조를 그대로 유지하면서, 마지막 감정 표현을 조금 더 자연스럽고 생생한 구어체로 다듬어 표현력 항목에 반영했어요.",
+    "createdAt" : "2026-10-07T21:04:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_RICH"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_VARIED"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_VIVID"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  }, {
+    "questionId" : 214,
+    "attemptId" : "dd5e0bc5-70ab-421c-b065-f4d0eab477ab",
+    "questionType" : "TYPE_4",
+    "surveyTopicName" : "DOMESTIC_TRAVEL",
+    "comboPatternKey" : "TYPE_1,TYPE_3,TYPE_4",
+    "comboCategory" : "C2",
+    "questionContent" : "Describe the most memorable domestic travel experience you have ever had. When was it, where did you go, who were you with, and what made it so special?",
+    "sttText" : "The most memorable trip I've ever had was a trip to Jeju Island with my two college friends last spring. We had been planning it for months, so we were really excited. On the second day, we decided to hike Hallasan, which is the highest mountain in Korea. Halfway up, it suddenly started raining heavily and we almost gave up, but we kept going because we didn't want to regret it. When we finally reached the top, the clouds cleared for just a few minutes and we could see the crater lake. We were soaked and exhausted, but we were screaming and hugging each other. That moment taught me that the best memories often come from the hardest moments. Even now, whenever we meet, we still talk about that day, and it always makes me smile.",
+    "mainPoint" : "기억에 남는 여행이라는 주제에 맞춰 왜 특별한지 도입부에서 명확하게 짚어주고 있어요.",
+    "mainPointScore" : 5,
+    "mainPointQuote" : "The most memorable trip I've ever had was a trip to Jeju Island with my two college friends last spring.",
+    "mainPointFix" : "",
+    "expression" : "상황을 생생하게 묘사하는 어휘와 감정 표현이 훌륭해요.",
+    "expressionScore" : 5,
+    "expressionQuote" : "We were soaked and exhausted, but we were screaming and hugging each other.",
+    "expressionFix" : "",
+    "accuracy" : "전반적인 문법과 시제 운용이 매우 정확해서 흠잡을 곳이 없어요.",
+    "accuracyScore" : 5,
+    "accuracyQuote" : "",
+    "accuracyFix" : "",
+    "content" : "질문에서 요구하는 장소, 함께 간 사람, 특별한 이유를 빠짐없이 훌륭하게 전개했어요.",
+    "contentScore" : 5,
+    "contentQuote" : "On the second day, we decided to hike Hallasan, which is the highest mountain in Korea.",
+    "contentFix" : "",
+    "fluency" : "136단어. 발화량이 충분해요.",
+    "fluencyScore" : 5,
+    "overall" : "IH 수준이에요.",
+    "overallGrade" : "IH",
+    "improvements" : "이미 훌륭한 답변이지만, 하이라이트 순간의 감정을 조금 더 강조하면 완벽해요.\n예) 'When we finally reached the top, the clouds cleared for just a few minutes and we could see the crater lake.' -> 'Reaching the top just as the clouds cleared to reveal the crater lake felt like a total miracle.'",
+    "modelAnswer" : "The most memorable trip I've ever had was a trip to Jeju Island with my two college friends last spring. We had been planning it for months, so we were really excited. On the second day, we decided to hike Hallasan, which is the highest mountain in Korea. Halfway up, it suddenly started raining heavily and we almost gave up, but we kept going because we didn't want to regret it. Reaching the top just as the clouds cleared to reveal the crater lake felt like a total miracle. We were soaked and exhausted, but we were screaming and hugging each other. That moment taught me that the best memories often come from the hardest moments. Even now, whenever we meet, we still talk about that day, and it always makes me smile.",
+    "modelAnswerComment" : "핵심전달 항목에서 짚어준 도입부의 명확한 요지와 표현력 항목의 생생한 묘사 문장을 모범 답안에 그대로 녹여내어 완성도를 높였어요.",
+    "createdAt" : "2026-10-07T21:06:00",
+    "tags" : [ {
+      "category" : "mainPoint",
+      "tag" : "MP_GOOD"
+    }, {
+      "category" : "vocab",
+      "tag" : "VOCAB_RICH"
+    }, {
+      "category" : "sentence",
+      "tag" : "SENTENCE_VARIED"
+    }, {
+      "category" : "imagery",
+      "tag" : "IMAGERY_VIVID"
+    }, {
+      "category" : "content",
+      "tag" : "CONTENT_GOOD"
+    } ]
+  } ],
+  "coaching" : {
+    "content" : "{\"summary\":\"전반적으로 문장의 구조가 단순하고 기초적인 어휘를 반복해서 사용하는 경향이 있어요. 또한 질문에 답할 때 감정이나 개인적인 느낌을 덧붙이는 부분이 부족해서 답변이 단조롭게 들릴 수 있어요.\",\"strength\":\"다양한 어휘와 다채로운 문장 구조를 활용하려는 시도가 종종 나타나는 점이 장점이에요.\",\"types\":[{\"label\":\"현재 상태 묘사\",\"pattern\":\"기초적인 어휘와 단순한 문장 위주로 구성되어 있으나, 다채로운 표현과 다양한 문장 구조를 활용하려는 시도도 함께 나타나요.\",\"strategy\":\"감각적 형용사로 묘사를 풍부하게 전개하는 연습\"},{\"label\":\"루틴/습관\",\"pattern\":\"감정이나 느낌을 생략한 채 기본 단어와 단순한 문장으로 평이하게 내용을 전달하는 모습이 주로 보여요.\",\"strategy\":\"when/where/what/frequency/with whom을 구체적으로 서술하는 연습\"},{\"label\":\"최근/최초 경험\",\"pattern\":\"감정 표현이 누락되거나 단순하고 평이한 문장과 기초 어휘가 주로 쓰이면서도, 중간에 풍부한 어휘를 섞어 쓰려는 모습이 관찰돼요.\",\"strategy\":\"결말/하이라이트를 먼저 말하고 과거 스토리를 전개하는 연습\"},{\"label\":\"기억에 남는 경험\",\"pattern\":\"기본 단어와 단순한 문장, 평이한 묘사가 나타나는 동시에 다채로운 어휘와 다양한 문장 구조를 쓰려는 시도가 균형 있게 보여요.\",\"strategy\":\"왜 기억에 남는지 먼저 말하는 연습\"}],\"weakCriteria\":[{\"name\":\"메인포인트\",\"score\":4.5,\"analysis\":\"답변을 시작할 때 감정이나 주관적인 느낌을 빠뜨리고 사실 위주로만 전달하는 경향이 있어요.\",\"advice\":\"핵심 주장을 펼칠 때 나의 감정이나 생각을 함께 곁들여 보세요. 그래야 듣는 사람에게 더 깊은 인상을 남길 수 있어요.\",\"examples\":[{\"before\":\"There is a park near my house. It is big.\",\"after\":\"The park near my house is honestly my favorite place because it always helps me clear my head.\",\"why\":\"감정 표현이 빠져 있어서\"}]},{\"name\":\"표현력\",\"score\":4.1,\"analysis\":\"기본적인 단어와 단순한 문장 구조가 자주 쓰이며, 묘사가 다소 평이하고 단조롭게 머무는 편이에요. 다만 풍부한 어휘와 다채로운 문장을 쓰려는 노력도 일부 확인돼요.\",\"advice\":\"평소에 쓰던 쉬운 단어 대신 구체적이고 생생한 표현을 사용해 보세요. 문장의 길이를 늘리거나 형용사를 다양하게 활용하면 답변이 훨씬 풍성해져요.\",\"examples\":[{\"before\":\"It is quiet and the air is good.\",\"after\":\"It is super peaceful, and the fresh air just makes me feel so relaxed.\",\"why\":\"기본적인 단어 위주라서\"},{\"before\":\"I walk about one hour.\",\"after\":\"I usually take a nice one-hour walk around the neighborhood.\",\"why\":\"단순한 문장 구조라서\"},{\"before\":\"Before, I go one time a week. Now I go two or three times.\",\"after\":\"Back then, I used to go just once a week, but now I visit two or three times a week.\",\"why\":\"감각적 묘사가 부족해서\"},{\"before\":\"Back then I only drank sweet drinks like caramel macchiato.\",\"after\":\"Back in those days, I used to only order super sweet drinks like a caramel macchiato.\",\"why\":\"반복적으로 나타나는 패턴이라서\"}]}],\"this_week\":\"루틴/습관 유형 2회 연습 — when/where/what/frequency/with whom을 구체적으로 서술하는 연습\"}",
+    "basedOnCount" : 12
+  }
+}

@@ -8,6 +8,7 @@ import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.service.CoachingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.opicnic.opicnic.service.guest.GuestQuotaService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -44,6 +45,7 @@ public class CoachingController {
         model.addAttribute("totalCount", totalCount);
         model.addAttribute("coachingMinCount", coachingMinCount);
         model.addAttribute("canGenerate", totalCount >= coachingMinCount);
+        model.addAttribute("guest", GuestQuotaService.isGuest(member));
         model.addAttribute("latestReport", latestReport);
         model.addAttribute("gradeLabels", List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"));
         model.addAttribute("currentGradeLabel", "IM3");
@@ -74,7 +76,8 @@ public class CoachingController {
     @PostMapping
     public String generate(@AuthenticationPrincipal OAuth2User oAuth2User) {
         Member member = resolveMember(oAuth2User);
-        if (!canGenerate(member)) return "redirect:/analytics/coaching";
+        // 게스트는 예시 코칭만 본다 — 생성은 LLM을 여러 번 불러 공용 무료 한도를 쓰는데, 문항 한도에 걸리지 않는다
+        if (GuestQuotaService.isGuest(member) || !canGenerate(member)) return "redirect:/analytics/coaching";
         coachingService.generate(member);
         return "redirect:/analytics/coaching";
     }

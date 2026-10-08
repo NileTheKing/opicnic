@@ -37,8 +37,16 @@
                 <div th:if="${latestReport != null}"
                      th:replace="~{analytics/coaching-report-card :: card(${latestReportParsed}, ${latestReport}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${avgScore}, ${targetThreshold})}"></div>
 
+                <!-- 게스트: 생성 대신 로그인 안내 (CoachingController.generate가 막는다) -->
+                <div th:if="${guest}"
+                     class="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>내 기록으로 새 분석을 받으려면 카카오 로그인이 필요해요.
+                        <a href="/auth/login" class="underline font-medium">로그인하기</a></span>
+                </div>
+
                 <!-- 생성/재생성 버튼 -->
-                <form th:action="@{/analytics/coaching}" method="post">
+                <form th:unless="${guest}" th:action="@{/analytics/coaching}" method="post">
                     <button type="submit"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-colors"
                             th:classappend="${latestReport != null} ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm'">

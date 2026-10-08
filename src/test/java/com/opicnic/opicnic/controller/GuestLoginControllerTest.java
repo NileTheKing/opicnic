@@ -49,6 +49,7 @@ class GuestLoginControllerTest {
     @MockBean PracticeAttemptService practiceAttemptService;
     @MockBean RateLimiterService rateLimiterService;
     @MockBean com.opicnic.opicnic.service.guest.GuestSampleCopier sampleCopier;
+    @MockBean com.opicnic.opicnic.service.guest.GuestSampleSource sampleSource;
 
     private void stubSave() {
         when(memberRepository.save(any(Member.class))).thenAnswer(inv -> {

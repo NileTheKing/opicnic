@@ -33,6 +33,7 @@ public class GuestService {
     private final MemberRepository memberRepository;
     private final GuestProperties properties;
     private final GuestSampleCopier sampleCopier;
+    private final GuestSampleSource sampleSource;
     private final SurveyProfileRepository surveyProfileRepository;
 
     // 방문자마다 새 회원 — 다른 방문자의 녹음·답변이 섞이면 안 된다. 권한은 항상 USER(ADMIN 불가).
@@ -50,14 +51,10 @@ public class GuestService {
         guest.setNotificationSetting(notificationSetting);
         guest = memberRepository.save(guest);
 
-        if (properties.getSampleMemberId() != null) {
-            sampleCopier.copy(properties.getSampleMemberId(), guest, LocalDateTime.now());
-        }
-        // 둘러보러 온 사람에게 2분 설정을 먼저 시키지 않는다 — 예시 설문이 없으면 온보딩 "전체 선택"과 같은 기본값.
-        // 바꾸고 싶으면 마이페이지에서
-        if (surveyProfileRepository.findByMemberId(guest.getId()).isEmpty()) {
-            surveyProfileRepository.save(defaultProfile(guest));
-        }
+        Member saved = guest;
+        sampleSource.get().ifPresent(sample -> sampleCopier.copy(sample, saved, LocalDateTime.now()));
+        // 둘러보러 온 사람에게 2분 설정을 먼저 시키지 않는다 — 온보딩 "전체 선택"과 같은 기본값. 바꾸고 싶으면 마이페이지에서
+        surveyProfileRepository.save(defaultProfile(guest));
         return guest;
     }
 

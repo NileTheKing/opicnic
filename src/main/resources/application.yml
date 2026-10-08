@@ -97,8 +97,6 @@ opicnic:
   # "로그인 없이 둘러보기" (service/guest). 외부 LLM 무료 한도 보호 때문에 기본 꺼짐
   guest:
     enabled: ${GUEST_ENABLED:false}
-    # 예시 기록을 복사해 올 회원 id. 비우면 게스트는 빈 상태로 시작
-    sample-member-id: ${GUEST_SAMPLE_MEMBER_ID:}
     # 채점 문항 수 기준(콤보 1회 ~3문항). 모의고사는 게스트에게 막혀 있음
     daily-questions: ${GUEST_DAILY_QUESTIONS:6}
     global-daily-questions: ${GUEST_GLOBAL_DAILY_QUESTIONS:30}

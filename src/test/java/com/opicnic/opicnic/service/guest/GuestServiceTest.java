@@ -31,9 +31,11 @@ class GuestServiceTest {
     private final GuestSampleCopier sampleCopier = mock(GuestSampleCopier.class);
     private final GuestProperties properties = new GuestProperties();
     private final SurveyProfileRepository surveyProfileRepository = mock(SurveyProfileRepository.class);
-    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, surveyProfileRepository);
+    private final GuestSampleSource sampleSource = mock(GuestSampleSource.class);
+    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, sampleSource, surveyProfileRepository);
 
     GuestServiceTest() {
+        when(sampleSource.get()).thenReturn(Optional.empty());
         when(memberRepository.save(any(Member.class))).thenAnswer(inv -> {
             Member m = inv.getArgument(0);
             m.setId(42L);
@@ -70,19 +72,19 @@ class GuestServiceTest {
     }
 
     @Test
-    void 예시_원본이_설정되면_복사하고_없으면_건너뛴다() {
+    void 예시_파일이_있으면_복사하고_없으면_건너뛴다() {
+        when(sampleSource.get()).thenReturn(Optional.empty());
         service.createGuest();
         verify(sampleCopier, never()).copy(any(), any(), any());
 
-        properties.setSampleMemberId(5L);
+        GuestSample sample = new GuestSample(java.util.List.of(), null);
+        when(sampleSource.get()).thenReturn(Optional.of(sample));
         Member guest = service.createGuest();
-        verify(sampleCopier).copy(eq(5L), eq(guest), any(LocalDateTime.class));
+        verify(sampleCopier).copy(eq(sample), eq(guest), any(LocalDateTime.class));
     }
 
     @Test
-    void 설문이_없으면_온보딩_전체선택과_같은_기본_설문을_만든다() {
-        when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.empty());
-
+    void 온보딩_전체선택과_같은_기본_설문을_만든다() {
         service.createGuest();
 
         ArgumentCaptor<SurveyProfile> saved = ArgumentCaptor.forClass(SurveyProfile.class);
@@ -92,14 +94,5 @@ class GuestServiceTest {
         assertThat(p.getResidenceType()).isEqualTo(SurveyProfile.ResidenceType.ALONE);
         assertThat(new SurveyTopicPolicy().isValid(SurveyTopicPolicy.allTopics())).isTrue();
         assertThat(p.getSelectedTopics()).containsAll(SurveyTopicPolicy.allTopics()).contains(SurveyTopic.LIVING_ALONE);
-    }
-
-    @Test
-    void 예시_설문이_복사됐으면_기본_설문을_만들지_않는다() {
-        when(surveyProfileRepository.findByMemberId(42L)).thenReturn(Optional.of(SurveyProfile.builder().build()));
-
-        service.createGuest();
-
-        verify(surveyProfileRepository, never()).save(any());
     }
 }

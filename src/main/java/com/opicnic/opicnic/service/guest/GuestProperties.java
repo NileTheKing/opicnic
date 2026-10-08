@@ -15,8 +15,6 @@ public class GuestProperties {
     public static final String PROVIDER = "guest";
 
     private boolean enabled = false;
-    // 예시 기록의 원본 회원. 비어 있으면 게스트는 빈 상태로 시작한다
-    private Long sampleMemberId;
     // 게스트 1명당 하루 채점 문항 수(콤보 1회 = 3문항 안팎). 모의고사는 게스트에게 막혀 있다
     private int dailyQuestions = 6;
     // 모든 게스트 합산 하루 채점 문항 수 — 제공자 무료 한도 보호
