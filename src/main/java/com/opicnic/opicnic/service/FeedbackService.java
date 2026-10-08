@@ -127,7 +127,7 @@ public class FeedbackService {
         return FeedbackDTO.builder()
                 .question(question)
                 .sttText(speechText)
-                .overall("자기소개는 채점 대상이 아닙니다. 수고하셨어요!")
+                .overall("자기소개는 채점하지 않아요. 수고하셨어요!")
                 .build();
     }
 
@@ -147,7 +147,7 @@ public class FeedbackService {
     private static String computeFluencyText(String text, int score) {
         int words = (text == null || text.isBlank()) ? 0 : text.trim().split("\\s+").length;
         return switch (score) {
-            case 5 -> words + "단어. 발화량이 충분합니다.";
+            case 5 -> words + "단어. 발화량이 충분해요.";
             case 4 -> words + "단어. 조금 더 말하면 만점이에요. (목표: 130단어+)";
             case 3 -> words + "단어. 발화량을 더 늘려보세요. (목표: 90단어+)";
             case 2 -> words + "단어. 더 길게 말하는 연습이 필요해요. (목표: 60단어+)";
@@ -165,7 +165,7 @@ public class FeedbackService {
                 weakest = labels[i];
             }
         }
-        String base = grade + " 수준입니다.";
+        String base = grade + " 수준이에요.";
         return weakest != null ? base + " " + weakest + " 개선이 다음 목표예요." : base;
     }
 

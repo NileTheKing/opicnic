@@ -255,6 +255,7 @@ public class LlmService {
                 "- analysis는 관찰된 패턴 진단만, advice는 일반적인 개선 전략만 써라 — 둘 다 특정 문장을 인용하지 말고, 다음에 다른 문장에도 적용할 수 있는 수준으로 일반화해서 써라.\n" +
                 "- advice는 지시만 하지 말고 이유를 한 문장 포함해라.\n" +
                 "- generic 조언 금지.\n" +
+                "- 한국어 문장은 모두 해요체로 써라(~해요, ~예요, ~세요). ~합니다·~한다체 금지.\n" +
                 "- summary/strength/analysis/advice/pattern의 한국어 설명 부분은 반드시 한국어로만 써라. 영어 인용문/예시를 제외하고는 다른 언어(영어 단어 나열, 아랍어, 중국어 등)를 절대 섞지 마라.\n" +
                 "- 태그 코드(WHY_MISSING, VOCAB_BASIC, MP_LATE 같은 대문자 스네이크케이스)를 summary/strength/analysis/advice/pattern 어디에도 그대로 쓰지 마라. 반드시 자연스러운 한국어 문장으로 풀어서 설명해라.\n" +
                 "  예) \"WHY_MISSING, FEELING_MISSING과 같은 문제가 관찰됨\" (금지) → \"이유나 감정 표현 없이 사실만 나열하는 경우가 많음\" (허용)\n" +
@@ -297,7 +298,8 @@ public class LlmService {
                 "- advice는 지시만 하지 말고 이유를 한 문장 포함해라.\n" +
                 "- generic 조언 금지.\n" +
                 "- 태그 코드(대문자 스네이크케이스)를 그대로 쓰지 말고 자연스러운 한국어 문장으로 풀어써라.\n" +
-                "- 한국어로만 써라 (영어 인용문/예시 제외).\n\n" +
+                "- 한국어로만 써라 (영어 인용문/예시 제외).\n" +
+                "- 한국어 문장은 모두 해요체로 써라(~해요, ~예요, ~세요). ~합니다·~한다체 금지.\n\n" +
                 "JSON만: {\"analysis\": \"...\", \"advice\": \"...\"}"
         );
         Message userMessage = new UserMessage(elementLines);
@@ -324,7 +326,8 @@ public class LlmService {
                 "규칙:\n" +
                 "- 주어진 태그/카운트 외의 내용을 지어내지 마라.\n" +
                 "- 태그 코드(대문자 스네이크케이스)를 그대로 쓰지 말고 자연스러운 한국어 문장으로 풀어써라.\n" +
-                "- 한국어로만 써라.\n\n" +
+                "- 한국어로만 써라.\n" +
+                "- 한국어 문장은 모두 해요체로 써라(~해요, ~예요, ~세요). ~합니다·~한다체 금지.\n\n" +
                 "JSON만: {\"pattern\": \"...\"}"
         );
         Message userMessage = new UserMessage(typeLines);

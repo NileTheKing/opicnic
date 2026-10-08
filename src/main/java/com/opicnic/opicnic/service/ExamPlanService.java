@@ -77,7 +77,7 @@ public class ExamPlanService {
                                List<FeedbackResult> results) {
         long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), examDate);
         if (daysLeft <= 0) {
-            return new StudyPlan(0, 0, 0, List.of(), List.of(), "시험일이 이미 지났습니다.");
+            return new StudyPlan(0, 0, 0, List.of(), List.of(), "시험일이 이미 지났어요.");
         }
 
         int dailyComboTarget = Math.max(1, dailyMinutes / MINUTES_PER_COMBO);

@@ -3,6 +3,8 @@ STT 결과라 더듬음·filler(um, uh)·문맥에 안 맞는 단어가 섞여 �
 
 아래 순서대로 판단하고, 맨 아래 JSON으로만 답한다.
 
+말투: 사용자에게 보이는 한국어(levelEvidence 제외 모든 진단, improvements, modelAnswerComment)는 해요체로 쓴다. 예: "핵심 문장이 뒤에 나와요.", "감정을 먼저 말해 보세요." ~합니다·~한다·명사형 끝맺음(~함, ~음)은 쓰지 않는다.
+
 # 1. 등급 (level)
 
 실제 OPIc 채점자처럼 "이 사람이 영어로 무엇을 해낼 수 있는가"로 판단한다. 2번의 코칭 점수와는 별개다 — 코칭 점수가 높다고 등급을 올리지 않는다. 특히 문법 오류가 없어도 문장이 단순하면 높은 등급이 아니다.
@@ -36,7 +38,7 @@ STT 결과라 더듬음·filler(um, uh)·문맥에 안 맞는 단어가 섞여 �
 - fix의 톤: 말하듯 자연스러운 구어체. 문장 끝에 추상적 격식 표현 붙이기 금지('..., which left a lasting impression'). 감정·반응 연결('..., which made me feel so good')과 강한 형용사(amazing, stunning)는 좋다.
 
 ## mainPoint (핵심전달) — 답변이 하나의 구조로 묶이는가
-- TYPE_5/6/7 (롤플레이): 평가하지 않는다. score 0, diagnosis "롤플레이 유형 — MP 평가 제외", quote·fix 빈 문자열.
+- TYPE_5/6/7 (롤플레이): 평가하지 않는다. score 0, diagnosis "롤플레이 유형이라 핵심전달은 평가하지 않아요.", quote·fix 빈 문자열.
 - TYPE_1/2/3/4/8: 처음 2~3문장 안에 What + Feeling + Why가 모두 있어야 한다.
   - What: 무엇에 대해 말할지
   - Feeling: 구체적인 감정·반응. 단순 'I like/love'는 Feeling이 아니다. 최소 'I feel so relaxed', 'it makes me so happy' 수준.
@@ -63,7 +65,7 @@ STT 결과라 더듬음·filler(um, uh)·문맥에 안 맞는 단어가 섞여 �
 
 # 3. 이렇게 바꿔보세요 (improvements)
 
-이 답변에서 가장 두드러진 약점 하나를 행동 패턴으로 한 줄 쓴다(한국어). 예: "MP 없이 행동 나열로 시작한다."
+이 답변에서 가장 두드러진 약점 하나를 행동 패턴으로 한 줄 쓴다(한국어). 예: "MP 없이 행동 나열로 시작해요."
 그 패턴이 드러난 실제 문장을 improvementsQuote로, 고친 문장을 improvementsFix로 낸다.
 예: improvementsQuote 'I go to the gym every day.' → improvementsFix 'Going to the gym is honestly my favorite part of the day. I just feel so much better after I work out.'
 

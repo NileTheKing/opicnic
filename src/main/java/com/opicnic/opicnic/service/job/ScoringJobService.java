@@ -101,7 +101,7 @@ public class ScoringJobService {
         // 채점 문항(자기소개 제외) 수만큼 한도 소비. 검증을 다 통과한 뒤, DB 저장 직전 — 기존 동기 경로와 같은 순서.
         long gradedCount = attempt.questionIds().stream().filter(id -> id != null).count();
         if (!rateLimiterService.tryConsume((int) Math.max(1, gradedCount), attempt.memberId())) {
-            throw new RateLimitExceededException("시간당 문항 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
+            throw new RateLimitExceededException("시간당 문항 한도를 넘었어요. 잠시 후 다시 시도해 주세요.");
         }
 
         // Caffeine attempt를 SUBMITTED로 — 같은 attempt로 URL 발급·재접수가 끼어들지 못하게.

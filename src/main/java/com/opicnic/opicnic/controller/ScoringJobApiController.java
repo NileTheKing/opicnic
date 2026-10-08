@@ -84,11 +84,11 @@ public class ScoringJobApiController {
         Member owner = memberRepository.findById(ownerId).orElse(null);
         if (owner != null && "dev".equals(owner.getProvider())) return null;
         if (oAuth2User == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("로그인이 필요합니다."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("로그인이 필요해요."));
         }
         Member requester = findMember(oAuth2User);
         if (requester == null || !ownerId.equals(requester.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("해당 연습 세션에 접근할 수 없습니다."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("이 연습 기록에 접근할 수 없어요."));
         }
         return null;
     }
