@@ -73,7 +73,7 @@
         </div>
         <div>
             <p class="text-base font-bold text-gray-800" th:text="${member.nickname}">사용자</p>
-            <p class="text-xs text-gray-400 mt-0.5">카카오 로그인</p>
+            <p class="text-xs text-gray-400 mt-0.5" th:text="${guest} ? '게스트 체험 · 기록은 7일 뒤 지워져요' : '카카오 로그인'">카카오 로그인</p>
         </div>
     </div>
 
@@ -235,6 +235,13 @@
     </div><!-- /오른쪽 -->
 
     </div><!-- /2컬럼 -->
+
+    <!-- 모바일에선 헤더(프로필 메뉴의 로그아웃)가 숨겨져 로그아웃할 곳이 여기뿐이다. CSRF 때문에 POST 폼 -->
+    <form th:action="@{/auth/logout}" method="post" class="mt-6">
+        <button type="submit"
+                class="w-full py-3 bg-white border border-gray-200 text-red-600 rounded-xl font-semibold text-sm hover:bg-red-50 transition"
+                th:text="${guest} ? '게스트 체험 끝내기' : '로그아웃'">로그아웃</button>
+    </form>
 
 </main>
 </div>

@@ -9,6 +9,7 @@ import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.NotificationSettingRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.SurveyTopicPolicy;
+import com.opicnic.opicnic.service.guest.GuestQuotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -49,6 +50,7 @@ public class MyPageController {
 
         model.addAttribute("notificationSetting", setting);
         model.addAttribute("member", member);
+        model.addAttribute("guest", GuestQuotaService.isGuest(member));
         model.addAttribute("surveyProfile", surveyProfile);
         model.addAttribute("residenceTypes", SurveyProfile.ResidenceType.values());
         model.addAttribute("topicGroups", buildTopicGroups());
