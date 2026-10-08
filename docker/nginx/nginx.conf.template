@@ -13,8 +13,14 @@ server {
         return 404;
     }
 
+    # 앱 주소를 요청 때마다 Docker 내부 DNS(127.0.0.11)로 다시 찾는다. proxy_pass에 이름을 바로 쓰면 nginx가
+    # 켜질 때 IP를 한 번만 찾아 계속 쓰는데, 앱이 재생성되며 IP가 바뀌면 502가 난다
+    # (2026-10-08: compose pull로 mysql이 먼저 재생성돼 옛 앱 IP를 가져감). valid=10s는 DNS 응답 캐시 시간
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $app_upstream http://opicnic_app:8080;
+
     location / {
-        proxy_pass http://opicnic_app:8080;
+        proxy_pass $app_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
