@@ -98,4 +98,23 @@ class LlmServiceTest {
         assertThat(node.get("criteria").isArray()).isTrue();
         assertThat(node.get("types").isArray()).isTrue();
     }
+
+    @Test
+    @DisplayName("LLM이 작은따옴표를 \\'로 escape해도 파싱한다 (Gemini 실측)")
+    void parsesBackslashEscapedSingleQuote() {
+        ChatModel chatModel = mock(ChatModel.class);
+        String raw = "{\"mainPointScore\":3,\"expressionScore\":3,\"accuracyScore\":4,\"contentScore\":3,\"fluencyScore\":0," +
+                "\"improvements\":\"예) 'it isn\\'t enough'\",\"level\":\"IM2\"}";
+        org.mockito.Mockito.when(chatModel.call(org.mockito.ArgumentMatchers.any(org.springframework.ai.chat.prompt.Prompt.class)))
+                .thenReturn(new org.springframework.ai.chat.model.ChatResponse(java.util.List.of(
+                        new org.springframework.ai.chat.model.Generation(new org.springframework.ai.chat.messages.AssistantMessage(raw)))));
+        LlmService live = new LlmService(chatModel, objectMapper, new SimpleMeterRegistry());
+        ReflectionTestUtils.setField(live, "aiEnabled", true);
+        ReflectionTestUtils.setField(live, "reasoningEffort", "");
+
+        Map<String, Object> result = live.getOpicFeedback("I like it.", new QuestionDto(1L, "q", "t", QuestionType.TYPE_1));
+
+        assertThat(result.get("improvements")).isEqualTo("예) 'it isn't enough'");
+        assertThat(result.get("level")).isEqualTo("IM2");
+    }
 }

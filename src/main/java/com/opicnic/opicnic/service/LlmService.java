@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -197,8 +198,13 @@ public class LlmService {
                     "  형식: [패턴 한국어 관찰]. 예) 'actual quote' -> 'improved version'\n" +
                     "  올바른 예: 'MP 없이 행동 나열로 시작. 예) \\'I go to the gym every day.\\' -> \\'Going to the gym is honestly my favorite part of the day. I just feel so much better after I work out.\\''\n" +
                     "  금지: 플레이스홀더('[실제 발화]') 사용. 반드시 사용자의 실제 문장을 그대로 인용할 것.\n" +
-                    "modelAnswer: 위 유형 전략을 적용한 모범 답변 (영어, 130단어 이상)\n" +
-                    "modelAnswerComment: MP가 어디인지, 어떤 전략을 적용했는지 (한국어, 2~3줄)\n" +
+                    "modelAnswer: 사용자 답변을 '한 단계 위 등급' 수준으로 다시 쓴 영어 답변. 새로 지어낸 남의 답이 아니라 '내 답을 고친 버전'이어야 한다.\n" +
+                    "  - 사용자가 말한 소재·경험·의견을 그대로 살린다. 새 사실은 질문에 답하는 데 꼭 필요할 때만 최소한으로 보탠다.\n" +
+                    "  - 위 mainPointFix/expressionFix/accuracyFix/contentFix의 고친 문장을 그대로 또는 거의 그대로 넣는다.\n" +
+                    "  - 위 유형 전략(MP → 전개 → 마무리)을 적용한다.\n" +
+                    "  - 길이 80~150단어. 사용자 답변이 짧고 등급이 낮을수록 80단어 쪽, 길고 높을수록 150단어 쪽.\n" +
+                    "  - 목표 등급 학습자가 그대로 따라 말할 수 있는 자연스러운 구어체. 어려운 문어 표현·과한 수사 금지.\n" +
+                    "modelAnswerComment: 어떤 피드백(핵심전달/표현력/정확성/내용구성)을 어느 문장에 반영했는지 (한국어, 2~3줄)\n" +
                     "\n" +
                     "【최종 체크 - JSON 출력 전 반드시 확인】\n" +
                     "- improvements: 사용자 실제 발화에서 문장을 그대로 인용. 플레이스홀더 절대 금지.\n" +
@@ -492,7 +498,10 @@ public class LlmService {
 
     private Map<String, Object> parseResponse(String response) {
         try {
-            return objectMapper.readValue(response, new TypeReference<Map<String, Object>>() {});
+            // Gemini가 영어 인용 속 작은따옴표를 백슬래시로 escape해(\\') JSON을 깨는 일이 있다(보정 실험 42건 중 1건) — 그 escape만 너그럽게 받는다
+            return objectMapper.readerFor(new TypeReference<Map<String, Object>>() {})
+                    .with(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature())
+                    .readValue(response);
         } catch (Exception e) {
             log.error("LLM JSON 파싱 오류: {}", e.getMessage());
             throw new RuntimeException("LLM 응답 파싱 중 오류가 발생했습니다.", e);
