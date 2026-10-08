@@ -62,6 +62,7 @@ HomeController (/practice/mock)
 |---|---|---|---|
 | `HomeController` | `/` | View | 홈, `/practice/random`, `/practice/surprise`, `/practice/mock` 진입점 |
 | `AuthController` | `/auth` | View | 로그인 페이지, 테스트용 인증 확인 |
+| `GuestLoginController` | `/auth/guest` (POST) | View | "로그인 없이 둘러보기". `opicnic.guest.enabled=false`면 404. 새 게스트 회원 + 카카오와 같은 모양의 OAuth2User 인증을 세션에 저장 |
 | `OnboardingController` | `/onboarding` | View | 최초 가입 후 배경설문 |
 | `MyPageController` | `/mypage` | View | 설정, 배경설문 수정, 관심 주제 토글 |
 | `TopicsController` | `/practice/topics` | View | 주제 탐색 화면 |
@@ -98,6 +99,7 @@ HomeController (/practice/mock)
 | `ExamPlanService` | 학습 이력 기반 시험 준비 계획/약점 유형 진단 |
 | `MemberService` | 회원 가입/조회 |
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
+| `guest/GuestService` · `GuestSampleCopier` · `GuestQuotaService` · `GuestCleanupService` | 게스트 체험(`provider="guest"`). 생성+principal 조립 / 예시 기록 복사(시각 이동, `sample=true`) / 하루 접수 한도(1인·전체, `ScoringJobService`가 호출) / 7일 지난 게스트와 종속 행·R2 오디오 삭제(스케줄). 설정은 `GuestProperties`(`opicnic.guest.*`) |
 | `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 중복 접수 차단). R2 확인·외부 호출 없음 |
 | `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`, 천장 2s부터 2배·상한 60s 안에서 무작위 = full jitter), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
 | `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |

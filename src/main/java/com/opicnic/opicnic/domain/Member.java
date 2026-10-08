@@ -4,6 +4,9 @@ package com.opicnic.opicnic.domain;
 import com.opicnic.opicnic.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 
 @Builder
@@ -30,6 +33,10 @@ public class Member {
 
     private String provider; // OAuth 로그인 제공자 (ex: kakao, google 등)
     private String providerId; // OAuth 로그인 사용자 ID or 내부 사용자 ID
+
+    // 게스트 만료 정리 기준(GuestCleanupService). 이 컬럼 이전에 가입한 회원은 null
+    @CreationTimestamp
+    private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL)
     private NotificationSetting notificationSetting;

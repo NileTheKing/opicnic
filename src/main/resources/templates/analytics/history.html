@@ -33,6 +33,8 @@
                     <div class="flex items-center gap-2 mb-1">
                         <span th:if="${r.overallGrade != null}" th:text="${r.overallGrade}"
                               class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0"></span>
+                        <span th:if="${r.sample == true}"
+                              class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0">예시</span>
                         <span class="text-sm font-semibold text-gray-800 truncate"
                               th:text="${r.surveyTopicName != null ? r.surveyTopicName : typeLabels.typeLabel(r.questionType)}"></span>
                     </div>

@@ -98,6 +98,9 @@ public class FeedbackResult {
     @Column(columnDefinition = "TEXT")
     private String modelAnswerComment;
 
+    // 게스트에게 복사해준 예시 기록 표시. null/false = 본인이 푼 기록
+    private Boolean sample;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -39,6 +39,11 @@ services:
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY가 .env에 필요}
       - R2_BUCKET=${R2_BUCKET:-opicnic-audio}
       - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-60}
+      # 로그인 없이 둘러보기(service/guest). 기본 꺼짐 — 켜면 LLM 무료 한도를 게스트가 나눠 쓴다
+      - GUEST_ENABLED=${GUEST_ENABLED:-false}
+      - GUEST_SAMPLE_MEMBER_ID=${GUEST_SAMPLE_MEMBER_ID:-}
+      - GUEST_DAILY_SUBMISSIONS=${GUEST_DAILY_SUBMISSIONS:-2}
+      - GUEST_GLOBAL_DAILY_SUBMISSIONS=${GUEST_GLOBAL_DAILY_SUBMISSIONS:-10}
     depends_on:
       mysql:
         condition: service_healthy

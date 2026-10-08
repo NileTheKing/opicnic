@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface ScoringJobRepository extends JpaRepository<ScoringJob, String> {
@@ -23,4 +24,12 @@ public interface ScoringJobRepository extends JpaRepository<ScoringJob, String> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select j from ScoringJob j where j.id = :id")
     Optional<ScoringJob> findByIdForUpdate(@Param("id") String id);
+
+    // 게스트 일일 한도: 회원별 / 제공자(guest) 전체 접수 수
+    long countByMemberIdAndCreatedAtGreaterThanEqual(Long memberId, LocalDateTime since);
+
+    long countByMemberProviderAndCreatedAtGreaterThanEqual(String provider, LocalDateTime since);
+
+    // 게스트 정리: 잡 삭제 전에 R2 키를 모으고, cascade로 문항 행까지 지운다
+    List<ScoringJob> findByMemberId(Long memberId);
 }

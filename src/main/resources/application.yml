@@ -98,6 +98,14 @@ management:
 opicnic:
   coaching:
     min-count: 3
+  # "로그인 없이 둘러보기" (service/guest). 외부 LLM 무료 한도 보호 때문에 기본 꺼짐
+  guest:
+    enabled: ${GUEST_ENABLED:false}
+    # 예시 기록을 복사해 올 회원 id. 비우면 게스트는 빈 상태로 시작
+    sample-member-id: ${GUEST_SAMPLE_MEMBER_ID:}
+    daily-submissions: ${GUEST_DAILY_SUBMISSIONS:2}
+    global-daily-submissions: ${GUEST_GLOBAL_DAILY_SUBMISSIONS:10}
+    retention-days: ${GUEST_RETENTION_DAYS:7}
   # 비동기 채점 워커 (ADR-0001, service/job/ScoringWorker). 값은 코드 기본값과 같다 — 운영에서 환경변수로 덮는다.
   worker:
     enabled: ${WORKER_ENABLED:true}

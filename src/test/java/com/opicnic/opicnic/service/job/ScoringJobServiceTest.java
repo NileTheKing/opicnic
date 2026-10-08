@@ -39,6 +39,7 @@ class ScoringJobServiceTest {
     private final ScoringJobRepository jobRepository = mock(ScoringJobRepository.class);
     private final MemberRepository memberRepository = mock(MemberRepository.class);
     private final RateLimiterService rateLimiter = mock(RateLimiterService.class);
+    private final com.opicnic.opicnic.service.guest.GuestQuotaService guestQuota = mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class);
     private final InMemoryAudioStorage storage = new InMemoryAudioStorage();
     private final Member member = Member.builder().id(7L).provider("kakao").providerId("p").build();
 
@@ -50,7 +51,7 @@ class ScoringJobServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ScoringJobService(attemptService, jobRepository, memberRepository, storage, rateLimiter, Optional.empty());
+        service = new ScoringJobService(attemptService, jobRepository, memberRepository, storage, rateLimiter, guestQuota, Optional.empty());
         when(attemptService.requireValidAttempt("att-1")).thenReturn(mockAttempt);
         when(memberRepository.findById(7L)).thenReturn(Optional.of(member));
         when(jobRepository.findById(any())).thenReturn(Optional.empty());

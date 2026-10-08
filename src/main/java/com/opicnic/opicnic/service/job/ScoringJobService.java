@@ -10,6 +10,7 @@ import com.opicnic.opicnic.exception.RateLimitExceededException;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.ScoringJobRepository;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import com.opicnic.opicnic.service.guest.GuestQuotaService;
 import com.opicnic.opicnic.storage.AudioStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class ScoringJobService {
     private final MemberRepository memberRepository;
     private final AudioStorage audioStorage;
     private final RateLimiterService rateLimiterService;
+    private final GuestQuotaService guestQuotaService;
     private final Optional<DevTesterMember> devTesterMember;   // dev 프로파일에만 존재
 
     // 키는 서버가 정한다 — 클라이언트가 고르게 두지 않는다. submit 시 같은 규칙으로 다시 만들므로 저장할 필요 없음.
@@ -51,6 +53,10 @@ public class ScoringJobService {
 
     public List<UploadUrlResponse> issueUploadUrls(String attemptId, List<UploadUrlRequest> requests) {
         PracticeAttempt attempt = requireAttempt(attemptId);
+        // 게스트는 한도가 찼으면 업로드(R2 쓰기)를 시작하기 전에 알린다
+        if (attempt.memberId() != null) {
+            guestQuotaService.assertCanSubmit(memberRepository.findById(attempt.memberId()).orElse(null));
+        }
         int questionCount = attempt.questionIds().size();
         if (requests == null || requests.isEmpty()) {
             throw new IllegalArgumentException("업로드할 문항이 없습니다.");
@@ -87,6 +93,9 @@ public class ScoringJobService {
         }
         PracticeAttempt attempt = requireAttempt(attemptId);
         Member owner = resolveOwner(attempt, requester);
+
+        // 게스트 체험 한도(게스트가 아니면 통과). 시간당 문항 한도와 별개로 하루 접수 수를 센다
+        guestQuotaService.assertCanSubmit(owner);
 
         // 채점 문항(자기소개 제외) 수만큼 한도 소비. 검증을 다 통과한 뒤, DB 저장 직전 — 기존 동기 경로와 같은 순서.
         long gradedCount = attempt.questionIds().stream().filter(id -> id != null).count();

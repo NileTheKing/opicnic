@@ -48,7 +48,11 @@
         <!-- 헤더: 등급 + 날짜 -->
         <div class="px-5 pt-5 pb-4">
             <div class="flex items-center justify-between mb-4">
-                <span class="text-xs text-gray-400" th:text="${#temporals.format(result.createdAt, 'yyyy.M.d HH:mm')}"></span>
+                <span class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400" th:text="${#temporals.format(result.createdAt, 'yyyy.M.d HH:mm')}"></span>
+                    <span th:if="${result.sample == true}"
+                          class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">예시</span>
+                </span>
                 <span th:if="${result.overallGrade != null}"
                       th:text="${result.overallGrade}"
                       th:classappend="${result.overallGrade == 'AL'} ? 'bg-purple-100 text-purple-700' :

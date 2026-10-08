@@ -2,6 +2,7 @@ package com.opicnic.opicnic.repository;
 
 import com.opicnic.opicnic.domain.FeedbackResult;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,4 +32,14 @@ public interface FeedbackResultRepository extends JpaRepository<FeedbackResult, 
 
     // 비동기 모의고사 결과 화면(ScoringJobViewController): attemptId = ScoringJob.id
     List<FeedbackResult> findAllByAttemptId(String attemptId);
+
+    // 게스트 예시 복사: @CreationTimestamp가 insert 시각으로 덮어쓰므로 저장 후 시각을 따로 맞춘다
+    @Modifying
+    @Query("update FeedbackResult r set r.createdAt = :createdAt where r.id = :id")
+    int updateCreatedAt(@Param("id") Long id, @Param("createdAt") LocalDateTime createdAt);
+
+    // 게스트 정리
+    @Modifying
+    @Query("delete from FeedbackResult r where r.member.id = :memberId")
+    int deleteByMemberId(@Param("memberId") Long memberId);
 }

@@ -7,4 +7,7 @@ import java.util.Optional;
 
 public interface ExamScheduleRepository extends JpaRepository<ExamSchedule, Long> {
     Optional<ExamSchedule> findTopByMemberIdOrderByCreatedAtDesc(Long memberId);
+
+    // 게스트 정리
+    void deleteByMemberId(Long memberId);
 }
