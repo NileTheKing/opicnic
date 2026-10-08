@@ -4,22 +4,22 @@ W, H = 1440, 740
 b = [rect(0, 0, W, H, C['bg'], r=24)]
 
 def card(x, y, w, h, title, top=False):
-    # 제목은 화살표가 안 지나가는 쪽에 — 워커·Groq는 위로 화살표가 들어와 아래, 요청 처리는 아래로 선이 나가 위
+    # 제목은 화살표가 안 지나가는 쪽에 — 워커·외부 API는 위로 화살표가 들어와 아래, 요청 처리는 아래로 선이 나가 위
     ty = y + 24 if top else y + h - 20
     return rect(x, y, w, h, C['card'], C['border'], r=18) + text(x + 18, ty, title, 13, C['sub'], 700, 'start')
 
-AX, WX, GX = 235, 870, 1210        # 요청 처리 카드, 워커 카드, Groq 카드의 x
+AX, WX, GX = 235, 870, 1210        # 요청 처리 카드, 워커 카드, 외부 API 카드의 x
 DB = 580                            # 저장소 x
 b += [card(AX, 185, 250, 360, 'Spring Boot: 요청 처리', top=True),
       card(WX, 205, 250, 200, 'Spring Boot: 채점 워커'),
-      card(GX, 205, 200, 300, 'Groq')]
+      card(GX, 205, 200, 300, '외부 API')]
 b += [box(30, 300, 160, 72, '브라우저'),
       box(AX + 25, 235, 200, 72, '접수 API', sub='202 즉시 응답'),
       box(AX + 25, 335, 200, 72, '결과 조회', sub='폴링'),
       box(AX + 25, 435, 200, 72, '코칭 리포트', sub='태그 집계 후 LLM')]
 b += [box(WX + 25, 235, 200, 110, '워커', sub='문항 단위 채점, 재시도')]
-b += [box(GX + 17, 235, 166, 64, 'Whisper', kind='white', sub='STT'),
-      box(GX + 17, 330, 166, 80, 'gpt-oss', kind='white', sub='120b 채점 / 20b 태깅')]
+b += [box(GX + 17, 235, 166, 64, 'Groq Whisper', kind='white', sub='STT'),
+      box(GX + 17, 330, 166, 80, 'Gemini', kind='white', sub='채점 / 태깅 / 코칭')]
 b += [cylinder(DB, 55, 190, 100, 'S3', sub='녹음 (Cloudflare R2)'),
       cylinder(DB, 290, 190, 110, 'MySQL', sub='채점 작업 큐, 결과')]
 
