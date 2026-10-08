@@ -26,11 +26,15 @@ public class ExamPlanService {
             "C5", "고난도 콤보"
     );
 
+    // estimatedGrade는 답변 수준(LLM이 매긴 문항별 등급)의 대표값이다. 코칭 점수 평균으로 등급을 매기면
+    // 요령만 지킨 단문 답이 AL이 됐다. checkNeeded가 있으면 그 등급을 실제 시험에서 가르는 유형(12번 롤플레이,
+    // 14·15번 비교·이슈)을 아직 연습하지 않아 확인되지 않은 것이다
     public record DiagnosisResult(
             TargetGrade estimatedGrade,
             double overallAvg,
             boolean sufficient,
-            Map<String, Double> scoreAvgs
+            Map<String, Double> scoreAvgs,
+            String checkNeeded
     ) {}
 
     public record ComboStat(String category, String label, int count, double avgScore, int pct) {}
@@ -50,7 +54,7 @@ public class ExamPlanService {
 
     public DiagnosisResult diagnose(List<FeedbackResult> results) {
         if (results.size() < 5) {
-            return new DiagnosisResult(null, 0, false, Map.of());
+            return new DiagnosisResult(null, 0, false, Map.of(), null);
         }
 
         // REVIEW-02: 롤플레이만 연습한 사용자는 mainPointScore 표본이 하나도 없다(TYPE_5~7은
@@ -70,7 +74,11 @@ public class ExamPlanService {
                         (a, b) -> a, LinkedHashMap::new));
 
         double overall = avgs.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
-        return new DiagnosisResult(estimateGrade(overall), round1(overall), true, avgs);
+        GradeEstimate estimate = estimateGrade(results);
+        if (estimate == null) {
+            return new DiagnosisResult(null, round1(overall), false, avgs, null);
+        }
+        return new DiagnosisResult(estimate.grade(), round1(overall), true, avgs, estimate.checkNeeded());
     }
 
     public StudyPlan buildPlan(DiagnosisResult diagnosis, TargetGrade target,
@@ -185,14 +193,49 @@ public class ExamPlanService {
         return scores.stream().mapToInt(Integer::intValue).average().orElse(0.0);
     }
 
-    private TargetGrade estimateGrade(double avg) {
-        if (avg >= 4.3) return TargetGrade.AL;
-        if (avg >= 3.8) return TargetGrade.IH;
-        if (avg >= 3.3) return TargetGrade.IM3;
-        if (avg >= 2.8) return TargetGrade.IM2;
-        if (avg >= 2.3) return TargetGrade.IM1;
-        if (avg >= 1.8) return TargetGrade.IL;
-        return TargetGrade.NH;
+    record GradeEstimate(TargetGrade grade, String checkNeeded) {}
+
+    static final int MIN_GRADED = 5;
+    static final int RECENT_GRADED = 15;
+    static final String CHECK_ROLEPLAY = "롤플레이 문제 해결(12번)";
+    static final String CHECK_ISSUE = "비교·사회 이슈(14·15번)";
+
+    // 예상 등급 = 최근 답변 수준의 중앙값(짝수면 낮은 쪽). 실제 OPIc는 15문항 전체로 매기고 특정 문항이 등급을 가른다
+    // (DOMAIN.md "답변 하나로는 볼 수 없는 것"): 12번 롤플레이가 IM2와 IH를, 14·15번이 IH와 AL을 가른다.
+    // 그래서 IH 이상은 TYPE_7에서, AL은 TYPE_9/10에서도 그 수준이 나와야 인정한다.
+    // 해당 유형을 안 풀었으면 등급은 그대로 두고 checkNeeded로 알리고, 풀었는데 못 미치면 등급을 내린다.
+    static GradeEstimate estimateGrade(List<FeedbackResult> results) {
+        List<FeedbackResult> graded = results.stream()
+                .filter(r -> r.getQuestionType() != null && levelIndex(r.getOverallGrade()) >= 0)
+                .toList();
+        if (graded.size() < MIN_GRADED) return null;
+
+        int[] recent = graded.stream().limit(RECENT_GRADED)
+                .mapToInt(r -> levelIndex(r.getOverallGrade())).sorted().toArray();
+        int level = recent[(recent.length - 1) / 2];
+
+        int ih = levelIndex("IH"), al = levelIndex("AL");
+        String check = null;
+        if (level >= ih) {
+            int best = bestLevel(graded, Set.of(QuestionType.TYPE_7));
+            if (best < 0) check = CHECK_ROLEPLAY;
+            else if (best < ih) level = Math.max(best, levelIndex("IM2"));
+        }
+        if (level >= al) {
+            int best = bestLevel(graded, Set.of(QuestionType.TYPE_9, QuestionType.TYPE_10));
+            if (best < 0) check = check != null ? check : CHECK_ISSUE;
+            else if (best < al) level = ih;
+        }
+        return new GradeEstimate(TargetGrade.valueOf(FeedbackService.LEVELS.get(level)), check);
+    }
+
+    private static int bestLevel(List<FeedbackResult> graded, Set<QuestionType> types) {
+        return graded.stream().filter(r -> types.contains(r.getQuestionType()))
+                .mapToInt(r -> levelIndex(r.getOverallGrade())).max().orElse(-1);
+    }
+
+    private static int levelIndex(String grade) {
+        return grade == null ? -1 : FeedbackService.LEVELS.indexOf(grade);
     }
 
     private String buildMessage(long daysLeft, TargetGrade target) {

@@ -23,7 +23,7 @@
                 <h1 class="text-xl font-bold text-gray-900">지난 분석 기록</h1>
             </div>
 
-            <div th:replace="~{analytics/coaching-report-card :: card(${reportParsed}, ${report}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${avgScore}, ${targetThreshold})}"></div>
+            <div th:replace="~{analytics/coaching-report-card :: card(${reportParsed}, ${report}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${checkNeeded})}"></div>
 
         </div>
     </main>

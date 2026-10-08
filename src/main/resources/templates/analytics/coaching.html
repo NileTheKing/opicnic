@@ -35,7 +35,7 @@
 
                 <!-- 최신 리포트 -->
                 <div th:if="${latestReport != null}"
-                     th:replace="~{analytics/coaching-report-card :: card(${latestReportParsed}, ${latestReport}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${avgScore}, ${targetThreshold})}"></div>
+                     th:replace="~{analytics/coaching-report-card :: card(${latestReportParsed}, ${latestReport}, ${gradeLabels}, ${currentGradeLabel}, ${targetGradeLabel}, ${checkNeeded})}"></div>
 
                 <!-- 게스트: 생성 대신 로그인 안내 (CoachingController.generate가 막는다) -->
                 <div th:if="${guest}"

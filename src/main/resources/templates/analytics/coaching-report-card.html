@@ -1,4 +1,4 @@
-<div th:fragment="card(parsed, report, gradeLabels, currentGradeLabel, targetGradeLabel, avgScore, targetThreshold)"
+<div th:fragment="card(parsed, report, gradeLabels, currentGradeLabel, targetGradeLabel, checkNeeded)"
      xmlns:th="http://www.thymeleaf.org" class="space-y-3 mb-4">
 
     <!-- 메타 -->
@@ -34,10 +34,17 @@
             </div>
         </div>
         <p class="text-xs text-gray-400 text-center border-t border-gray-100 pt-2.5">
-            평균 <span class="font-semibold text-gray-600" th:text="${avgScore}"></span>점 → 현재
-            <span class="font-semibold text-brand-600" th:text="${currentGradeLabel}"></span> 구간 ·
-            <span class="font-semibold text-amber-600" th:text="${targetGradeLabel}"></span> 도달엔 평균
-            <span class="font-semibold text-gray-600" th:text="${targetThreshold}"></span>+ 필요
+            <th:block th:if="${currentGradeLabel != null}">
+                최근 답변 수준으로 본 예상 등급
+                <span class="font-semibold text-brand-600" th:text="${currentGradeLabel}"></span> ·
+                목표 <span class="font-semibold text-amber-600" th:text="${targetGradeLabel}"></span>
+                <span th:if="${checkNeeded != null}" class="block mt-1"
+                      th:text="${checkNeeded} + ' 문항을 아직 안 풀어서 확인이 필요해요'"></span>
+            </th:block>
+            <th:block th:if="${currentGradeLabel == null}">
+                채점된 답변이 5개 이상이면 예상 등급을 보여드려요 ·
+                목표 <span class="font-semibold text-amber-600" th:text="${targetGradeLabel}"></span>
+            </th:block>
         </p>
     </div>
 

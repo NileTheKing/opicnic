@@ -2,10 +2,13 @@ package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.CoachingReport;
 import com.opicnic.opicnic.domain.Member;
+import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.repository.CoachingReportRepository;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
+import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.CoachingService;
+import com.opicnic.opicnic.service.ExamPlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.opicnic.opicnic.service.guest.GuestQuotaService;
@@ -31,6 +34,8 @@ public class CoachingController {
     private final FeedbackResultRepository feedbackResultRepository;
     private final CoachingReportRepository coachingReportRepository;
     private final CoachingService coachingService;
+    private final ExamPlanService examPlanService;
+    private final SurveyProfileRepository surveyProfileRepository;
 
     @Value("${opicnic.coaching.min-count:3}")
     private int coachingMinCount;
@@ -48,10 +53,7 @@ public class CoachingController {
         model.addAttribute("guest", GuestQuotaService.isGuest(member));
         model.addAttribute("latestReport", latestReport);
         model.addAttribute("gradeLabels", List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"));
-        model.addAttribute("currentGradeLabel", "IM3");
-        model.addAttribute("targetGradeLabel", "IH");
-        model.addAttribute("avgScore", "3.3");
-        model.addAttribute("targetThreshold", "3.8");
+        addGradeLadder(member, model);
         model.addAttribute("latestReportParsed", coachingService.parseReport(latestReport));
         model.addAttribute("reports",
                 coachingReportRepository.findByMemberIdOrderByCreatedAtDesc(member.getId()));
@@ -65,10 +67,7 @@ public class CoachingController {
 
         model.addAttribute("report", report);
         model.addAttribute("gradeLabels", List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"));
-        model.addAttribute("currentGradeLabel", "IM3");
-        model.addAttribute("targetGradeLabel", "IH");
-        model.addAttribute("avgScore", "3.3");
-        model.addAttribute("targetThreshold", "3.8");
+        addGradeLadder(member, model);
         model.addAttribute("reportParsed", coachingService.parseReport(report));
         return "analytics/coaching-detail";
     }
@@ -80,6 +79,16 @@ public class CoachingController {
         if (GuestQuotaService.isGuest(member) || !canGenerate(member)) return "redirect:/analytics/coaching";
         coachingService.generate(member);
         return "redirect:/analytics/coaching";
+    }
+
+    // 등급 사다리: 현재 = 답변 수준으로 본 예상 등급(ExamPlanService.diagnose), 목표 = 설문 목표 등급
+    private void addGradeLadder(Member member, Model model) {
+        ExamPlanService.DiagnosisResult diagnosis =
+                examPlanService.diagnose(feedbackResultRepository.findSummaryByMemberId(member.getId()));
+        model.addAttribute("currentGradeLabel", diagnosis.sufficient() ? diagnosis.estimatedGrade().label : null);
+        model.addAttribute("checkNeeded", diagnosis.checkNeeded());
+        model.addAttribute("targetGradeLabel", surveyProfileRepository.findByMemberId(member.getId())
+                .map(SurveyProfile::getTargetGrade).map(g -> g.label).orElse("IH"));
     }
 
     private boolean canGenerate(Member member) {

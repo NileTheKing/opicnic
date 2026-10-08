@@ -52,9 +52,13 @@
                         <p class="text-2xl font-black" th:text="${schedule.targetGrade.label}"></p>
                     </div>
                 </div>
-                <div th:if="${diagnosis.sufficient()}" class="mt-3 pt-3 border-t border-brand-500 flex items-center justify-between">
-                    <span class="text-brand-200 text-xs">현재 추정</span>
-                    <span class="text-white text-sm font-bold" th:text="${diagnosis.estimatedGrade().label}"></span>
+                <div th:if="${diagnosis.sufficient()}" class="mt-3 pt-3 border-t border-brand-500">
+                    <div class="flex items-center justify-between">
+                        <span class="text-brand-200 text-xs">예상 등급</span>
+                        <span class="text-white text-sm font-bold" th:text="${diagnosis.estimatedGrade().label}"></span>
+                    </div>
+                    <p th:if="${diagnosis.checkNeeded() != null}" class="text-brand-200 text-xs mt-1 text-right"
+                       th:text="${diagnosis.checkNeeded()} + ' 문항으로 확인이 필요해요'"></p>
                 </div>
             </div>
 
