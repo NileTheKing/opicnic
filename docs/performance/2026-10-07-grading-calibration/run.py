@@ -4,6 +4,7 @@
 #   → results-<provider>[-<level>][-<set>].jsonl (이어 돌리면 끝난 건 건너뜀)
 #   --level vN: level-vN.md를 프롬프트에 덧붙여 LLM이 등급(level)을 직접 판단하고, 서버 규칙(word_cap)으로 상한만 건다
 #   --set test: anchors-test.json(검증용, 개발 중엔 안 봄)
+#   --prompt-file: 운영 프롬프트 파일(src/main/resources/prompts/scoring.md)과 JSON 스키마를 그대로 쓴다(2026-10-08 프롬프트 통합 이후)
 import json, os, re, sys, time, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,9 +65,10 @@ def word_cap(level, words):
     return level
 
 
-def call(conf, model, system, user):
+def call(conf, model, system, user, schema=None):
     # 운영 채점 호출(LlmService.callOpicFeedback)과 같은 옵션
-    body = {"model": model, "temperature": 0.0, "response_format": {"type": "json_object"}, "max_tokens": 3000,
+    fmt = {"type": "json_schema", "json_schema": {"name": "scoring", "strict": True, "schema": schema}} if schema else {"type": "json_object"}
+    body = {"model": model, "temperature": 0.0, "response_format": fmt, "max_tokens": 3000,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     if conf["reasoning_effort"]:
         body["reasoning_effort"] = conf["reasoning_effort"]
@@ -101,8 +103,14 @@ def main():
     done = set()
     if os.path.exists(out_path):
         done = {(r["q"], r["level"]) for r in map(json.loads, open(out_path)) if r.get("model") == model and "error" not in r}
-    system = system_prompt()
-    if level_tag:
+    schema = None
+    if "--prompt-file" in args:
+        level_tag = level_tag or "file"
+        system = open(os.path.join(ROOT, "src/main/resources/prompts/scoring.md")).read()
+        schema = json.load(open(os.path.join(ROOT, "src/main/resources/prompts/scoring-schema.json")))
+    else:
+        system = system_prompt()
+    if level_tag and "--prompt-file" not in args:
         system += "\n\n" + open(os.path.join(HERE, f"level-{level_tag}.md")).read()
     for a in data["anchors"]:
         if (a["q"], a["level"]) in done:
@@ -111,7 +119,7 @@ def main():
         user = f"문제 유형: {q['type']}\n질문: {q['content']}\n사용자 응답: {a['text']}"
         rec = {"model": model, "q": a["q"], "level": a["level"], "words": len(a["text"].split())}
         try:
-            resp, secs = call(conf, model, system, user)
+            resp, secs = call(conf, model, system, user, schema)
             raw = resp["choices"][0]["message"]["content"]
             rec |= {"secs": round(secs, 1), "usage": resp.get("usage"), "raw": raw}
             fb = json.loads(raw)

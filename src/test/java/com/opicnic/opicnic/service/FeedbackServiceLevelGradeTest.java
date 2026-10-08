@@ -2,8 +2,6 @@ package com.opicnic.opicnic.service;
 
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,8 +45,22 @@ class FeedbackServiceLevelGradeTest {
     }
 
     @Test
-    void 운영_프롬프트는_실험에서_잰_level_v3과_같다() throws Exception {
-        String measured = Files.readString(Path.of("docs/performance/2026-10-07-grading-calibration/level-v3.md")).stripTrailing();
-        assertThat(LlmService.LEVEL_PROMPT).isEqualTo(measured);
+    void 프롬프트_출력_양식과_스키마의_키가_같다() throws Exception {
+        var schema = new com.fasterxml.jackson.databind.ObjectMapper().readTree(LlmService.SCORING_SCHEMA);
+        var required = new java.util.TreeSet<String>();
+        schema.get("required").forEach(n -> required.add(n.asText()));
+        var inPrompt = new java.util.TreeSet<String>();
+        var m = java.util.regex.Pattern.compile("\"(\\w+)\":").matcher(LlmService.SCORING_PROMPT.substring(LlmService.SCORING_PROMPT.indexOf("# 5. 출력")));
+        while (m.find()) inPrompt.add(m.group(1));
+        inPrompt.removeAll(java.util.Set.of("textType", "timeFrames", "cohesion", "vocabulary", "errors"));
+        assertThat(inPrompt).isEqualTo(required);
+    }
+
+    @Test
+    void 스키마의_등급_목록이_서버_등급과_같다() throws Exception {
+        var schema = new com.fasterxml.jackson.databind.ObjectMapper().readTree(LlmService.SCORING_SCHEMA);
+        var levels = new java.util.ArrayList<String>();
+        schema.get("properties").get("level").get("enum").forEach(n -> levels.add(n.asText()));
+        assertThat(levels).isEqualTo(FeedbackService.LEVELS);
     }
 }

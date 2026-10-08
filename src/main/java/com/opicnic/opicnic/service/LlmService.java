@@ -71,164 +71,26 @@ public class LlmService {
     @Value("${opicnic.llm.reasoning-effort:low}")
     private String reasoningEffort;
 
-    // 등급 판단 — 코칭 점수와 별개로 ACTFL 기준 근거를 먼저 적고 level을 고르게 한다.
-    // docs/performance/2026-10-07-grading-calibration/level-v3.md 와 같은 내용(실험에서 잰 그대로 옮김)
-    static final String LEVEL_PROMPT =
-            "【추가: 등급(level) 판단 — 위 코칭 점수와 별개로】\n" +
-            "위 점수들(mainPoint/expression/accuracy/content)은 \"무엇을 고칠지\"를 위한 코칭 기준이다. 등급은 그 점수와 무관하게, 실제 OPIc 채점자처럼 \"이 사람이 영어로 무엇을 해낼 수 있는가\"로 판단하라.\n" +
-            "코칭 점수가 높다고 등급을 올리지 마라. 특히 문법 오류가 없어도 문장이 단순하면 높은 등급이 아니다.\n" +
-            "\n" +
-            "먼저 아래 5가지 근거를 관찰하고(levelEvidence), 그 근거로 등급을 고른다.\n" +
-            "1. textType — 말의 단위: 단어·구 나열 / 단문 몇 개 / 단문을 이어 붙인 나열 / 연결된 문단\n" +
-            "2. timeFrames — 시제 운용: 현재만 / 과거 시도하나 흔들림 / 과거·현재(·미래)를 대체로 통제 / 일관되게 통제\n" +
-            "3. cohesion — 연결: and·so 위주 / because·when 등 기본 접속 / 다양한 접속·전환(though, which, so that…) / 문단 전체가 하나의 흐름(도입-전개-마무리)\n" +
-            "4. vocabulary — 어휘: 기본 단어 반복 / 일반적이지만 충분 / 구체적·다양 / 정확하고 관용적, 뉘앙스 있음\n" +
-            "5. errors — 오류의 성격: 이해를 방해 / 잦지만 이해 가능 / 가끔, 복잡한 문장에서 / 드물고 패턴 없음\n" +
-            "\n" +
-            "등급 기술 (가장 잘 맞는 하나를 고르되, 경계에서는 낮은 쪽):\n" +
-            "- NH: 단어·구·외운 표현 위주. 문장을 만들려는 시도는 있지만 대부분 완성되지 않는다.\n" +
-            "- IL: 짧은 단문을 스스로 만든다. 문장이 짧고 뚝뚝 끊기며, 질문에 기본 정보 몇 개로만 답한다. 오류가 잦지만 뜻은 통한다.\n" +
-            "- IM1: 단문 여러 개로 질문에 답한다. 기본 어휘, 거의 현재 시제, 세부 정보가 적다.\n" +
-            "- IM2: 단문을 여러 개 이어 질문에 충실히 답한다. and/so/because 정도의 연결, 약간의 세부 정보. 여전히 문장 단위.\n" +
-            "- IM3: 더 길고 구체적인 문장 나열, 복문을 가끔 쓴다. 과거 이야기를 대체로 맞는 시제로 하지만 흐름은 문장 단위이고, 구성(도입-전개-마무리)이 약하거나 어휘가 일반적이다.\n" +
-            "- IH: 문단 수준으로 말하려 하고 대부분 성공한다. 시제를 오가며 서술하지만 길어지면 가끔 흔들리거나 단순해진다. 어휘가 구체적이고 연결 장치가 다양하다.\n" +
-            "- AL: 처음부터 끝까지 하나로 이어진 문단. 시제를 일관되게 통제하며 이야기·묘사·의견을 구체적으로 전개한다. 어휘가 정확하고 자연스러우며, 오류는 드물고 의사소통에 영향이 없다.\n" +
-            "\n" +
-            "주의:\n" +
-            "- 길이는 근거가 아니다. 긴데 문장 나열이면 IM3 이하, 짧아도 연결이 탁월하면 그 수준을 인정하되 문단을 보여줄 만큼은 되어야 IH 이상.\n" +
-            "- 질문에 맞지 않는 답(묻는 것에 답하지 않음)은 그만큼 낮게 본다.\n" +
-            "\n" +
-            "JSON에 아래 두 필드를 추가하라 (기존 필드는 그대로):\n" +
-            "  \"levelEvidence\": {\"textType\": \"...\", \"timeFrames\": \"...\", \"cohesion\": \"...\", \"vocabulary\": \"...\", \"errors\": \"...\"},\n" +
-            "  \"level\": \"NH|IL|IM1|IM2|IM3|IH|AL 중 하나 (NH보다 낮아 보여도 NH)\"";
-
     // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
     private static final String MOCK_429_BODY =
             "Rate limit reached for model `openai/gpt-oss-120b` in organization ... on tokens per minute (TPM): "
                     + "Limit 8000, Used 4271, Requested 7120. Please try again in 24.9s.";
     private static final String MOCK_5XX_BODY = "Service Unavailable";
 
-    private static final String SYSTEM_PROMPT =
-            "당신은 OPIc 시험 전문 평가자입니다.\n" +
-                    "입력은 음성 STT 결과이므로 더듬음·filler words는 감안하고, 문맥에 맞지 않는 단어는 STT 오류로 간주해 크게 감점하지 마세요.\n" +
-                    "\n" +
-                    "【채점 + 피드백 규칙】\n" +
-                    "각 항목 텍스트 필드는 한국어 진단 + 영어 예시 형식으로 작성:\n" +
-                    "  형식: 한국어로 약점을 짚고, 예) 'actual quote' -> 'improved version'\n" +
-                    "  영어 예시 없이 한국어 조언만 쓰는 것 금지.\n" +
-                    "  개선 표현 톤: 말하듯 자연스러운 구어체 문장 구조.\n" +
-                    "  금지: 문장 끝에 추상적 격식 표현 붙이기 ('..., which left a lasting impression', '..., which was non-negotiable')\n" +
-                    "  OK: 감정/반응 연결 ('..., which made me feel so good', '..., which I really enjoyed'), breathtaking/stunning/amazing 같은 강한 형용사\n" +
-                    "\n" +
-                    "mainPoint (메인포인트 — 답변이 하나의 구조로 묶이는가):\n" +
-                    "\n" +
-                    "  【TYPE_5/TYPE_6/TYPE_7 — 롤플레이 유형】\n" +
-                    "  mainPointScore: 0 고정. mainPoint 텍스트: '롤플레이 유형 — MP 평가 제외'\n" +
-                    "\n" +
-                    "  【TYPE_1/TYPE_2/TYPE_3/TYPE_4/TYPE_8 — What+Feeling+Why】\n" +
-                    "  MP = 초반 2~3문장 안에 3요소가 모두 나와야 함:\n" +
-                    "    What    : 무엇에 대해 말할 것인지\n" +
-                    "    Feeling : 구체적인 감정/반응. 단순 'I like/love'는 Feeling이 아님. 최소 'I feel so relaxed', 'it makes me so happy' 수준이어야 함.\n" +
-                    "    Why     : 그 감정의 이유. 특징/사실 나열('it has trees', 'it is big')은 Why가 아님. 'because it clears my head', 'it just makes me forget everything' 수준이어야 함.\n" +
-                    "\n" +
-                    "  5=3요소 초반에 명확, 이후 전개도 MP로 수렴\n" +
-                    "  4=3요소 있으나 하나가 약하거나 순서 어색\n" +
-                    "  3=What만 있고 Feeling/Why가 뒤로 밀리거나 약함\n" +
-                    "  2=What만 있고 Feeling/Why 없음\n" +
-                    "  1=MP 자체 없음, 두서없이 나열\n" +
-                    "\n" +
-                    "  평가 순서 (반드시 이 순서로):\n" +
-                    "  1. 초반 2~3문장에서 What/Feeling/Why를 각각 찾아라\n" +
-                    "  2. 'I like/love' → Feeling 아님. 특징 나열 → Why 아님.\n" +
-                    "  3. 빠진 요소 확인 후 점수 결정. 빠진 요소를 채운 개선 예시 제시 (실제 발화 인용 포함)\n" +
-                    "\n" +
-                    "  예시:\n" +
-                    "  입력: 'I like the park near my house. It has many trees and a pond.'\n" +
-                    "  → What: 공원 ✓ / Feeling: 'I like' → Feeling 아님 ✗ / Why: 'has trees' → 특징 나열, Why 아님 ✗\n" +
-                    "  → score: 2. 피드백: 'I like the park.' → 'The park near my house is honestly my sanctuary — I go there whenever I need to clear my head.'\n" +
-                    "\n" +
-                    "  금지: What만 다른 What으로 교체\n" +
-                    "  예) 'I go to the gym' → 'My daily exercise routine is quite consistent' (Feeling/Why 여전히 없음)\n" +
-                    "\n" +
-                    "  【TYPE_9/TYPE_10 — 방향/프레임 명확성】\n" +
-                    "  MP = 채점자가 초반에 답변 방향을 파악할 수 있는가. 개인 입장 필수 아님.\n" +
-                    "\n" +
-                    "  5=초반에 방향 명확, 이후 전개가 그 방향을 따름\n" +
-                    "  4=방향은 있으나 약간 모호\n" +
-                    "  3=방향이 뒤로 밀림\n" +
-                    "  2=방향 파악 어려움\n" +
-                    "  1=두서없이 나열\n" +
-                    "\n" +
-                    "expression (표현력 - 어휘 선택 수준 + 문장 복잡도 + 묘사력):\n" +
-                    "  5=풍부한 형용사/비유, 복합문/종속절 자연스럽게 활용, 생생한 묘사\n" +
-                    "  4=형용사 있으나 다양성 부족, 간단한 복합문 일부 사용\n" +
-                    "  3=기본 어휘 위주, 단순문 위주지만 가끔 복합문 시도\n" +
-                    "  2=단순 동사 위주, 묘사 거의 없음, 모든 문장이 단순문\n" +
-                    "  1=매우 제한적인 어휘, 표현 패턴 없음\n" +
-                    "  expression 피드백: 어휘 선택과 문장 표현 수준을 함께 짚을 것.\n" +
-                    "\n" +
-                    "accuracy (정확성 - 순수 문법 오류만):\n" +
-                    "  평가 순서 (반드시 이 순서로):\n" +
-                    "  1. 사용자 응답에서 시제/주어-동사/관사/전치사 오류가 있는 문장을 먼저 찾아라\n" +
-                    "  2. 오류가 없으면 -> accuracyScore 4~5, 짧은 칭찬. 끝.\n" +
-                    "  3. 오류가 있으면 -> 해당 문장만 인용하고 수정안 제시\n" +
-                    "\n" +
-                    "  주의: 문장이 단순하거나 어휘가 기본적이어도 오류가 없으면 절대 감점 금지.\n" +
-                    "  문장 복잡도, 어휘 수준은 expression이 담당. accuracy에서 언급하면 역할 충돌.\n" +
-                    "\n" +
-                    "  5=오류 없음  4=소소한 오류 1~2개  3=오류 있으나 이해 가능  2=잦은 오류  1=기본 문법도 불안정\n" +
-                    "\n" +
-                    "content (내용 구성 - 주제 부합도 및 이유/예시 전개):\n" +
-                    "  5=주제 완전 부합, 이유+예시 충분히 전개  4=주제 부합, 전개 약간 부족\n" +
-                    "  3=주제 부합하나 단순한 수준  2=주제와 부분적으로만 관련  1=주제와 무관\n" +
-                    "\n" +
-                    "【모범답안 유형별 전략】\n" +
-                    "TYPE_1(묘사): What+Feeling+Why → 감각적 형용사로 묘사 전개 → 마무리\n" +
-                    "TYPE_2(루틴): What+Feeling+Why → when/where/what/frequency/with whom 구체 서술 → 마무리\n" +
-                    "TYPE_3(과거경험): 결말/하이라이트 먼저 → 과거 스토리 전개 → 현재로 귀결\n" +
-                    "TYPE_4(기억에 남는 경험): 왜 기억에 남는지 먼저 → when/where/what/how/why 전개 → 감정 마무리\n" +
-                    "TYPE_5(질문하기): 자연스러운 대화체로 3~4개 질문. 친구에게 묻듯이, 질문마다 다른 표현 패턴.\n" +
-                    "TYPE_6(정보/요청): 상황에 맞는 자연스러운 대화체. 내가 원하는 상황이면 공손한 요청, 상대가 원하는 상황이면 상대 요구에 맞게 응대.\n" +
-                    "TYPE_7(문제해결): 상황 설명(상대/내/제3자 잘못 중 해당) → 대안 2~3개 제시\n" +
-                    "TYPE_8(유사경험): 유사했던 과거 상황 설명 → 어떻게 해결했는지 전개\n" +
-                    "TYPE_9(비교): 비교 프레임/방향 먼저 → 각 대상 전개(과거/현재 or A/B) → 마무리\n" +
-                    "TYPE_10(사회이슈): 이슈 제시 → 내 생각/진술 전개 → 마무리\n" +
-                    "\n" +
-                    "improvements: 이 답변의 가장 특징적인 약점을 행동 패턴 1줄로.\n" +
-                    "  형식: [패턴 한국어 관찰]. 예) 'actual quote' -> 'improved version'\n" +
-                    "  올바른 예: 'MP 없이 행동 나열로 시작. 예) \\'I go to the gym every day.\\' -> \\'Going to the gym is honestly my favorite part of the day. I just feel so much better after I work out.\\''\n" +
-                    "  금지: 플레이스홀더('[실제 발화]') 사용. 반드시 사용자의 실제 문장을 그대로 인용할 것.\n" +
-                    "modelAnswer: 사용자 답변을 '한 단계 위 등급' 수준으로 다시 쓴 영어 답변. 새로 지어낸 남의 답이 아니라 '내 답을 고친 버전'이어야 한다.\n" +
-                    "  - 사용자가 말한 소재·경험·의견을 그대로 살린다. 새 사실은 질문에 답하는 데 꼭 필요할 때만 최소한으로 보탠다.\n" +
-                    "  - 위 mainPointFix/expressionFix/accuracyFix/contentFix의 고친 문장을 그대로 또는 거의 그대로 넣는다.\n" +
-                    "  - 위 유형 전략(MP → 전개 → 마무리)을 적용한다.\n" +
-                    "  - 길이 80~150단어. 사용자 답변이 짧고 등급이 낮을수록 80단어 쪽, 길고 높을수록 150단어 쪽.\n" +
-                    "  - 목표 등급 학습자가 그대로 따라 말할 수 있는 자연스러운 구어체. 어려운 문어 표현·과한 수사 금지.\n" +
-                    "modelAnswerComment: 어떤 피드백(핵심전달/표현력/정확성/내용구성)을 어느 문장에 반영했는지 (한국어, 2~3줄)\n" +
-                    "\n" +
-                    "【최종 체크 - JSON 출력 전 반드시 확인】\n" +
-                    "- improvements: 사용자 실제 발화에서 문장을 그대로 인용. 플레이스홀더 절대 금지.\n" +
-                    "- mainPoint(TYPE_1~4/8): 빠진 요소(What/Feeling/Why)가 뭔지 짚고, 실제 발화 인용 포함한 개선 예시 제시.\n" +
-                    "- mainPoint(TYPE_5~7): score=0, 텍스트='롤플레이 유형 — MP 평가 제외'.\n" +
-                    "- mainPoint(TYPE_9~10): 방향/프레임 명확성 기준으로만 평가. Feeling/Why 없어도 됨.\n" +
-                    "- accuracy: 오류 없으면 칭찬. 문장 복잡도/어휘 언급 금지.\n" +
-                    "- fluencyScore: 반드시 0.\n" +
-                    "\n" +
-                    "아래 JSON 형식으로만 응답:\n" +
-                    "{\n" +
-                    "  \"mainPoint\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"mainPointScore\": 3,\n" +
-                    "  \"expression\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"expressionScore\": 3,\n" +
-                    "  \"accuracy\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"accuracyScore\": 3,\n" +
-                    "  \"fluencyScore\": 0,\n" +
-                    "  \"content\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"contentScore\": 3,\n" +
-                    "  \"improvements\": \"패턴 관찰 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"modelAnswer\": \"모범 답변 영어 텍스트\",\n" +
-                    "  \"modelAnswerComment\": \"모범 답변 핵심 포인트 한국어 설명\"\n" +
-                    "}";
+    // 채점 프롬프트와 응답 스키마는 파일로 둔다 — 읽고 고치기 쉽게, 보정 실험(run.py --prompt-file)도 같은 파일을 쓴다.
+    // 등급(level) 판단 + 코칭 4개 항목 + 이렇게 바꿔보세요 + 모범 답안을 한 번에. 스키마로 형식을 강제해 JSON이 깨지지 않는다
+    // (docs/performance/2026-10-07-grading-calibration, 2026-10-08 덧붙인 지시 3개를 하나로 다시 씀)
+    static final String SCORING_PROMPT = resource("prompts/scoring.md");
+    static final String SCORING_SCHEMA = resource("prompts/scoring-schema.json");
+
+    private static String resource(String path) {
+        try (var in = LlmService.class.getClassLoader().getResourceAsStream(path)) {
+            if (in == null) throw new IllegalStateException("리소스 없음: " + path);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
 
     public Map<String, Object> getOpicFeedback(String speechText, QuestionDto question) {
         // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
@@ -273,26 +135,7 @@ public class LlmService {
             return parseResponse(mock);
         }
 
-        String exampleInstruction = "\n\n【변경: example을 구조화된 필드로 분리】\n" +
-                "mainPoint/expression/accuracy/content 텍스트에는 '예) ...' 문장을 넣지 마라. 대신 진단만 쓰고, 인용-개선 쌍은 아래 별도 필드로 내라.\n" +
-                "각 Quote/Fix는 개선 예시가 있을 때만 채우고, 없으면(이미 좋음) 빈 문자열로 둬라.\n\n" +
-                "최종 JSON은 다음 형태여야 한다 (기존 필드 절대 생략 금지):\n" +
-                "{\n" +
-                "  \"mainPoint\": \"진단만 (예시 문장 없이)\", \"mainPointScore\": 3,\n" +
-                "  \"mainPointQuote\": \"실제 발화 인용 또는 빈 문자열\", \"mainPointFix\": \"개선 문장 또는 빈 문자열\",\n" +
-                "  \"expression\": \"진단만\", \"expressionScore\": 3,\n" +
-                "  \"expressionQuote\": \"...\", \"expressionFix\": \"...\",\n" +
-                "  \"accuracy\": \"진단만\", \"accuracyScore\": 3,\n" +
-                "  \"accuracyQuote\": \"...\", \"accuracyFix\": \"...\",\n" +
-                "  \"fluencyScore\": 0,\n" +
-                "  \"content\": \"진단만\", \"contentScore\": 3,\n" +
-                "  \"contentQuote\": \"...\", \"contentFix\": \"...\",\n" +
-                "  \"improvements\": \"패턴 관찰만 (예시 문장 없이)\",\n" +
-                "  \"improvementsQuote\": \"...\", \"improvementsFix\": \"...\",\n" +
-                "  \"modelAnswer\": \"모범 답변 영어 텍스트\", \"modelAnswerComment\": \"한국어 설명\"\n" +
-                "}";
-
-        Message systemMessage = new SystemMessage(SYSTEM_PROMPT + exampleInstruction + "\n\n" + LEVEL_PROMPT);
+        Message systemMessage = new SystemMessage(SCORING_PROMPT);
         Message userMessage = new UserMessage(
                 "문제 유형: " + question.getQuestionType().name() + "\n" +
                 "질문: " + question.getContent() + "\n" +
@@ -307,7 +150,7 @@ public class LlmService {
         // effort=low로 실측 completion이 1,022까지 내려와 3000도 3배 여유이고,
         // 상한을 올리면 요청당 TPM 점유만 늘어 429가 잦아진다.
         OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, SCORING_SCHEMA))
                 .temperature(0.0)
                 .reasoningEffort(reasoningEffort == null || reasoningEffort.isBlank() ? null : reasoningEffort)
                 .maxTokens(3000)
