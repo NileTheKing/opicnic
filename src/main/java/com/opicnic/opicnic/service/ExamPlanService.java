@@ -3,6 +3,7 @@ package com.opicnic.opicnic.service;
 import com.opicnic.opicnic.domain.FeedbackResult;
 import com.opicnic.opicnic.domain.SurveyProfile.TargetGrade;
 import com.opicnic.opicnic.domain.enums.QuestionType;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -201,6 +202,13 @@ public class ExamPlanService {
         if (daysLeft <= 21) return "순서대로 꾸준히 진행하세요.";
         if (daysLeft <= 28) return "여유있게 전체를 커버할 수 있어요.";
         return "충분한 시간이 있어요. 반복 연습으로 실력을 쌓으세요.";
+    }
+
+    // 기록 목록의 주제 이름. 저장값은 enum 상수명(MOVIE_WATCHING)이라 한국어 이름으로 바꿔 보여준다.
+    // 예전 기록처럼 이미 한국어로 저장됐거나 모르는 값이면 그대로
+    public String topicLabel(String surveyTopicName) {
+        SurveyTopic topic = SurveyTopic.fromString(surveyTopicName);
+        return topic != null ? topic.getLabel() : surveyTopicName;
     }
 
     public String typeLabel(QuestionType type) {

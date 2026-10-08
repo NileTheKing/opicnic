@@ -48,7 +48,7 @@
                         <span th:if="${r.overallGrade != null}" th:text="${r.overallGrade}"
                               class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0"></span>
                         <span class="text-sm text-gray-700 truncate"
-                              th:text="${r.surveyTopicName != null ? r.surveyTopicName : typeLabels.typeLabel(r.questionType)}"></span>
+                              th:text="${r.surveyTopicName != null ? typeLabels.topicLabel(r.surveyTopicName) : typeLabels.typeLabel(r.questionType)}"></span>
                     </div>
                     <i class="fa-solid fa-chevron-right text-gray-300 text-xs shrink-0"></i>
                 </a>
