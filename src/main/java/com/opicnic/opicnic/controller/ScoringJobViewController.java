@@ -7,6 +7,7 @@ import com.opicnic.opicnic.domain.job.ScoringJobItem;
 import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureReason;
 import com.opicnic.opicnic.domain.job.ScoringJobItemStatus;
 import com.opicnic.opicnic.dto.FeedbackDTO;
+import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
@@ -92,7 +93,11 @@ public class ScoringJobViewController {
                     failMessage(item.getFailureReason()));
         }
         if (item.getFeedbackResultId() == null) {
-            // 자기소개: 채점·저장 안 함
+            // 결과 행이 없는 완료 = 자기소개(채점 대상 아님) 또는 채점 불가(말이 거의 없음). 둘 다 저장하지 않는다
+            if (question.getQuestionType() != null) {
+                return new ResultCard(item.getQuestionIndex(), number, "UNSCORABLE", FeedbackDTO.builder().question(question)
+                        .sttText(item.getSttText()).unscorable(true).build(), FeedbackService.UNSCORABLE_MESSAGE);
+            }
             return new ResultCard(item.getQuestionIndex(), number, "DONE", FeedbackDTO.builder().question(question)
                     .sttText(item.getSttText()).overall("자기소개는 채점 대상이 아닙니다. 수고하셨어요!").build(), null);
         }
@@ -118,7 +123,7 @@ public class ScoringJobViewController {
     public static class ResultCard {
         private final int index;
         private final int number;
-        private final String state;         // DONE / FAILED / PENDING
+        private final String state;         // DONE / FAILED / PENDING / UNSCORABLE
         private final FeedbackDTO feedback;
         private final String failMessage;
     }

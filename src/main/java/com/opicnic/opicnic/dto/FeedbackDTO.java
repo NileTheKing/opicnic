@@ -43,6 +43,9 @@ public class FeedbackDTO {
 
     @Builder.Default
     private boolean failed = false;
+    // 말이 거의 없어 판단할 근거가 없음 — 등급·점수를 매기지 않고 저장도 안 한다(통계에 1점으로 섞이지 않게)
+    @Builder.Default
+    private boolean unscorable = false;
     private String errorMessage;
 
     // 비동기 결과 화면용: DB에 저장된 FeedbackResult → 기존 feedback.html이 그대로 그릴 수 있는 DTO.

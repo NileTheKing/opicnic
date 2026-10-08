@@ -30,11 +30,12 @@ public class FeedbackPersistenceService {
     // 워커용: 문항 하나를 태그까지 한 트랜잭션으로 저장하고 저장된 엔티티를 돌려준다.
     // 문항 상태(DONE)와 결과 행이 같은 DB에 있어 워커가 "상태 갱신 + 결과 저장"을 한 트랜잭션에 묶을 수 있다 —
     // 큐를 DB로 두는 진짜 이득(불일치 없음). 자기소개(questionType null)는 저장하지 않고 null을 돌려준다.
+    // 채점 불가(말이 거의 없음)도 같은 이유로 저장하지 않는다.
     // 자기소개는 실제 시험에서도 채점 문항으로 취급되지 않는다 — DB에 아예 저장하지 않아야
     // "총 문항 수", "최근 기록", "코칭 열람 조건" 같은 문항 개수 기반 통계에 섞이지 않는다.
     @Transactional
     public FeedbackResult saveOne(FeedbackDTO fb, ScoringJob job) {
-        if (fb.isFailed() || fb.getQuestion().getQuestionType() == null) return null;
+        if (fb.isFailed() || fb.isUnscorable() || fb.getQuestion().getQuestionType() == null) return null;
         FeedbackResult saved = feedbackResultRepository.save(
                 toEntity(fb, job.getMember(), job.getId(), job.getComboPatternKey(), job.getComboCategory()));
         List<FeedbackTag> tags = new ArrayList<>();

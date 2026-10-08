@@ -40,6 +40,17 @@ class FeedbackPersistenceServiceTest {
         Mockito.verifyNoInteractions(feedbackResultRepository, feedbackTagRepository);
     }
 
+    // 채점 불가(말이 거의 없음)도 저장하지 않는다 — 1점 표본으로 통계·코칭에 섞이지 않게
+    @Test
+    void unscorableAnswerIsNotPersisted() {
+        ScoringJob job = new ScoringJob("attempt-2", member, PracticeMode.MOCK_EXAM);
+        QuestionDto q = new QuestionDto(1L, "Describe a park.", "공원", com.opicnic.opicnic.domain.enums.QuestionType.TYPE_1);
+        FeedbackDTO unscorable = FeedbackDTO.builder().question(q).sttText("um").unscorable(true).build();
+
+        assertThat(service.saveOne(unscorable, job)).isNull();
+        Mockito.verifyNoInteractions(feedbackResultRepository, feedbackTagRepository);
+    }
+
     // 콤보 패턴/카테고리는 잡 행에서 결과 행으로 그대로 복사돼야 학습분석(콤보↔유형 사이클)이 성립한다
     @Test
     void gradedFeedbackIsPersistedWithComboMetadataFromJob() {

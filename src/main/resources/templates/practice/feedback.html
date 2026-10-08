@@ -88,6 +88,20 @@
             </div>
         </div>
 
+        <!-- 채점 불가 카드: 말이 거의 없어 판단하지 않음. 오류가 아니라 안내라서 회색 -->
+        <div th:if="${card.state == 'UNSCORABLE'}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <span class="text-sm font-semibold text-gray-700" th:text="'문항 ' + ${card.number}"></span>
+            </div>
+            <div class="px-5 py-4">
+                <p class="text-sm text-gray-500 mb-3 leading-relaxed" th:text="${feedback.question.content}"></p>
+                <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
+                    <i class="fa-solid fa-microphone-slash text-gray-400 text-sm shrink-0"></i>
+                    <p class="text-sm text-gray-600" th:text="${card.failMessage}"></p>
+                </div>
+            </div>
+        </div>
+
         <!-- 실패 카드: 왜 안 됐는지만 말한다 -->
         <div th:if="${card.state == 'FAILED'}" class="bg-white rounded-2xl overflow-hidden shadow-sm">
             <div class="px-5 py-4 border-b border-gray-100">
