@@ -21,8 +21,8 @@ import static org.mockito.Mockito.when;
 // 재시도하고, 끝내 실패하면 failed=true 카드로 반환해야 한다.
 class FeedbackServiceScoreValidationTest {
 
-    private FeedbackService newService(GroqService groqService, STTService sttService) {
-        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper());
+    private FeedbackService newService(LlmService llmService, STTService sttService) {
+        return new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, llmService, new ObjectMapper());
     }
 
     private String emptyTagsJson() {
@@ -32,8 +32,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void outOfRangeScoreEndsAsFailedCardNotSilentlyStored() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -45,8 +45,8 @@ class FeedbackServiceScoreValidationTest {
                 "accuracy", "양호", "accuracyScore", 3,
                 "content", "양호", "contentScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(badFeedback);
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(badFeedback);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         // 범위 밖 점수는 조용히 저장되지 않고 예외로 끝나야 한다(워커가 FAILED/재시도로 처리)
@@ -57,8 +57,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void missingScoreFieldEndsAsFailedCardNotNpe() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -69,8 +69,8 @@ class FeedbackServiceScoreValidationTest {
                 "expression", "양호", "expressionScore", 3,
                 "accuracy", "양호", "accuracyScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(missingFieldFeedback);
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(missingFieldFeedback);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(emptyTagsJson());
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         // 예외로 끝나야 워커가 문항을 FAILED/재시도로 처리한다 — NPE가 아니라 원인이 읽히는 IllegalStateException
@@ -81,8 +81,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void overlongOrBlankOrUnknownTagsAreDropped() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -92,7 +92,7 @@ class FeedbackServiceScoreValidationTest {
                 "accuracy", "양호", "accuracyScore", 3,
                 "content", "양호", "contentScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
 
         // TYPE_1(groupA)의 mainPoint allowlist는 WHY_MISSING/FEELING_MISSING/MP_LATE/MP_GOOD뿐이다.
         // 200자 가비지, 빈 문자열, allowlist 밖 "정상태그"(오타/환각 흉내)는 전부 버려지고
@@ -100,7 +100,7 @@ class FeedbackServiceScoreValidationTest {
         String overlongTag = "가".repeat(200);
         String tagsJson = "{\"mainPoint\":[\"" + overlongTag + "\", \"\", \"정상태그\", \"MP_GOOD\"],"
                 + "\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}";
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
@@ -114,8 +114,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void tagOutsideAllowlistForGivenCategoryIsDropped() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -125,12 +125,12 @@ class FeedbackServiceScoreValidationTest {
                 "accuracy", "양호", "accuracyScore", 3,
                 "content", "양호", "contentScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
 
         // accuracy allowlist엔 없는 "NO_ERROR"(프롬프트가 명시적으로 쓰지 말라고 지시한 값) — 환각 시나리오.
         String tagsJson = "{\"mainPoint\":[],\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},"
                 + "\"accuracy\":[\"NO_ERROR\", \"TENSE_ERROR\"],\"content\":[]}";
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
@@ -145,8 +145,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void tagCountPerCategoryIsCapped() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -156,13 +156,13 @@ class FeedbackServiceScoreValidationTest {
                 "accuracy", "양호", "accuracyScore", 3,
                 "content", "양호", "contentScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
 
         // accuracy allowlist는 4개뿐이지만 같은 값을 반복해서 6개를 보내는 비정상 응답을 흉내낸다.
         String tagsJson = "{\"mainPoint\":[],\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},"
                 + "\"accuracy\":[\"TENSE_ERROR\",\"TENSE_ERROR\",\"TENSE_ERROR\",\"TENSE_ERROR\","
                 + "\"TENSE_ERROR\",\"TENSE_ERROR\"],\"content\":[]}";
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});
@@ -175,8 +175,8 @@ class FeedbackServiceScoreValidationTest {
     @Test
     void distinctAllowedTagsAreAllKeptInFirstSeenOrder() {
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = newService(groqService, sttService);
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = newService(llmService, sttService);
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(
                 "This is a sufficiently long answer so that it passes the minimum word count guard for STT text.");
@@ -186,13 +186,13 @@ class FeedbackServiceScoreValidationTest {
                 "accuracy", "양호", "accuracyScore", 3,
                 "content", "양호", "contentScore", 3
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(goodFeedback);
 
         // accuracy allowlist 4개(TENSE/ARTICLE/PREPOSITION/SUBJECT_VERB_ERROR) 전부 + 중복 + unknown + blank 섞임.
         String tagsJson = "{\"mainPoint\":[],\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},"
                 + "\"accuracy\":[\"TENSE_ERROR\",\"ARTICLE_ERROR\",\"TENSE_ERROR\",\"\",\"NO_ERROR\","
                 + "\"PREPOSITION_ERROR\",\"SUBJECT_VERB_ERROR\",\"ARTICLE_ERROR\"],\"content\":[]}";
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any())).thenReturn(tagsJson);
 
         QuestionDto question = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_1);
         List<byte[]> streams = List.of(new byte[]{1, 2, 3});

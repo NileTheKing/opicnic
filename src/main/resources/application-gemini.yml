@@ -1,0 +1,10 @@
+# LLM 공급자: Google Gemini (LLM_PROVIDER=gemini). AI Studio 무료 키, OpenAI 호환 주소. STT는 Groq 그대로
+# 무료 요금제는 입력이 구글 학습에 쓰인다 — 개인정보 처리방침에 적을 것.
+# 2.5 계열은 신규 사용자에게 막혀 있고(404), 최신 Flash는 무료 하루 약 20회라 Flash-Lite를 쓴다(2026-10-07 확인)
+spring.ai.openai.api-key: ${GEMINI_API_KEY}
+spring.ai.openai.base-url: https://generativelanguage.googleapis.com/v1beta/openai
+spring.ai.openai.chat.completions-path: /chat/completions
+spring.ai.openai.chat.options.model: gemini-3.5-flash-lite
+spring.ai.tagging.model: gemini-3.5-flash-lite
+# 빈 값 = reasoning_effort를 보내지 않는다. 보정 실험의 Gemini 측정이 이 조건
+opicnic.llm.reasoning-effort: ""

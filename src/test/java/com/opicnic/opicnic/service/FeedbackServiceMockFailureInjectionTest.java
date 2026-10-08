@@ -19,8 +19,8 @@ import static org.mockito.Mockito.mock;
 // S2("외부 API 실패 30% 주입 시 우리 쪽 호출 증폭 ≤ 1.5배") 측정 전, mock 429 주입이
 // ScoringWorker의 재시도 분기가 실제로 감지하는 429 경로
 // (isRateLimited() -> HttpClientErrorException 429)를 그대로 타는지 확인하는 테스트.
-// STTService/GroqService는 실제 인스턴스를 mock 모드로 만들어 쓴다 — Mockito.mock으로
-// 임의 예외를 던지면 주입 로직 자체(STTService/GroqService가 실제와 같은 예외 타입을 던지는지)는
+// STTService/LlmService는 실제 인스턴스를 mock 모드로 만들어 쓴다 — Mockito.mock으로
+// 임의 예외를 던지면 주입 로직 자체(STTService/LlmService가 실제와 같은 예외 타입을 던지는지)는
 // 검증되지 않는다.
 class FeedbackServiceMockFailureInjectionTest {
 
@@ -51,15 +51,15 @@ class FeedbackServiceMockFailureInjectionTest {
     @Test
     @DisplayName("LLM(채점) mock 429 주입 예외가 FeedbackService.isRateLimited()를 true로 만든다")
     void llmMock429Exception_isDetectedAsRateLimited() throws Exception {
-        GroqService groqService = new GroqService(mock(ChatModel.class), new ObjectMapper(), new SimpleMeterRegistry());
-        ReflectionTestUtils.setField(groqService, "aiEnabled", false);
-        ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
-        ReflectionTestUtils.setField(groqService, "mock429Rate", 1.0);
-        ReflectionTestUtils.setField(groqService, "mock5xxRate", 0.0);
+        LlmService llmService = new LlmService(mock(ChatModel.class), new ObjectMapper(), new SimpleMeterRegistry());
+        ReflectionTestUtils.setField(llmService, "aiEnabled", false);
+        ReflectionTestUtils.setField(llmService, "mockDelayMs", 0L);
+        ReflectionTestUtils.setField(llmService, "mock429Rate", 1.0);
+        ReflectionTestUtils.setField(llmService, "mock5xxRate", 0.0);
 
         Throwable thrown = null;
         try {
-            groqService.getOpicFeedback("speech", QUESTION);
+            llmService.getOpicFeedback("speech", QUESTION);
         } catch (Throwable e) {
             thrown = e;
         }
@@ -75,14 +75,14 @@ class FeedbackServiceMockFailureInjectionTest {
     @DisplayName("STT가 항상 429를 던지면 transcribe는 예외를 그대로 던지고, 워커의 429 판정이 true다")
     void sttAlwaysRateLimited_transcribeThrowsRateLimited() {
         STTService sttService = new STTService(RestClient.builder(), "dummy-key", false, 0L, 1.0, 0.0, 0.0, new ObjectMapper(), new SimpleMeterRegistry());
-        GroqService groqService = Mockito.mock(GroqService.class); // STT 단계에서 실패하므로 호출되지 않아야 함
-        FeedbackService feedbackService = new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, groqService, new ObjectMapper());
+        LlmService llmService = Mockito.mock(LlmService.class); // STT 단계에서 실패하므로 호출되지 않아야 함
+        FeedbackService feedbackService = new FeedbackService(Mockito.mock(ComboPracticeService.class), sttService, llmService, new ObjectMapper());
 
         Throwable thrown = org.assertj.core.api.Assertions.catchThrowable(
                 () -> feedbackService.transcribe(new byte[]{1, 2, 3}, "a.webm"));
 
         assertThat(thrown).isNotNull();
         assertThat(FeedbackService.isRateLimited(thrown)).isTrue();
-        Mockito.verifyNoInteractions(groqService);
+        Mockito.verifyNoInteractions(llmService);
     }
 }

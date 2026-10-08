@@ -26,7 +26,7 @@ class CoachingServiceDistinctOccurrenceTest {
 
     private CoachingService newService() {
         return new CoachingService(
-                Mockito.mock(GroqService.class),
+                Mockito.mock(LlmService.class),
                 Mockito.mock(FeedbackResultRepository.class),
                 Mockito.mock(FeedbackTagRepository.class),
                 Mockito.mock(CoachingReportRepository.class),

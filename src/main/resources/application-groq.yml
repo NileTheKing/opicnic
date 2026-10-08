@@ -1,0 +1,10 @@
+# LLM 공급자: Groq (LLM_PROVIDER=groq, 기본값). OpenAI 호환 주소. STT도 Groq지만 그건 application.yml의 stt 설정
+# Groq이 모델을 내리는 일이 반복됨(2026-07-31 llama-4-scout, 2026-08-31 llama-3.3-70b + llama-3.1-8b) — 죽으면 여기부터 확인
+spring.ai.openai.api-key: ${GROQ_API_KEY}
+spring.ai.openai.base-url: https://api.groq.com/openai
+spring.ai.openai.chat.completions-path: /v1/chat/completions
+spring.ai.openai.chat.options.model: openai/gpt-oss-120b
+# 태깅 전용 모델. 채점 모델과 일부러 분리 — Groq 한도는 모델별로 따로 적용돼서 나눠 쓰면 TPD를 두 배로 쓴다
+spring.ai.tagging.model: openai/gpt-oss-20b
+# gpt-oss는 reasoning 토큰이 출력에 포함돼 low로 줄인다(LlmService 채점 호출 주석 참고)
+opicnic.llm.reasoning-effort: low

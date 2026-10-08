@@ -39,7 +39,7 @@ CoachingController (POST /analytics/coaching)
   → CoachingService.generate(member)
       → 최근 FeedbackResult + FeedbackTag 조회
       → 요소별 집계 (count >= 3), 유형별 집계 (비율 >= 0.4)
-      → GroqService.getCoachingReport()   // 집계 결과를 문장으로 서술만 함
+      → LlmService.getCoachingReport()   // 집계 결과를 문장으로 서술만 함
       → CoachingReport 저장
 ```
 
@@ -93,7 +93,7 @@ HomeController (/practice/mock)
 | `ComboQuestionStrategy` / `FixedComboQuestionStrategy` / `OpicStandardComboSelectionStrategy` | 콤보 내 문제 선택 전략 |
 | `TopicCatalog` | 배경설문 주제(22개)/돌발 주제(23개) 카탈로그 |
 | `FeedbackService` | 단일 문항 채점 — `transcribe()`(STT), `gradeWithSpeech()`(채점 → 태깅 → 점수 검증·등급). 재시도 없음(워커가 소유). `isRateLimited()`로 429 판정 |
-| `GroqService` | Groq API 호출 — `getOpicFeedback`(채점), `extractFeedbackTags`(태깅), `getCoachingReport`(코칭 리포트 문장화) |
+| `LlmService` | LLM 호출(OpenAI 호환, 공급자는 `application-<공급자>.yml`을 `LLM_PROVIDER`로 선택) — `getOpicFeedback`(채점 + 등급 판단), `extractFeedbackTags`(태깅), `getCoachingReport`(코칭 리포트 문장화). 예전 이름 GroqService |
 | `STTService` | Groq Whisper STT 호출 |
 | `CoachingService` | 저장된 `FeedbackTag`를 요소별·유형별로 집계해 코칭 리포트 생성 (태그 아키텍처 — 클래스 상단 주석 참고). `parseReport()`/`buildTeaser()`로 리포트 JSON 파싱과 홈·A·B 공통 코칭 티저 문구도 제공 |
 | `ExamPlanService` | 학습 이력 기반 시험 준비 계획/약점 유형 진단 |

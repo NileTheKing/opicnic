@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.stream.Collectors;
 
-// 태그 기반 코칭 아키텍처: GroqService.extractFeedbackTags가 답변 단위로 태그를 매기고(LLM 판단),
+// 태그 기반 코칭 아키텍처: LlmService.extractFeedbackTags가 답변 단위로 태그를 매기고(LLM 판단),
 // 여러 답변에 걸친 집계·문턱값 필터링은 전부 이 클래스가 코드로 한다. LLM은 최종 집계 결과를
 // 문장으로 서술하는 역할만 맡는다("판단은 LLM, 집계는 코드"). 자유텍스트를 LLM에게 통째로 주고
 // "반복 패턴 요약해줘"라고 시켰던 이전 방식은 카운팅과 의미 클러스터링을 동시에 요구해
@@ -101,7 +101,7 @@ public class CoachingService {
             Map.entry("TYPE_10", "이슈 제시 후 내 생각을 진술하는 연습")
     );
 
-    private final GroqService groqService;
+    private final LlmService llmService;
     private final FeedbackResultRepository feedbackResultRepository;
     private final FeedbackTagRepository feedbackTagRepository;
     private final CoachingReportRepository coachingReportRepository;
@@ -148,7 +148,7 @@ public class CoachingService {
                 + elementSections.text()
                 + typeSections.text();
 
-        String content = groqService.getCoachingReport(summary, targetGrade);
+        String content = llmService.getCoachingReport(summary, targetGrade);
         content = fillGapsAndPostProcess(content, elementSections, elementScores, typeSections, typeStats, targetGrade);
 
         return coachingReportRepository.save(CoachingReport.builder()
@@ -367,7 +367,7 @@ public class CoachingService {
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             Map<String, StructuredTaskScope.Subtask<Map<String, Object>>> subtasks = new LinkedHashMap<>();
             for (String element : missing) {
-                subtasks.put(element, scope.fork(() -> groqService.writeCriterion(element, byElement.get(element), targetGrade)));
+                subtasks.put(element, scope.fork(() -> llmService.writeCriterion(element, byElement.get(element), targetGrade)));
             }
             scope.joinUntil(Instant.now().plus(Duration.ofSeconds(30)));
             scope.throwIfFailed();
@@ -396,7 +396,7 @@ public class CoachingService {
             Map<String, StructuredTaskScope.Subtask<String>> subtasks = new LinkedHashMap<>();
             for (String typeKey : missing) {
                 String label = typeLabels.getOrDefault(typeKey, typeKey);
-                subtasks.put(typeKey, scope.fork(() -> groqService.writeTypePattern(typeKey, label, byType.get(typeKey))));
+                subtasks.put(typeKey, scope.fork(() -> llmService.writeTypePattern(typeKey, label, byType.get(typeKey))));
             }
             scope.joinUntil(Instant.now().plus(Duration.ofSeconds(30)));
             scope.throwIfFailed();

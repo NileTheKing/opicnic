@@ -28,8 +28,8 @@ class FeedbackServiceRoleplayMainPointTest {
     void roleplayMainPointScoreIsExcludedFromGradeAndOverallText() {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
 
         // fluencyScore가 4점(90단어 이상)이 나오도록 충분히 긴 답변을 준다 — 짧으면 fluency 자체가
         // 평균을 끌어내려 이 테스트가 검증하려는 MP 제외 효과와 뒤섞인다.
@@ -47,8 +47,8 @@ class FeedbackServiceRoleplayMainPointTest {
                 "accuracy", "문법 양호", "accuracyScore", 4,
                 "content", "내용 양호", "contentScore", 4
         );
-        when(groqService.getOpicFeedback(any(), any())).thenReturn(mockFeedback);
-        when(groqService.extractFeedbackTags(any(), any(), any(), any(), any()))
+        when(llmService.getOpicFeedback(any(), any())).thenReturn(mockFeedback);
+        when(llmService.extractFeedbackTags(any(), any(), any(), any(), any()))
                 .thenReturn("{\"mainPoint\":[],\"expression\":{\"vocab\":[],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}");
 
         QuestionDto roleplayQuestion = new QuestionDto(1L, "content", "topic", QuestionType.TYPE_6);
@@ -77,8 +77,8 @@ class FeedbackServiceRoleplayMainPointTest {
     void roleplayShortOrEmptyAnswerStillExcludesMainPointScore(QuestionType type, String sttText) {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn(sttText);
 
@@ -92,8 +92,8 @@ class FeedbackServiceRoleplayMainPointTest {
         assertThat(result.getContentScore()).isEqualTo(1);
         assertThat(result.getOverallGrade()).isEqualTo("IL");
         // 무응답 조기 반환 경로이므로 채점/태깅 LLM은 호출되지 않아야 한다.
-        verify(groqService, never()).getOpicFeedback(any(), any());
-        verify(groqService, never()).extractFeedbackTags(any(), any(), any(), any(), any());
+        verify(llmService, never()).getOpicFeedback(any(), any());
+        verify(llmService, never()).extractFeedbackTags(any(), any(), any(), any(), any());
     }
 
     // 비교 대조군: 롤플레이가 아닌 유형의 짧은 답변은 기존처럼 MP=1을 유지해야 한다(회귀 방지).
@@ -101,8 +101,8 @@ class FeedbackServiceRoleplayMainPointTest {
     void nonRoleplayShortAnswerKeepsMainPointScoreAtOne() {
         ComboPracticeService comboPracticeService = Mockito.mock(ComboPracticeService.class);
         STTService sttService = Mockito.mock(STTService.class);
-        GroqService groqService = Mockito.mock(GroqService.class);
-        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, groqService, new ObjectMapper());
+        LlmService llmService = Mockito.mock(LlmService.class);
+        FeedbackService feedbackService = new FeedbackService(comboPracticeService, sttService, llmService, new ObjectMapper());
 
         when(sttService.sendStreamToStt(any(), any())).thenReturn("no idea");
 

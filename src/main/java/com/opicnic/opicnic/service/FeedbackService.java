@@ -30,7 +30,7 @@ public class FeedbackService {
 
     private final ComboPracticeService comboPracticeService;
     private final STTService sttService;
-    private final GroqService groqService;
+    private final LlmService llmService;
     private final ObjectMapper objectMapper;
 
     public ComboQuestionsResult getComboQuestions(String topic, String difficulty) {
@@ -54,14 +54,14 @@ public class FeedbackService {
         if (question.getQuestionType() == null) {
             return selfIntroductionDto(question, speechText);
         }
-        var feedbackMap = groqService.getOpicFeedback(speechText, question);
+        var feedbackMap = llmService.getOpicFeedback(speechText, question);
 
         String mainPointDiag = str(feedbackMap, "mainPoint");
         String expressionDiag = str(feedbackMap, "expression");
         String accuracyDiag = str(feedbackMap, "accuracy");
         String contentDiag = str(feedbackMap, "content");
 
-        String tagsJson = groqService.extractFeedbackTags(
+        String tagsJson = llmService.extractFeedbackTags(
                 question.getQuestionType().name(),
                 mainPointDiag, expressionDiag, accuracyDiag, contentDiag);
         List<FeedbackTagDto> tags = parseTags(tagsJson, question.getQuestionType().name());
@@ -76,7 +76,11 @@ public class FeedbackService {
         int exScore    = score(feedbackMap, "expressionScore");
         int acScore    = score(feedbackMap, "accuracyScore");
         int ctScore    = score(feedbackMap, "contentScore");
-        String grade   = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
+        // 등급은 코칭 점수 평균이 아니라 LLM의 등급 판단(level)을 쓰고, 서버는 단어 수 상한만 건다.
+        // 코칭 점수는 요령(오류 없는 단문, What+Feeling+Why)만 지켜도 만점이라 평균하면 IM3 답이 AL이 됐다
+        // (docs/performance/2026-10-07-grading-calibration). level이 없거나 이상하면 예전 계산으로 대신한다.
+        String grade   = capByLength(str(feedbackMap, "level"), speechText);
+        if (grade == null) grade = computeGrade(mpScore, exScore, acScore, fluencyScore, ctScore);
 
         String mainPointQuote = str(feedbackMap, "mainPointQuote");
         String mainPointFix = str(feedbackMap, "mainPointFix");
@@ -187,6 +191,22 @@ public class FeedbackService {
 
     private static boolean isRoleplayType(QuestionType type) {
         return type == QuestionType.TYPE_5 || type == QuestionType.TYPE_6 || type == QuestionType.TYPE_7;
+    }
+
+    static final List<String> LEVELS = List.of("NH", "IL", "IM1", "IM2", "IM3", "IH", "AL");
+    // 짧은 답은 문단 수준 등급을 보여줄 수 없다 — 상한만 걸고 올려 주지는 않는다. 값은 보정 실험에서 기준점을 자르지 않는 선
+    private static final List<Map.Entry<Integer, String>> WORD_CAPS =  // 이 단어 수 미만이면 이 등급까지
+            List.of(Map.entry(35, "IM1"), Map.entry(60, "IM2"), Map.entry(90, "IM3"), Map.entry(120, "IH"));
+
+    static String capByLength(String level, String text) {
+        if (level == null) return null;
+        int idx = LEVELS.indexOf(level.trim().toUpperCase());
+        if (idx < 0) return null;
+        int words = text == null || text.isBlank() ? 0 : text.trim().split("\\s+").length;
+        for (var cap : WORD_CAPS) {
+            if (words < cap.getKey()) return LEVELS.get(Math.min(idx, LEVELS.indexOf(cap.getValue())));
+        }
+        return LEVELS.get(idx);
     }
 
     private static String computeGrade(Integer... scores) {

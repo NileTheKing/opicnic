@@ -60,17 +60,17 @@ class ExternalCallMetricsTest {
     @DisplayName("채점 mock 503 주입이면 kind=score outcome=5xx, 정상이면 outcome=ok로 기록된다")
     void scoreMock_recordsOutcome() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        GroqService groqService = new GroqService(mock(ChatModel.class), new ObjectMapper(), registry);
-        ReflectionTestUtils.setField(groqService, "aiEnabled", false);
-        ReflectionTestUtils.setField(groqService, "mockDelayMs", 0L);
-        ReflectionTestUtils.setField(groqService, "mock429Rate", 0.0);
-        ReflectionTestUtils.setField(groqService, "mock5xxRate", 1.0);
+        LlmService llmService = new LlmService(mock(ChatModel.class), new ObjectMapper(), registry);
+        ReflectionTestUtils.setField(llmService, "aiEnabled", false);
+        ReflectionTestUtils.setField(llmService, "mockDelayMs", 0L);
+        ReflectionTestUtils.setField(llmService, "mock429Rate", 0.0);
+        ReflectionTestUtils.setField(llmService, "mock5xxRate", 1.0);
 
-        assertThatThrownBy(() -> groqService.getOpicFeedback("speech", QUESTION)).isNotNull();
+        assertThatThrownBy(() -> llmService.getOpicFeedback("speech", QUESTION)).isNotNull();
         assertThat(count(registry, "score", "5xx")).isEqualTo(1);
 
-        ReflectionTestUtils.setField(groqService, "mock5xxRate", 0.0);
-        groqService.getOpicFeedback("speech", QUESTION);
+        ReflectionTestUtils.setField(llmService, "mock5xxRate", 0.0);
+        llmService.getOpicFeedback("speech", QUESTION);
         assertThat(count(registry, "score", "ok")).isEqualTo(1);
     }
 

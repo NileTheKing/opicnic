@@ -1,0 +1,142 @@
+{
+  "type": "object",
+  "properties": {
+    "levelEvidence": {
+      "type": "object",
+      "properties": {
+        "textType": {
+          "type": "string"
+        },
+        "timeFrames": {
+          "type": "string"
+        },
+        "cohesion": {
+          "type": "string"
+        },
+        "vocabulary": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "textType",
+        "timeFrames",
+        "cohesion",
+        "vocabulary",
+        "errors"
+      ],
+      "additionalProperties": false
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "NH",
+        "IL",
+        "IM1",
+        "IM2",
+        "IM3",
+        "IH",
+        "AL"
+      ]
+    },
+    "mainPoint": {
+      "type": "string"
+    },
+    "mainPointScore": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    },
+    "mainPointQuote": {
+      "type": "string"
+    },
+    "mainPointFix": {
+      "type": "string"
+    },
+    "expression": {
+      "type": "string"
+    },
+    "expressionScore": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "expressionQuote": {
+      "type": "string"
+    },
+    "expressionFix": {
+      "type": "string"
+    },
+    "accuracy": {
+      "type": "string"
+    },
+    "accuracyScore": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "accuracyQuote": {
+      "type": "string"
+    },
+    "accuracyFix": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "contentScore": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "contentQuote": {
+      "type": "string"
+    },
+    "contentFix": {
+      "type": "string"
+    },
+    "improvements": {
+      "type": "string"
+    },
+    "improvementsQuote": {
+      "type": "string"
+    },
+    "improvementsFix": {
+      "type": "string"
+    },
+    "modelAnswer": {
+      "type": "string"
+    },
+    "modelAnswerComment": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "levelEvidence",
+    "level",
+    "mainPoint",
+    "mainPointScore",
+    "mainPointQuote",
+    "mainPointFix",
+    "expression",
+    "expressionScore",
+    "expressionQuote",
+    "expressionFix",
+    "accuracy",
+    "accuracyScore",
+    "accuracyQuote",
+    "accuracyFix",
+    "content",
+    "contentScore",
+    "contentQuote",
+    "contentFix",
+    "improvements",
+    "improvementsQuote",
+    "improvementsFix",
+    "modelAnswer",
+    "modelAnswerComment"
+  ],
+  "additionalProperties": false
+}

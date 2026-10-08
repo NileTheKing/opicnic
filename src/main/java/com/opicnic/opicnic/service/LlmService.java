@@ -1,5 +1,6 @@
 package com.opicnic.opicnic.service;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.dto.QuestionDto;
@@ -29,10 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+// 채점·태깅·코칭 LLM 호출. OpenAI 호환 주소면 공급자는 상관없다 — 어떤 공급자를 쓸지는 application-<공급자>.yml(LLM_PROVIDER).
+// 예전 이름 GroqService (2026-10-08 Gemini 전환 준비로 이름을 바꿈)
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GroqService {
+public class LlmService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
@@ -64,128 +67,30 @@ public class GroqService {
     @Value("${spring.ai.tagging.model:openai/gpt-oss-20b}")
     private String taggingModel;
 
+    // gpt-oss(Groq)는 reasoning 토큰을 줄이려고 low를 준다. 빈 값이면 보내지 않는다 — 보정 실험의 Gemini 측정이 이 조건
+    @Value("${opicnic.llm.reasoning-effort:low}")
+    private String reasoningEffort;
+
     // S2 실패 주입용 — 실측한 Groq 429 본문(docs/performance/slo.md).
     private static final String MOCK_429_BODY =
             "Rate limit reached for model `openai/gpt-oss-120b` in organization ... on tokens per minute (TPM): "
                     + "Limit 8000, Used 4271, Requested 7120. Please try again in 24.9s.";
     private static final String MOCK_5XX_BODY = "Service Unavailable";
 
-    private static final String SYSTEM_PROMPT =
-            "당신은 OPIc 시험 전문 평가자입니다.\n" +
-                    "입력은 음성 STT 결과이므로 더듬음·filler words는 감안하고, 문맥에 맞지 않는 단어는 STT 오류로 간주해 크게 감점하지 마세요.\n" +
-                    "\n" +
-                    "【채점 + 피드백 규칙】\n" +
-                    "각 항목 텍스트 필드는 한국어 진단 + 영어 예시 형식으로 작성:\n" +
-                    "  형식: 한국어로 약점을 짚고, 예) 'actual quote' -> 'improved version'\n" +
-                    "  영어 예시 없이 한국어 조언만 쓰는 것 금지.\n" +
-                    "  개선 표현 톤: 말하듯 자연스러운 구어체 문장 구조.\n" +
-                    "  금지: 문장 끝에 추상적 격식 표현 붙이기 ('..., which left a lasting impression', '..., which was non-negotiable')\n" +
-                    "  OK: 감정/반응 연결 ('..., which made me feel so good', '..., which I really enjoyed'), breathtaking/stunning/amazing 같은 강한 형용사\n" +
-                    "\n" +
-                    "mainPoint (메인포인트 — 답변이 하나의 구조로 묶이는가):\n" +
-                    "\n" +
-                    "  【TYPE_5/TYPE_6/TYPE_7 — 롤플레이 유형】\n" +
-                    "  mainPointScore: 0 고정. mainPoint 텍스트: '롤플레이 유형 — MP 평가 제외'\n" +
-                    "\n" +
-                    "  【TYPE_1/TYPE_2/TYPE_3/TYPE_4/TYPE_8 — What+Feeling+Why】\n" +
-                    "  MP = 초반 2~3문장 안에 3요소가 모두 나와야 함:\n" +
-                    "    What    : 무엇에 대해 말할 것인지\n" +
-                    "    Feeling : 구체적인 감정/반응. 단순 'I like/love'는 Feeling이 아님. 최소 'I feel so relaxed', 'it makes me so happy' 수준이어야 함.\n" +
-                    "    Why     : 그 감정의 이유. 특징/사실 나열('it has trees', 'it is big')은 Why가 아님. 'because it clears my head', 'it just makes me forget everything' 수준이어야 함.\n" +
-                    "\n" +
-                    "  5=3요소 초반에 명확, 이후 전개도 MP로 수렴\n" +
-                    "  4=3요소 있으나 하나가 약하거나 순서 어색\n" +
-                    "  3=What만 있고 Feeling/Why가 뒤로 밀리거나 약함\n" +
-                    "  2=What만 있고 Feeling/Why 없음\n" +
-                    "  1=MP 자체 없음, 두서없이 나열\n" +
-                    "\n" +
-                    "  평가 순서 (반드시 이 순서로):\n" +
-                    "  1. 초반 2~3문장에서 What/Feeling/Why를 각각 찾아라\n" +
-                    "  2. 'I like/love' → Feeling 아님. 특징 나열 → Why 아님.\n" +
-                    "  3. 빠진 요소 확인 후 점수 결정. 빠진 요소를 채운 개선 예시 제시 (실제 발화 인용 포함)\n" +
-                    "\n" +
-                    "  예시:\n" +
-                    "  입력: 'I like the park near my house. It has many trees and a pond.'\n" +
-                    "  → What: 공원 ✓ / Feeling: 'I like' → Feeling 아님 ✗ / Why: 'has trees' → 특징 나열, Why 아님 ✗\n" +
-                    "  → score: 2. 피드백: 'I like the park.' → 'The park near my house is honestly my sanctuary — I go there whenever I need to clear my head.'\n" +
-                    "\n" +
-                    "  금지: What만 다른 What으로 교체\n" +
-                    "  예) 'I go to the gym' → 'My daily exercise routine is quite consistent' (Feeling/Why 여전히 없음)\n" +
-                    "\n" +
-                    "  【TYPE_9/TYPE_10 — 방향/프레임 명확성】\n" +
-                    "  MP = 채점자가 초반에 답변 방향을 파악할 수 있는가. 개인 입장 필수 아님.\n" +
-                    "\n" +
-                    "  5=초반에 방향 명확, 이후 전개가 그 방향을 따름\n" +
-                    "  4=방향은 있으나 약간 모호\n" +
-                    "  3=방향이 뒤로 밀림\n" +
-                    "  2=방향 파악 어려움\n" +
-                    "  1=두서없이 나열\n" +
-                    "\n" +
-                    "expression (표현력 - 어휘 선택 수준 + 문장 복잡도 + 묘사력):\n" +
-                    "  5=풍부한 형용사/비유, 복합문/종속절 자연스럽게 활용, 생생한 묘사\n" +
-                    "  4=형용사 있으나 다양성 부족, 간단한 복합문 일부 사용\n" +
-                    "  3=기본 어휘 위주, 단순문 위주지만 가끔 복합문 시도\n" +
-                    "  2=단순 동사 위주, 묘사 거의 없음, 모든 문장이 단순문\n" +
-                    "  1=매우 제한적인 어휘, 표현 패턴 없음\n" +
-                    "  expression 피드백: 어휘 선택과 문장 표현 수준을 함께 짚을 것.\n" +
-                    "\n" +
-                    "accuracy (정확성 - 순수 문법 오류만):\n" +
-                    "  평가 순서 (반드시 이 순서로):\n" +
-                    "  1. 사용자 응답에서 시제/주어-동사/관사/전치사 오류가 있는 문장을 먼저 찾아라\n" +
-                    "  2. 오류가 없으면 -> accuracyScore 4~5, 짧은 칭찬. 끝.\n" +
-                    "  3. 오류가 있으면 -> 해당 문장만 인용하고 수정안 제시\n" +
-                    "\n" +
-                    "  주의: 문장이 단순하거나 어휘가 기본적이어도 오류가 없으면 절대 감점 금지.\n" +
-                    "  문장 복잡도, 어휘 수준은 expression이 담당. accuracy에서 언급하면 역할 충돌.\n" +
-                    "\n" +
-                    "  5=오류 없음  4=소소한 오류 1~2개  3=오류 있으나 이해 가능  2=잦은 오류  1=기본 문법도 불안정\n" +
-                    "\n" +
-                    "content (내용 구성 - 주제 부합도 및 이유/예시 전개):\n" +
-                    "  5=주제 완전 부합, 이유+예시 충분히 전개  4=주제 부합, 전개 약간 부족\n" +
-                    "  3=주제 부합하나 단순한 수준  2=주제와 부분적으로만 관련  1=주제와 무관\n" +
-                    "\n" +
-                    "【모범답안 유형별 전략】\n" +
-                    "TYPE_1(묘사): What+Feeling+Why → 감각적 형용사로 묘사 전개 → 마무리\n" +
-                    "TYPE_2(루틴): What+Feeling+Why → when/where/what/frequency/with whom 구체 서술 → 마무리\n" +
-                    "TYPE_3(과거경험): 결말/하이라이트 먼저 → 과거 스토리 전개 → 현재로 귀결\n" +
-                    "TYPE_4(기억에 남는 경험): 왜 기억에 남는지 먼저 → when/where/what/how/why 전개 → 감정 마무리\n" +
-                    "TYPE_5(질문하기): 자연스러운 대화체로 3~4개 질문. 친구에게 묻듯이, 질문마다 다른 표현 패턴.\n" +
-                    "TYPE_6(정보/요청): 상황에 맞는 자연스러운 대화체. 내가 원하는 상황이면 공손한 요청, 상대가 원하는 상황이면 상대 요구에 맞게 응대.\n" +
-                    "TYPE_7(문제해결): 상황 설명(상대/내/제3자 잘못 중 해당) → 대안 2~3개 제시\n" +
-                    "TYPE_8(유사경험): 유사했던 과거 상황 설명 → 어떻게 해결했는지 전개\n" +
-                    "TYPE_9(비교): 비교 프레임/방향 먼저 → 각 대상 전개(과거/현재 or A/B) → 마무리\n" +
-                    "TYPE_10(사회이슈): 이슈 제시 → 내 생각/진술 전개 → 마무리\n" +
-                    "\n" +
-                    "improvements: 이 답변의 가장 특징적인 약점을 행동 패턴 1줄로.\n" +
-                    "  형식: [패턴 한국어 관찰]. 예) 'actual quote' -> 'improved version'\n" +
-                    "  올바른 예: 'MP 없이 행동 나열로 시작. 예) \\'I go to the gym every day.\\' -> \\'Going to the gym is honestly my favorite part of the day. I just feel so much better after I work out.\\''\n" +
-                    "  금지: 플레이스홀더('[실제 발화]') 사용. 반드시 사용자의 실제 문장을 그대로 인용할 것.\n" +
-                    "modelAnswer: 위 유형 전략을 적용한 모범 답변 (영어, 130단어 이상)\n" +
-                    "modelAnswerComment: MP가 어디인지, 어떤 전략을 적용했는지 (한국어, 2~3줄)\n" +
-                    "\n" +
-                    "【최종 체크 - JSON 출력 전 반드시 확인】\n" +
-                    "- improvements: 사용자 실제 발화에서 문장을 그대로 인용. 플레이스홀더 절대 금지.\n" +
-                    "- mainPoint(TYPE_1~4/8): 빠진 요소(What/Feeling/Why)가 뭔지 짚고, 실제 발화 인용 포함한 개선 예시 제시.\n" +
-                    "- mainPoint(TYPE_5~7): score=0, 텍스트='롤플레이 유형 — MP 평가 제외'.\n" +
-                    "- mainPoint(TYPE_9~10): 방향/프레임 명확성 기준으로만 평가. Feeling/Why 없어도 됨.\n" +
-                    "- accuracy: 오류 없으면 칭찬. 문장 복잡도/어휘 언급 금지.\n" +
-                    "- fluencyScore: 반드시 0.\n" +
-                    "\n" +
-                    "아래 JSON 형식으로만 응답:\n" +
-                    "{\n" +
-                    "  \"mainPoint\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"mainPointScore\": 3,\n" +
-                    "  \"expression\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"expressionScore\": 3,\n" +
-                    "  \"accuracy\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"accuracyScore\": 3,\n" +
-                    "  \"fluencyScore\": 0,\n" +
-                    "  \"content\": \"진단 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"contentScore\": 3,\n" +
-                    "  \"improvements\": \"패턴 관찰 + 예) 'actual quote' -> 'improved version'\",\n" +
-                    "  \"modelAnswer\": \"모범 답변 영어 텍스트\",\n" +
-                    "  \"modelAnswerComment\": \"모범 답변 핵심 포인트 한국어 설명\"\n" +
-                    "}";
+    // 채점 프롬프트와 응답 스키마는 파일로 둔다 — 읽고 고치기 쉽게, 보정 실험(run.py --prompt-file)도 같은 파일을 쓴다.
+    // 등급(level) 판단 + 코칭 4개 항목 + 이렇게 바꿔보세요 + 모범 답안을 한 번에. 스키마로 형식을 강제해 JSON이 깨지지 않는다
+    // (docs/performance/2026-10-07-grading-calibration, 2026-10-08 덧붙인 지시 3개를 하나로 다시 씀)
+    static final String SCORING_PROMPT = resource("prompts/scoring.md");
+    static final String SCORING_SCHEMA = resource("prompts/scoring-schema.json");
+
+    private static String resource(String path) {
+        try (var in = LlmService.class.getClassLoader().getResourceAsStream(path)) {
+            if (in == null) throw new IllegalStateException("리소스 없음: " + path);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
 
     public Map<String, Object> getOpicFeedback(String speechText, QuestionDto question) {
         // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
@@ -230,26 +135,7 @@ public class GroqService {
             return parseResponse(mock);
         }
 
-        String exampleInstruction = "\n\n【변경: example을 구조화된 필드로 분리】\n" +
-                "mainPoint/expression/accuracy/content 텍스트에는 '예) ...' 문장을 넣지 마라. 대신 진단만 쓰고, 인용-개선 쌍은 아래 별도 필드로 내라.\n" +
-                "각 Quote/Fix는 개선 예시가 있을 때만 채우고, 없으면(이미 좋음) 빈 문자열로 둬라.\n\n" +
-                "최종 JSON은 다음 형태여야 한다 (기존 필드 절대 생략 금지):\n" +
-                "{\n" +
-                "  \"mainPoint\": \"진단만 (예시 문장 없이)\", \"mainPointScore\": 3,\n" +
-                "  \"mainPointQuote\": \"실제 발화 인용 또는 빈 문자열\", \"mainPointFix\": \"개선 문장 또는 빈 문자열\",\n" +
-                "  \"expression\": \"진단만\", \"expressionScore\": 3,\n" +
-                "  \"expressionQuote\": \"...\", \"expressionFix\": \"...\",\n" +
-                "  \"accuracy\": \"진단만\", \"accuracyScore\": 3,\n" +
-                "  \"accuracyQuote\": \"...\", \"accuracyFix\": \"...\",\n" +
-                "  \"fluencyScore\": 0,\n" +
-                "  \"content\": \"진단만\", \"contentScore\": 3,\n" +
-                "  \"contentQuote\": \"...\", \"contentFix\": \"...\",\n" +
-                "  \"improvements\": \"패턴 관찰만 (예시 문장 없이)\",\n" +
-                "  \"improvementsQuote\": \"...\", \"improvementsFix\": \"...\",\n" +
-                "  \"modelAnswer\": \"모범 답변 영어 텍스트\", \"modelAnswerComment\": \"한국어 설명\"\n" +
-                "}";
-
-        Message systemMessage = new SystemMessage(SYSTEM_PROMPT + exampleInstruction);
+        Message systemMessage = new SystemMessage(SCORING_PROMPT);
         Message userMessage = new UserMessage(
                 "문제 유형: " + question.getQuestionType().name() + "\n" +
                 "질문: " + question.getContent() + "\n" +
@@ -264,9 +150,9 @@ public class GroqService {
         // effort=low로 실측 completion이 1,022까지 내려와 3000도 3배 여유이고,
         // 상한을 올리면 요청당 TPM 점유만 늘어 429가 잦아진다.
         OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null))
+                .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, SCORING_SCHEMA))
                 .temperature(0.0)
-                .reasoningEffort("low")
+                .reasoningEffort(reasoningEffort == null || reasoningEffort.isBlank() ? null : reasoningEffort)
                 .maxTokens(3000)
                 .build();
 
@@ -455,7 +341,10 @@ public class GroqService {
 
     private Map<String, Object> parseResponse(String response) {
         try {
-            return objectMapper.readValue(response, new TypeReference<Map<String, Object>>() {});
+            // Gemini가 영어 인용 속 작은따옴표를 백슬래시로 escape해(\\') JSON을 깨는 일이 있다(보정 실험 42건 중 1건) — 그 escape만 너그럽게 받는다
+            return objectMapper.readerFor(new TypeReference<Map<String, Object>>() {})
+                    .with(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature())
+                    .readValue(response);
         } catch (Exception e) {
             log.error("LLM JSON 파싱 오류: {}", e.getMessage());
             throw new RuntimeException("LLM 응답 파싱 중 오류가 발생했습니다.", e);

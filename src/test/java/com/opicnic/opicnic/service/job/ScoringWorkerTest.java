@@ -4,6 +4,7 @@ import com.opicnic.opicnic.domain.job.ScoringJobItem.FailureKind;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -61,6 +62,15 @@ class ScoringWorkerTest {
         assertThat(ScoringWorker.classify(new ResourceAccessException("Read timed out"))).isEqualTo(FailureKind.TRANSIENT);
         // 원인 체인 안쪽까지 본다 — STT 래핑 RuntimeException 안의 파일 거절
         assertThat(ScoringWorker.classify(new RuntimeException("stt", HttpClientErrorException.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "415", HttpHeaders.EMPTY, null, null))))
+                .isEqualTo(FailureKind.PERMANENT);
+    }
+
+    @Test
+    @DisplayName("분류: 채점·태깅(Spring AI) 경로의 요청 거절도 STT와 똑같이 영구로 본다")
+    void classifyLlmRejectionAsPermanent() {
+        assertThat(ScoringWorker.classify(new NonTransientAiException("HTTP 400 - {\"error\":{\"message\":\"bad request\"}}")))
+                .isEqualTo(FailureKind.PERMANENT);
+        assertThat(ScoringWorker.classify(new NonTransientAiException("HTTP 422 - {\"error\":{\"message\":\"unprocessable\"}}")))
                 .isEqualTo(FailureKind.PERMANENT);
     }
 
