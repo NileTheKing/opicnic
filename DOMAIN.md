@@ -49,3 +49,36 @@ OPIcnic은 고득점 전략 기준으로 배경설문 선택지를 의도적으�
 - 5개 콤보 슬롯 중 3개는 선택 주제 콤보, 2개는 돌발 주제 콤보.
 - 돌발 콤보 슬롯 위치는 5개 슬롯 중에서 랜덤화된다.
 - 돌발 주제는 `TopicCatalog.surpriseTopics()`에 정의된 전용 풀(23개, 5그룹)을 쓴다. 22개 배경설문 주제와는 완전히 별개이며, DB에 별도 `QuestionSet`을 갖는다(DataInitializer V1/V2/V3).
+
+## 실제 OPIc 등급 기준 (조사, 2026-10-08)
+
+채점 프롬프트(`prompts/scoring.md`)의 등급 설명은 이 절을 따른다. ACTFL 원문 기술은 실제 OPIc 체감보다 한 단계쯤 빡빡하다 — AL은 원어민 수준이 아니다(AL 취득자 확인).
+
+**말의 단위가 1차 기준** — 채점표 "speaker produces mainly" 항목(강지완 오픽TV, 세부 진단서 해설):
+
+| 단위 | 등급 |
+|---|---|
+| 단어 | NH 이하 |
+| 문장 하나하나 | IM1 |
+| 쉬운 문장의 연속(strings of sentences) | IM2 |
+| 접속사·관계사로 이은 문장(connected sentences: which, when, where, if…) | IM3 |
+| 뼈대 있는 문단(skeletal paragraph) | IH, AL |
+
+- **문단** = 한 주제로 5~6문장 이상을 이어 말하되, "뭐가 있고 뭐가 있고"식 나열이 아니라 그 주제를 강화하는 이유·예시를 붙인 것. 서론·본론·결론(커뮤니티 경험칙: 서론 2·본론 6·결론 2, 최소 10문장).
+- **IM3는 드물다**(취득자 약 4%). 채점자가 "문장 단위"로 판단하면 상한이 IM3이고, 오류가 있으면 IM2·IM1로 내려간다 — IM과 IH 사이에 담이 있는 구조. 문단으로 말하면 IH 이상, 아니면 IM2 이하로 갈리는 경우가 대부분.
+- **IM2의 전형**(오픽노잼): 말은 많이 하는데 핵심(MP)이 없다. IM1은 말을 너무 적게 한다. MP는 What·Feeling·Why 중 **Why**가 가장 중요하다.
+
+**IH와 AL을 가르는 것** — 둘 다 문단 수준이고, 차이는 오류와 폭:
+- 과거 시제 통제. 과거 경험 문항에서 시제 실수가 나오면 상한 IH.
+- 어휘 폭(breadth of vocabulary). 같은 표현 반복(delicious, delicious…)이면 상한 IH. 바꿔 말하기(appetizing, mouth-watering…)가 AL 쪽.
+- 감점 항목: 수 일치(one of the most famous singer**s**, 3인칭 -s), 단조로운 문장 구조, 2~3초 이상 끊김, 발음·강세·억양(STT 텍스트로는 못 본다).
+- 사회·전문 주제(돌발, 14·15번 비교·이슈)에서 의견을 제시하고 설명할 수 있는가.
+- 단어 선택의 사소한 오류는 AL에서도 크게 문제 삼지 않는다.
+
+**답변 하나로는 볼 수 없는 것** — 실제 등급은 채점자(2명)가 15문항 전체를 듣고 매긴다:
+- 롤플레이 12번(예상 못한 문제 상황 해결)이 IM2와 IH를 가르고, 같은 등급대 안의 최종 등급도 롤플레이로 정해진다.
+- 14·15번(비교·이슈, 난이도 5~6)이 IH와 AL을 가른다.
+- 외운 스크립트처럼 들리면(지나치게 매끄럽고 빠른 시작) 감점.
+- 우리 채점은 답변 하나 단위라 이 부분은 근사일 뿐이다.
+
+출처(영상 자막을 읽고 요약): 강지완 오픽TV — "IM2와 IH를 가르는 채점 기준 3가지"(youtu.be/BLOLtPcw33s), "채점자가 IM3를 적게 주는 이유"(youtu.be/yxjmfJTAzjU), "숨겨진 채점기준 IL vs IM, IH vs AL"(youtu.be/zwltCNJmk6E), "IH에서 AL로"(youtu.be/zmamhX5s3Fg), "IH vs AL 실제 답변"(youtu.be/Se4X7UWUpLU) / 오픽노잼 — "왜 계속 IM1?"(youtu.be/oLivwcfQ9V4), "IM2 받았다고 기뻐하지 마세요"(youtu.be/EOPpAJzePgo) / 진짜녀석들 오픽 — 14·15번(youtu.be/id9hIxXEiss) / 오픽 마이너 갤러리 IM2→IH 후기(gall.dcinside.com/mgallery/board/view/?id=opic&no=44525).
