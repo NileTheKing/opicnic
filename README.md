@@ -12,7 +12,7 @@
 
 [**라이브 데모 →**](https://opicnic.xyz)
 
-<img src="docs/screenshots/feedback-score.png" alt="문항 피드백 — 답변 수준과 항목별 점수" width="260"> <img src="docs/screenshots/feedback-fix.png" alt="문항 피드백 — 내 문장과 고친 문장" width="260"> <img src="docs/screenshots/feedback-model.png" alt="문항 피드백 — 이렇게 말해보세요와 모범 답안" width="260">
+<img src="docs/screenshots/hero.png" alt="내 답변(IM2)과, 내 답을 한 단계 올려 다시 쓴 모범 답안" width="820">
 
 <sub>로그인 없이 둘러보기로 들어가면 바로 보이는 예시 기록입니다(실제 채점 결과).</sub>
 
@@ -53,14 +53,18 @@ OPIcnic은 주제 선택부터 문제, 피드백, 코칭, 학습 계획까지 �
 
 ## 주요 화면
 
-**1. 문항 피드백** (맨 위 사진)
-<br>답변마다 실제 등급 이름으로 수준(IM2 등)을 알려주고, 항목별로 약한 문장을 그대로 인용해 고친 문장을 붙입니다. 마지막엔 가장 두드러진 버릇 하나와, 내 답을 한 단계 올린 모범 답안을 줍니다.
-
-**2. 기록 · AI 코칭 · 연습 시작**
-<br>쌓인 답변으로 항목별 평균과 약한 유형을 보여주고, AI 코칭은 반복되는 패턴과 답변 수준으로 본 예상 등급을 정리합니다.
+**1. 문항 피드백**
+<br>답변마다 실제 등급 이름으로 수준을 알려주고(왼쪽), 항목별로 약한 문장을 그대로 인용해 고친 문장을 붙입니다(가운데). 마지막엔 가장 두드러진 버릇 하나와 따라 말할 문장, 내 답을 한 단계 올린 모범 답안을 줍니다(오른쪽).
 
 <p align="center">
-<img src="docs/screenshots/history.png" alt="기록 — 최근 기록과 항목별 평균" width="260"> <img src="docs/screenshots/coaching.png" alt="AI 코칭 — 반복 패턴과 예상 등급" width="260"> <img src="docs/screenshots/home.png" alt="연습 시작 화면" width="260">
+<img src="docs/screenshots/feedback-score.png" alt="답변 수준과 항목별 점수" width="260"> <img src="docs/screenshots/feedback-fix.png" alt="항목별 내 문장과 고친 문장" width="260"> <img src="docs/screenshots/feedback-improve.png" alt="이렇게 바꿔보세요와 모범 답안" width="260">
+</p>
+
+**2. 기록 · AI 코칭 · 시험 준비**
+<br>쌓인 답변으로 항목별 평균과 약한 유형을 보여주고(왼쪽), AI 코칭은 반복되는 패턴과 답변 수준으로 본 예상 등급을 정리합니다(가운데). 시험일을 정하면 남은 기간으로 하루 목표와 약한 콤보·유형을 역산합니다(오른쪽).
+
+<p align="center">
+<img src="docs/screenshots/history.png" alt="기록 — 최근 기록과 항목별 평균" width="260"> <img src="docs/screenshots/coaching.png" alt="AI 코칭 — 반복 패턴과 예상 등급" width="260"> <img src="docs/screenshots/plan.png" alt="시험 준비 — D-day와 학습 계획" width="260">
 </p>
 
 ---
