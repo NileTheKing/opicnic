@@ -1,5 +1,5 @@
 {
-  "_note": "검증용. 개발용(anchors.json)과 다른 질문·유형. 프롬프트를 고칠 때는 보지 않고, 마지막에 한 번만 잰다. 2026-10-08: 단어·구 위주였던 기존 IL 기준점은 ACTFL 기준 NH라 NH로 고치고, 짧은 단문을 스스로 만드는 진짜 IL을 새로 넣었다(이전 결과는 before-nh/). 2026-10-08 오후: 실제 OPIc 기준(DOMAIN.md '실제 OPIc 등급 기준')으로 정답 등급을 다시 붙였다 — level은 작성 당시 의도(기준점 id), label이 현재 정답. ACTFL 기술로 쓴 답이 실제 체감보다 한 단계 높았다(작성 IM3→IH, IH→AL).",
+  "_note": "검증용. 개발용(anchors.json)과 다른 질문·유형. 프롬프트를 고칠 때는 보지 않고, 마지막에 한 번만 잰다. 2026-10-08: 단어·구 위주였던 기존 IL 기준점은 ACTFL 기준 NH라 NH로 고치고, 짧은 단문을 스스로 만드는 진짜 IL을 새로 넣었다(이전 결과는 before-nh/). 2026-10-08 오후: 실제 OPIc 기준(DOMAIN.md '실제 OPIc 등급 기준')으로 정답 등급을 다시 붙였다 — level은 작성 당시 의도(기준점 id), label이 현재 정답. ACTFL 기술로 쓴 답이 실제 체감보다 한 단계 높았다(작성 IM3→IH, IH→AL). 같은 날 저녁: 경계 답은 정답을 범위(label 'IM2~IH')로 둔다 — 실제 등급 사례 영상(DOMAIN.md) 기준 글자만으로는 한 등급을 정할 수 없어서.",
   "questions": {
     "routine": {
       "type": "TYPE_2",
@@ -33,22 +33,22 @@
       "q": "routine",
       "level": "IM1",
       "text": "I wake up at seven o'clock. I eat breakfast with my mom. Then I go to school by bus. I have classes in the morning and afternoon. After school I go home. I eat dinner and watch TV. Sometimes I play games. I go to bed at twelve.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "routine",
       "level": "IM2",
       "text": "On weekdays I usually wake up at seven and I take a shower first. I don't eat breakfast because I don't have time, so I just drink some coffee. Then I take the subway to my university. It takes about forty minutes. I have classes until three or four. After class I go to the library and study, or sometimes I meet my friends and we eat something together. I get home around eight, and I have dinner and watch YouTube. I go to bed around one, so I'm always tired in the morning.",
-      "label": "IM2",
-      "label_reason": "하루 일과를 시간순으로 나열만 한다. MP 없음 → IM2"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "routine",
       "level": "IM3",
       "text": "My typical day starts pretty early, around six thirty, because I have a part-time job at a cafe before my classes. I work there from seven to ten, so I make a lot of coffee for people who are going to work. After that I go to school, which is only ten minutes away. Most of my classes are in the afternoon, and I usually have two or three. Between classes I have lunch with my classmates at the student cafeteria, which is cheap but not that delicious. In the evening I go to the gym for about an hour because I'm trying to stay healthy. When I get home, I'm usually exhausted, so I just eat something simple and do my homework. I try to sleep before midnight, but honestly it doesn't happen very often.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "routine",
@@ -82,22 +82,22 @@
       "q": "recent",
       "level": "IM1",
       "text": "Last Saturday I went to a restaurant. I went with my friend. It was a Korean restaurant. We ate bulgogi and kimchi stew. The food was very delicious. The restaurant was clean. We talked a lot. It was a good day. I want to go there again.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "recent",
       "level": "IM2",
       "text": "The last time I went to a restaurant was last Saturday. I went to an Italian restaurant near my office with my coworker. It was her birthday, so we wanted to eat something special. We ordered a pasta with cream sauce and a pizza, and we also had some wine. The pasta was really good, but the pizza was a little bit salty. The restaurant was very crowded because it was the weekend, so we waited about twenty minutes. But the atmosphere was nice and we talked a lot. I think it was a good choice for her birthday.",
-      "label": "IM2",
-      "label_reason": "시간순 서술, 과거 시제는 안정적이지만 하이라이트·감정 없이 사실 나열 → IM2"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "recent",
       "level": "IM3",
       "text": "The last time I ate out was last Saturday, when I went to a small Italian place near my office with my coworker Jiwon. It was actually her birthday, so I wanted to take her somewhere nicer than our usual lunch spots. When we got there, the place was packed, and we had to wait almost twenty minutes, which was a little annoying. But once we sat down, everything was great. We ordered a creamy mushroom pasta, a margherita pizza, and a glass of wine each. The pasta was amazing, but the pizza was a bit too salty for me. The best part was that the staff brought out a small cake with a candle because I had told them about her birthday when I made the reservation. She was really surprised and happy, so I felt proud of myself.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "recent",
@@ -131,22 +131,22 @@
       "q": "compare",
       "level": "IM1",
       "text": "In the past people went to the market. They bought things in stores. Now people shop on the internet. They use smartphones. It is very easy. Delivery is very fast. I like online shopping. But sometimes the clothes are not good. I think now is better.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "compare",
       "level": "IM2",
       "text": "Shopping has changed a lot compared to the past. In the past, people usually went to traditional markets or department stores to buy things. They could see the products and touch them before buying. But now most people shop online with their smartphones. It is very convenient because you can buy anything at home, and delivery is really fast in Korea. Sometimes you can get it the next morning. But there are some problems too. For example, sometimes the clothes look different from the pictures, so you have to return them. I think online shopping is more convenient, but I still go to stores sometimes.",
-      "label": "IM3",
-      "label_reason": "비교 방향 먼저, 과거→현재→문제점→결론 구조와 For example이 있다. 문장은 단순 → IM3. 가장 불확실한 라벨"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "compare",
       "level": "IM3",
       "text": "I think shopping has changed a lot over the past ten or twenty years. When I was a kid, my mom used to take me to the traditional market every weekend. We would walk around, compare prices, and sometimes the sellers gave us extra vegetables for free. It took a long time, but it was kind of fun. Nowadays, most people, including me, do almost all their shopping on their phones. In Korea, delivery is so fast that if you order before midnight, you can get it the next morning. It's really convenient, especially for busy people. However, I think something is missing. You can't talk with the sellers anymore, and it's easy to spend too much money because buying things is just one click. So even though online shopping is more convenient, I sometimes miss the old way.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "compare",

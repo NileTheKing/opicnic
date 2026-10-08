@@ -1,5 +1,5 @@
 {
-  "_note": "등급을 미리 정해 쓴 답변(STT 결과처럼 구두점 단순). 수준 기준은 ACTFL 말하기 기술(IL 단문·외운 표현 / IM 문장 단위 생성, 단계마다 길이·연결어 증가 / IH 문단 시도·시제 전환 중 흔들림 / AL 문단 단위·시제 안정·구체적). 작성자 판단이 들어간 기준점이라 공인 채점 결과는 아니다. 2026-10-08: 단어·구 위주였던 기존 IL 기준점은 ACTFL 기준 NH라 NH로 고치고, 짧은 단문을 스스로 만드는 진짜 IL을 새로 넣었다(이전 결과는 before-nh/). 2026-10-08 오후: 실제 OPIc 기준(DOMAIN.md '실제 OPIc 등급 기준')으로 정답 등급을 다시 붙였다 — level은 작성 당시 의도(기준점 id), label이 현재 정답. ACTFL 기술로 쓴 답이 실제 체감보다 한 단계 높았다(작성 IM3→IH, IH→AL).",
+  "_note": "등급을 미리 정해 쓴 답변(STT 결과처럼 구두점 단순). 수준 기준은 ACTFL 말하기 기술(IL 단문·외운 표현 / IM 문장 단위 생성, 단계마다 길이·연결어 증가 / IH 문단 시도·시제 전환 중 흔들림 / AL 문단 단위·시제 안정·구체적). 작성자 판단이 들어간 기준점이라 공인 채점 결과는 아니다. 2026-10-08: 단어·구 위주였던 기존 IL 기준점은 ACTFL 기준 NH라 NH로 고치고, 짧은 단문을 스스로 만드는 진짜 IL을 새로 넣었다(이전 결과는 before-nh/). 2026-10-08 오후: 실제 OPIc 기준(DOMAIN.md '실제 OPIc 등급 기준')으로 정답 등급을 다시 붙였다 — level은 작성 당시 의도(기준점 id), label이 현재 정답. ACTFL 기술로 쓴 답이 실제 체감보다 한 단계 높았다(작성 IM3→IH, IH→AL). 같은 날 저녁: 경계 답은 정답을 범위(label 'IM2~IH')로 둔다 — 실제 등급 사례 영상(DOMAIN.md) 기준 글자만으로는 한 등급을 정할 수 없어서.",
   "questions": {
     "park": {
       "type": "TYPE_1",
@@ -33,22 +33,22 @@
       "q": "park",
       "level": "IM1",
       "text": "I often go to a park near my house. The park is very big. There are many trees and a small lake. I walk there on weekends. Sometimes I ride a bike. Many people walk with their dogs. I like the park because it is quiet. It is good for me. I go there every weekend.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "park",
       "level": "IM2",
       "text": "The park I often visit is near my apartment. It's pretty big and there are a lot of trees and a small lake in the middle. I usually go there on weekends to take a walk and sometimes I ride my bike. There is a walking path around the lake and many people jog there in the morning. I like this park because it is quiet and I can relax. When I'm stressed I go there and listen to music, and then I feel better. It is my favorite place in my neighborhood.",
-      "label": "IM2",
-      "label_reason": "쉬운 문장의 연속. 특징 나열로 시작하고 Why(좋아하는 이유)가 끝에서야 나온다 — 말은 되는데 MP 없는 IM2 전형"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "park",
       "level": "IM3",
       "text": "Well, the park I visit the most is a riverside park about ten minutes from my place. Honestly it's my favorite spot because it really helps me relax after a long day. It's long and narrow because it follows the river, and there's a bike path, some benches, and a lot of tall trees on both sides. In the spring there are cherry blossoms everywhere, so it gets really crowded. I usually go there in the evening after work. I walk along the river and listen to podcasts, and sometimes I meet my friend there and we grab a coffee from a convenience store. When the sun goes down the river looks really beautiful, so I just sit on a bench and watch it. I think going there is the best way to clear my head.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "park",
@@ -82,22 +82,22 @@
       "q": "trip",
       "level": "IM1",
       "text": "My most memorable trip is a trip to Jeju Island. I went there with my family. We went there three years ago. We went to the beach and we ate a lot of food. The sea was very beautiful. We also went to a mountain. It was very hard but it was fun. I was very happy. I want to go again.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "trip",
       "level": "IM2",
       "text": "The most memorable trip with my family was a trip to Jeju Island about three years ago. We went there for four days in the summer. First we went to the beach and we swam in the sea. The water was very clear and blue. On the second day we climbed Hallasan mountain. It was really difficult and my father was very tired, but the view was amazing. We also ate black pork barbecue and it was so delicious. I remember this trip because it was the first time my whole family traveled together in a long time, so it was really special for me.",
-      "label": "IM2",
-      "label_reason": "첫째 날·둘째 날 순서 나열, 왜 기억에 남는지는 마지막 문장. 시제는 맞지만 MP가 늦어 IM2"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "trip",
       "level": "IM3",
       "text": "The most memorable trip I took with my family was to Jeju Island three years ago, and I still remember it because it was our last trip before my older brother went to the army. We stayed there for four days in the summer. On the first day we went to Hyeopjae beach. The water was so clear that you could see the sand under it, and we just swam and played in the water all afternoon. The next day we decided to climb Hallasan. It took almost five hours and my mom wanted to give up in the middle, but we encouraged her and finally we reached the top together. Everybody was exhausted but really proud. That night we had black pork barbecue and talked until late. Whenever I see the pictures from that trip, I feel a little emotional because we don't have many chances like that anymore.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "trip",
@@ -131,22 +131,22 @@
       "q": "issue",
       "level": "IM1",
       "text": "In my country there are some environmental problems. The biggest problem is fine dust. The air is very bad in spring. People wear masks. Another problem is plastic. People use a lot of plastic cups. The government says recycle. So people recycle plastic and paper. I think it is important. We must protect the environment.",
-      "label": "IM1",
-      "label_reason": "문장 하나하나, 50단어 안팎으로 말이 적다(오픽노잼: IM1은 말을 너무 적게 함). 그대로 둔다"
+      "label": "IM1~IM2",
+      "label_reason": "실제 IM2 문턱이 낮다(그린오픽 실제 IM2: 오류·filler 많고 12번을 건너뛰어도 IM2). 50단어 문장 나열은 IM1~IM2"
     },
     {
       "q": "issue",
       "level": "IM2",
       "text": "There are a few environmental issues in Korea. The biggest one is fine dust. Especially in spring, the air quality is really bad and sometimes you can't even see the buildings far away. So many people check the air quality app every morning and wear masks when they go outside. Another issue is plastic waste. People use a lot of plastic cups and delivery containers. To solve this problem, the government made rules about recycling, and people have to separate their trash very carefully. Also some cafes don't give plastic cups inside the store anymore. I think these efforts are good but we need to do more.",
-      "label": "IM3",
-      "label_reason": "방향(가장 큰 문제)을 먼저 말하고 원인·대응을 접속어로 잇는다. 다만 어휘·문장이 기본이라 문단으로 보기엔 약함 → IM3. IM2/IH 사이에서 가장 불확실한 라벨"
+      "label": "IM2~IH",
+      "label_reason": "실제 IM2 사례보다 낫고 실제 IH 사례(해커스 학생: 오류 있지만 관계절·used to 등 다양한 구조)보다 단순. 글자만으로는 못 가르고 실제로는 머뭇거림·자기수정 같은 전달 방식이 가른다(강지완 같은 학생 IM2→IH) → IM2~IH"
     },
     {
       "q": "issue",
       "level": "IM3",
       "text": "I think the most serious environmental problem in Korea is fine dust. Every spring, the sky turns kind of yellow and gray, and on bad days the government sends emergency text messages telling people to stay inside. A lot of the dust comes from factories and cars, and some of it also comes from other countries, so it's not easy to solve. People usually deal with it by wearing masks and using air purifiers at home. The second big issue is plastic waste, especially because of food delivery. When I order food, I get so many plastic containers that I feel guilty. Korea has pretty strict recycling rules, so people sort their trash into different bins, and recently some cafes started using reusable cups. Personally I try to bring my own tumbler, but honestly I think companies need to change more than individuals.",
-      "label": "IH",
-      "label_reason": "첫 2~3문장에 What·Feeling·Why(또는 방향)가 있고, 접속사·관계사로 이은 문장이 5문장 이상 한 주제로 이어진 문단. 과거 시제 통제도 됨 → 실제 OPIc 기준 IH(AL 취득자 판단과 같음)"
+      "label": "IH~AL",
+      "label_reason": "초반 MP + 문단 + 시제 통제 → IH, 어휘·구조가 넓어 AL도 가능(AL 취득자 판단) → IH~AL"
     },
     {
       "q": "issue",

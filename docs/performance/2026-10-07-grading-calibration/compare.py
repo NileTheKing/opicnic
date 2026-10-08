@@ -7,7 +7,15 @@ ANCHORS = [a for f in ("anchors.json", "anchors-test.json") for a in json.load(o
 A = {(a["q"], a["level"]): a["text"] for a in ANCHORS}
 # level은 작성 당시 의도(기준점 id), label은 실제 OPIc 기준으로 다시 붙인 정답(2026-10-08). --label이면 label과 비교
 USE_LABEL = "--label" in sys.argv
+# label은 'IM2~IH'처럼 범위일 수 있다 — 범위 안이면 일치, 밖이면 가까운 끝과의 거리
 TARGET = {(a["q"], a["level"]): a.get("label", a["level"]) if USE_LABEL else a["level"] for a in ANCHORS}
+
+
+def off(grade, target):
+    lo, _, hi = target.partition("~")
+    g, lo, hi = ORDER.index(grade), ORDER.index(lo), ORDER.index(hi or lo)
+    return g - lo if g < lo else g - hi if g > hi else 0
+
 norm = lambda s: re.sub(r"[^a-z0-9 ]", "", (s or "").lower().replace("...", " ")).split()
 
 
@@ -24,10 +32,10 @@ for path in sorted(glob.glob(os.path.join(HERE, "results-*.jsonl"))):
     for model in sorted({r["model"] for r in rows}):
         rs = [r for r in rows if r["model"] == model]
         ok = [r for r in rs if r.get("grade")]
-        diff = [ORDER.index(r["grade"]) - ORDER.index(TARGET[(r["q"], r["level"])]) for r in ok]
+        diff = [off(r["grade"], TARGET[(r["q"], r["level"])]) for r in ok]
         inversions = 0
         for q in {r["q"] for r in ok}:
-            seq = sorted((ORDER.index(TARGET[(r["q"], r["level"])]), ORDER.index(r["grade"])) for r in ok if r["q"] == q)
+            seq = sorted((ORDER.index(r["level"]), ORDER.index(r["grade"])) for r in ok if r["q"] == q)
             inversions += sum(1 for (_, a), (_, b) in zip(seq, seq[1:]) if b < a)
         quotes = bad = 0
         for r in ok:

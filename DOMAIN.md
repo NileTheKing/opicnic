@@ -85,4 +85,11 @@ OPIcnic은 고득점 전략 기준으로 배경설문 선택지를 의도적으�
 - 외운 스크립트처럼 들리면(지나치게 매끄럽고 빠른 시작) 감점.
 - 우리 채점은 답변 하나 단위라 이 부분은 근사일 뿐이다.
 
-출처(영상 자막을 읽고 요약): 강지완 오픽TV — "IM2와 IH를 가르는 채점 기준 3가지"(youtu.be/BLOLtPcw33s), "채점자가 IM3를 적게 주는 이유"(youtu.be/yxjmfJTAzjU), "숨겨진 채점기준 IL vs IM, IH vs AL"(youtu.be/zwltCNJmk6E), "IH에서 AL로"(youtu.be/zmamhX5s3Fg), "IH vs AL 실제 답변"(youtu.be/Se4X7UWUpLU), "채점자 상세내역으로 IM1→IH"(youtu.be/wi7Sa73dnhY), "IM2가 IH 못 받는 이유"(youtu.be/SRpycVkeVE0), "외운 답변 적발"(youtu.be/kNS8pgf01b0) / 오픽노잼 — "왜 계속 IM1?"(youtu.be/oLivwcfQ9V4), "IM2 받았다고 기뻐하지 마세요"(youtu.be/EOPpAJzePgo), "MP가 약해서 IM2"(youtu.be/3eSHVbGMfSQ), "IM vs IH vs AL 차이"(youtu.be/x9ajV_2pG8o) / 진짜녀석들 오픽 — 14·15번(youtu.be/id9hIxXEiss) / 오픽 마이너 갤러리 IM2→IH 후기(gall.dcinside.com/mgallery/board/view/?id=opic&no=44525).
+**실제 등급을 받은 답변 사례** (등급 공개 영상, 2026-10-08 추가) — 실제 문턱은 ACTFL 기술보다 낮다:
+- 실제 IM2(그린오픽, 일부러 낮게 본 시험 전체 녹음): 쉬운 문장에 오류·um/uh가 잦고, 12번 롤플레이는 "어렵다"며 건너뛰었는데도 IM2. 대신 답마다 1분 넘게 말하고 이유(because)를 붙였다. 진짜녀석들 진쌤 실제 IM2도 "최소 1분, 문장마다 설명·이유를 덧붙여 한 문장을 한 단락으로".
+- 실제 IH(해커스 학생): 수 일치·전치사 오류가 있고 MP가 끝에 나왔지만, 관계절·used to·"I was amazed by how…" 같은 다양한 구조로 길게 이어 말했다.
+- 같은 학생 같은 답 IM2→IH(강지완): 내용·양은 비슷했고, 차이는 전달 방식 — 머뭇거림·말 고치기(self-correction)·외운 듯 딱딱함이면 IM2, 틀려도 고치지 않고 자신 있게 이어 가면 IH. **IM2/IH 경계는 글자만으로는 못 가른다.**
+- IM2·IH·AL을 다 받은 사람(주책임): IM2는 질문 요지를 놓치고 아무 얘기나 늘어놓음. IH는 문장 수준은 높지만 외운 스크립트·질문과 동떨어짐·너무 김. AL은 오히려 쉬운 영어로 MP를 먼저 말하고 본문은 MP 얘기만, 감정 표현을 많이 넣음 — IH→AL은 어려운 문법이 아니라 질문에 맞는 MP와 구성.
+- 그래서 채점 보정 기준점은 경계 답의 정답을 범위(IM2~IH 등)로 둔다. 전달 방식 신호(filler 수, 말 고치기)는 STT 결과에 남아 있어 규칙으로 셀 수 있다 — 아직 안 씀.
+
+출처(영상 자막을 읽고 요약): 강지완 오픽TV — "IM2와 IH를 가르는 채점 기준 3가지"(youtu.be/BLOLtPcw33s), "채점자가 IM3를 적게 주는 이유"(youtu.be/yxjmfJTAzjU), "숨겨진 채점기준 IL vs IM, IH vs AL"(youtu.be/zwltCNJmk6E), "IH에서 AL로"(youtu.be/zmamhX5s3Fg), "IH vs AL 실제 답변"(youtu.be/Se4X7UWUpLU), "채점자 상세내역으로 IM1→IH"(youtu.be/wi7Sa73dnhY), "IM2가 IH 못 받는 이유"(youtu.be/SRpycVkeVE0), "외운 답변 적발"(youtu.be/kNS8pgf01b0) / 오픽노잼 — "왜 계속 IM1?"(youtu.be/oLivwcfQ9V4), "IM2 받았다고 기뻐하지 마세요"(youtu.be/EOPpAJzePgo), "MP가 약해서 IM2"(youtu.be/3eSHVbGMfSQ), "IM vs IH vs AL 차이"(youtu.be/x9ajV_2pG8o) / 진짜녀석들 오픽 — 14·15번(youtu.be/id9hIxXEiss), 실제 IM2 답변(youtu.be/UbRn7wd0rbU) / 강지완 — IM2 vs IH 같은 학생(youtu.be/leC8AGuhNs4) / 그린오픽 — 실제 IM2 시험 녹음(youtu.be/4ZbB-dSwCWI) / 주책임 — IM2·IH·AL 실제 답변(youtu.be/_38Au_sIJhM) / 해커스 — 실제 IH 학생 답변(youtu.be/P2k2F3uf_Ak) / 오픽 마이너 갤러리 IM2→IH 후기(gall.dcinside.com/mgallery/board/view/?id=opic&no=44525).
