@@ -68,6 +68,10 @@ OPIcnic은 고득점 전략 기준으로 배경설문 선택지를 의도적으�
 - **IM3는 드물다**(취득자 약 4%). 채점자가 "문장 단위"로 판단하면 상한이 IM3이고, 오류가 있으면 IM2·IM1로 내려간다 — IM과 IH 사이에 담이 있는 구조. 문단으로 말하면 IH 이상, 아니면 IM2 이하로 갈리는 경우가 대부분.
 - **IM2의 전형**(오픽노잼): 말은 많이 하는데 핵심(MP)이 없다. IM1은 말을 너무 적게 한다. MP는 What·Feeling·Why 중 **Why**가 가장 중요하다.
 
+- **IM2인데 길고 매끄러운 경우**(오픽노잼 1:1 가이드 실제 학생): 150단어 안팎의 이어진 이야기였지만 IM2. 처음 20초 안에 Why가 없어 핵심이 늦고, 과거 이야기에서 시제가 흔들렸다(I have a terrible experience, I lost). 길이·유창함만으로 IH가 아니다 — 문단 + MP(특히 Why) + 시제가 같이 있어야 한다.
+- 문장 하나하나 사이에 쉼이 있으면 IM1, 쉬운 문장이라도 끊김 없이 이어지면 IM2, 접속사·관계사로 이으면 IM3, 이런 문장이 5~7개 이어져 문단을 이루고 복문 구조가 나오면 IH 후보(강지완 "채점자 상세내역").
+- 질문과 다른 답(다른 질문에 대한 외운 답)은 외운 답변으로 판정해 크게 깎는다. 공개된 금지 템플릿을 쓰면 NH.
+
 **IH와 AL을 가르는 것** — 둘 다 문단 수준이고, 차이는 오류와 폭:
 - 과거 시제 통제. 과거 경험 문항에서 시제 실수가 나오면 상한 IH.
 - 어휘 폭(breadth of vocabulary). 같은 표현 반복(delicious, delicious…)이면 상한 IH. 바꿔 말하기(appetizing, mouth-watering…)가 AL 쪽.
@@ -81,4 +85,4 @@ OPIcnic은 고득점 전략 기준으로 배경설문 선택지를 의도적으�
 - 외운 스크립트처럼 들리면(지나치게 매끄럽고 빠른 시작) 감점.
 - 우리 채점은 답변 하나 단위라 이 부분은 근사일 뿐이다.
 
-출처(영상 자막을 읽고 요약): 강지완 오픽TV — "IM2와 IH를 가르는 채점 기준 3가지"(youtu.be/BLOLtPcw33s), "채점자가 IM3를 적게 주는 이유"(youtu.be/yxjmfJTAzjU), "숨겨진 채점기준 IL vs IM, IH vs AL"(youtu.be/zwltCNJmk6E), "IH에서 AL로"(youtu.be/zmamhX5s3Fg), "IH vs AL 실제 답변"(youtu.be/Se4X7UWUpLU) / 오픽노잼 — "왜 계속 IM1?"(youtu.be/oLivwcfQ9V4), "IM2 받았다고 기뻐하지 마세요"(youtu.be/EOPpAJzePgo) / 진짜녀석들 오픽 — 14·15번(youtu.be/id9hIxXEiss) / 오픽 마이너 갤러리 IM2→IH 후기(gall.dcinside.com/mgallery/board/view/?id=opic&no=44525).
+출처(영상 자막을 읽고 요약): 강지완 오픽TV — "IM2와 IH를 가르는 채점 기준 3가지"(youtu.be/BLOLtPcw33s), "채점자가 IM3를 적게 주는 이유"(youtu.be/yxjmfJTAzjU), "숨겨진 채점기준 IL vs IM, IH vs AL"(youtu.be/zwltCNJmk6E), "IH에서 AL로"(youtu.be/zmamhX5s3Fg), "IH vs AL 실제 답변"(youtu.be/Se4X7UWUpLU), "채점자 상세내역으로 IM1→IH"(youtu.be/wi7Sa73dnhY), "IM2가 IH 못 받는 이유"(youtu.be/SRpycVkeVE0), "외운 답변 적발"(youtu.be/kNS8pgf01b0) / 오픽노잼 — "왜 계속 IM1?"(youtu.be/oLivwcfQ9V4), "IM2 받았다고 기뻐하지 마세요"(youtu.be/EOPpAJzePgo), "MP가 약해서 IM2"(youtu.be/3eSHVbGMfSQ), "IM vs IH vs AL 차이"(youtu.be/x9ajV_2pG8o) / 진짜녀석들 오픽 — 14·15번(youtu.be/id9hIxXEiss) / 오픽 마이너 갤러리 IM2→IH 후기(gall.dcinside.com/mgallery/board/view/?id=opic&no=44525).
