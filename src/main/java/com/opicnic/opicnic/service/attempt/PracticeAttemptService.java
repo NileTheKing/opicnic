@@ -7,7 +7,6 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,13 +44,13 @@ public class PracticeAttemptService {
     }
 
     // ScoringJobItem.questionId(null = 자기소개) → QuestionDto. questionCache는 questionId 기준(REVIEW-08 참고).
-    // 워커 스레드엔 웹 요청의 OSIV가 없어 QuestionDto.from()의 questionSet(LAZY) 접근이 세션 밖이 된다 — 트랜잭션 필요
-    @Transactional(readOnly = true)
+    // 트랜잭션을 걸지 않는다: 걸면 캐시 히트에도 DB 커넥션을 잡아, 동기 구조 때 없앤 커넥션 경합이 워커에 다시 생긴다.
+    // 워커 스레드엔 OSIV가 없으니 미스일 때는 questionSet까지 fetch join으로 읽어 세션 밖에서도 DTO로 바꾼다
     public QuestionDto questionById(Long questionId) {
         if (questionId == null) return selfIntroDto();
         QuestionDto cached = questionCache.get(questionId);
         if (cached != null) return cached;
-        questionRepository.findById(questionId).ifPresent(q -> questionCache.put(q.getId(), QuestionDto.from(q)));
+        questionRepository.findWithQuestionSetById(questionId).ifPresent(q -> questionCache.put(q.getId(), QuestionDto.from(q)));
         return requireQuestion(questionCache, questionId);
     }
 

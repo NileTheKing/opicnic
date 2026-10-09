@@ -41,7 +41,7 @@ class PracticeAttemptServiceQuestionCacheTest {
 
         Question question = new Question("내용", QuestionType.TYPE_1, questionSet);
         question.setId(1L);
-        when(questionRepository.findById(1L)).thenReturn(Optional.of(question));
+        when(questionRepository.findWithQuestionSetById(1L)).thenReturn(Optional.of(question));
 
         // 캐시 미스 — DB에서 로드하고 DTO로 변환하며 이때 getTopic()이 처음(유일하게) 호출된다.
         QuestionDto first = service.questionById(1L);
@@ -53,6 +53,6 @@ class PracticeAttemptServiceQuestionCacheTest {
         assertThat(second.getSurveyTopicName()).isEqualTo("MOVIE_WATCHING");
 
         verify(questionSet, times(2)).getTopic();
-        verify(questionRepository, times(1)).findById(any());
+        verify(questionRepository, times(1)).findWithQuestionSetById(any());
     }
 }
