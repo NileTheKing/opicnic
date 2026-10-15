@@ -1,0 +1,99 @@
+# S3-async heap512-f45 — 2026-10-15 13:22:44
+# base=http://localhost:8080 users=30 duration=150s topic=MOVIE_WATCHING/LEVEL_3 audio=/private/tmp/claude-501/-Users-yangnail-univ-sem7-capstone-opicnic/22cf4888-e4ba-492e-8311-111990c14fe5/scratchpad/audio4m.webm
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+user attemptId                             q   http  submit_s  complete_s
+1   d529c564-87f0-42c0-b2d0-cff1061c2e42  3   202   0.017534  120.5
+1   548a123d-b557-4984-9b5f-0650a08e055e  2   202   0.020790  22.4
+1   8c131d25-19bd-4a92-ac51-738aeb3e98a9  3   202   0.030934  46.7
+2   4313b06c-dd6c-4da2-ad98-49cd4c5aaa64  3   202   0.015688  174.1
+2   7f153fff-69a8-46d6-a44c-bcf086b33f41  3   202   0.025258  44.9
+2   c36f6eaf-a88d-457e-b5b1-2cddd278b7e0  3   202   0.034513  57.2
+3   8aa1b77d-9e9f-4706-9630-bf9361248352  3   202   0.030569  169.2
+3   21fa44f6-8a85-45c7-9b86-76e7e786f295  2   202   0.032834  71.5
+4   e4b95012-5ec3-44fe-aa40-af7e9aba6d42  3   202   0.020647  150.8
+4   1102ffaf-71c5-47a8-bc03-4c650fc804c6  3   202   0.021386  20.3
+4   4e648003-3a32-4168-8464-f3c1f6d033c5  2   202   0.121363  101.7
+5   784eb1e9-15cc-465c-bffb-2eccde1448cf  3   202   0.023653  159.1
+5   bd69b4d5-4710-4dce-bc45-568857ba44e9  3   202   0.026940  57.1
+6   ccafaa55-0810-4c54-82dd-9b2beb8d2ea4  3   202   0.018431  87.8
+6   44fb60fe-4bd7-4d9b-ac43-639fa2ac3b73  2   202   0.019051  46.7
+6   75b4b2be-7a14-4995-a991-970956b24e0c  3   202   0.021126  16.3
+7   828713ce-c882-4718-b307-b9f1557dfaf6  2   202   0.021536  38.7
+7   5836bcc1-5dd4-48e6-9f26-0db6bda43dba  2   202   0.022599  61.2
+7   1414a093-b1a0-434a-92e8-81ed4704a082  3   202   0.023132  90.2
+8   5f3261a1-a1ef-4a72-a35c-1659dc0af37a  3   202   0.018874  69.2
+8   6e021093-bb16-4386-b736-c3d197706240  3   202   0.019315  34.8
+8   66d83da8-2fc1-4def-be85-b894cce430de  3   202   0.029685  36.7
+8   f7015579-ee16-4f3f-9f19-b0ccd3d9cd2a  3   202   0.049518  16.6
+9   02e9e2f3-de2f-4e67-84c2-fe5956c75752  3   202   0.021400  46.7
+9   9bc10c0d-c5f6-4f15-86be-140afb4d59b2  3   202   0.022688  51.6
+9   da8bd41a-2744-4c5a-be0e-05608aa5f24e  3   202   0.028146  55.0
+10  3d42d90b-daaa-4b2c-8222-b0820a06ff64  3   202   0.019057  51.0
+10  a2bd210c-bfd8-4d98-8cbb-a92680735585  2   202   0.022476  51.5
+10  5f0ccf1b-4521-43b0-ae14-2323de900d19  3   202   0.031187  47.0
+11  18f0977d-650f-4812-9360-df90eff6b5a6  3   202   0.015335  72.0
+11  b050ea81-76c6-45e9-9a03-395fec044633  3   202   0.020807  100.0
+11  a75da1f4-e54e-40d4-b65c-0b9ec10a099a  2   202   0.021535  22.4
+12  32bdafbf-1ca3-4337-9980-ace27228bf26  3   202   0.019986  91.8
+12  213aedfa-2325-46ed-a9bf-9d596a599df7  3   202   0.022655  65.1
+12  e0f54e2f-6d1e-43e4-9b4c-591c6e6189ae  2   202   0.026155  47.0
+13  920003ac-0090-4320-9e86-cc20340e10c5  3   202   0.023427  16.3
+13  82edc13a-3f3b-4e5f-bf7b-08737a268c5a  3   202   0.031765  99.8
+13  ab901210-0914-4898-936a-06a300044a2e  3   202   0.032705  104.0
+14  9da97df3-7110-4880-bbc1-9b9ca00dd4e4  3   202   0.024244  83.8
+14  ac50c7b2-e007-459b-9dd8-687204a19a4f  3   202   0.034783  69.2
+15  9e38b29a-5062-4a51-bc60-fe478d30fbb5  3   202   0.015598  63.1
+15  12935b35-3981-4278-a3cb-38ab3a13a7c7  3   202   0.018129  124.3
+15  84abe032-9042-4238-8ed2-4ca6d2541f90  3   202   0.025243  45.0
+16  89c3dbea-81cf-4952-b608-d9f251a20eb5  3   202   0.019259  69.2
+16  032b4de8-3ff2-46a1-82c5-e561bc42d026  2   202   0.019454  40.9
+16  7dcc59ad-c6ea-4b4c-a5e7-a71d80c201f2  3   202   0.032626  40.8
+17  e6b36191-e030-437c-a88d-c9cf49dd1ae7  3   202   0.014437  166.9
+17  4efccb0a-6daf-4818-a8cc-36a6defd7414  3   202   0.023145  46.8
+18  071eff01-d108-4cf4-9a6a-45962c0d6ca6  3   202   0.018199  67.8
+18  fd1b43fe-4072-49a1-ae16-4312d5757a80  3   202   0.021884  55.2
+18  f7c8ec54-9d34-4a52-85be-b88fca021a7b  3   202   0.025860  67.1
+19  8c7f8054-8f38-45d1-bbd5-c6f24a2b89b7  2   202   0.021827  195.5
+19  cee3c3b7-1aa1-46b1-87a1-707d0e018164  3   202   0.027851  59.0
+20  ee7187e6-3c6b-45ba-adeb-6b84c6f89959  3   202   0.020291  40.8
+20  198aeeb5-0535-4aba-bd02-b522bb687293  3   202   0.021976  38.6
+20  a967cc64-c198-4eb3-b2c3-7f34a7acfcdc  3   202   0.022755  196.9
+20  2f627fd0-c41e-4867-8b5b-b268c0d1a931  3   202   0.027153  16.3
+21  1401eca3-9f86-48de-91e1-de54bb33cead  3   202   0.021120  51.0
+21  74ccff27-dc10-49e0-943f-5cc04d3fc652  3   202   0.025866  100.0
+22  bf764a3a-8920-4145-b4ca-d9480651a84e  3   202   0.022399  73.2
+22  10c98cc8-0311-4978-a9a0-b4f3f875514e  3   202   0.027419  42.7
+22  178cfaeb-f856-4af1-ae0a-0fe6342d01e5  3   202   0.030835  42.8
+23  9cd12d1f-fb51-4c8b-832b-c25112bd7b8b  2   202   0.018986  130.9
+23  6536dda4-9ad9-4c82-baff-c7c7746417e8  2   202   0.031711  61.3
+24  98c0bbe2-4e9f-4c76-9cbf-c3facd042a93  3   202   0.018717  56.9
+24  74f7d2a5-99dd-4565-b62b-b20629ef7ff2  3   202   0.023077  195.5
+24  dac0285d-24ce-4c65-9e61-8bfe66d122a5  3   202   0.069545  63.6
+25  3da584e9-e710-4199-a5b8-cf5b6d5305c6  3   202   0.017904  152.7
+26  278b9ec3-04e4-4968-ad51-3fbeeb5c7738  3   202   0.022932  153.0
+27  3545d173-ba02-404b-8f7e-bb84d54fc79f  3   202   0.029587  163.7
+27  d0d2e883-1016-4791-8e32-d984f840885a  2   202   0.043526  57.0
+28  9071503b-866b-4292-a1f5-7bca6f2992c4  2   202   0.015653  55.3
+28  41a96a57-3d6f-48da-a2f9-0031d1dd9e16  2   202   0.019372  83.9
+28  1105c329-3767-4605-98b2-85d356e0384c  3   202   0.021855  10.2
+28  5687b5d8-82ad-4e0f-aea9-f64021c993fa  3   202   0.029337  51.1
+29  81b77de8-9830-40cf-813c-2105f14ccba3  3   202   0.019516  51.0
+29  5ac87f6a-52ef-48fd-8f93-6108260ac0cd  3   202   0.022236  57.6
+29  fdf858ec-7fd0-4074-8fa6-58dc66b1ec6e  3   202   0.025240  177.3
+30  3608891a-14ec-4a6e-90dd-78a2137fcf08  3   202   0.019204  143.8
+30  9bff4995-4e67-430c-bbf3-2f7a8d67e2ed  3   202   0.026533  46.8
+
+# 콤보 80건 / 문항 224개 / 325s → 15 콤보/분
+# 접수 HTTP: 202=80 비202=0  (SLO 100% 202)   R2 업로드 실패로 접수 안 함: 0건
+# 접수 응답(클라이언트 측정, TLS·네트워크 포함): avg 0.026s  p50 0.023s  p95 0.035s  max 0.121s
+# 접수 응답(서버 측정, http_server_requests): avg 0.025s over 80건  (SLO p95 ≤ 0.5s — 서버 측 p95는 Grafana '제출 API p95' 패널)
+# 접수→완료(클라이언트 폴링 기준, +≤2s): avg 76.5s  p50 57.6s  p95 174.1s  max 196.9s
+# 큐 깊이(5s 샘플 65회): avg 21  max 59   처리 중: avg 11  max 59
+# HikariCP active: avg 0 max 4   pending max 0   힙 사용: avg 230MB max 502MB
+# 잡 상태: COMPLETED=80 
+# 문항 상태: DONE=224 
+# 접수→완료 DB(초): min 8.8 / avg 75.4 / max 195
+# GC 전: jvm_gc_pause_seconds_count{action="end of major GC",cause="Diagnostic Command",gc="G1 Old Generation"} 5 jvm_gc_pause_seconds_sum{action="end of major GC",cause="Diagnostic Command",gc="G1 Old Generation"} 0.142 jvm_gc_pause_seconds_count{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation"} 5 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation"} 0.014 
+# GC 후: jvm_gc_pause_seconds_count{action="end of major GC",cause="Diagnostic Command",gc="G1 Old Generation"} 20 jvm_gc_pause_seconds_sum{action="end of major GC",cause="Diagnostic Command",gc="G1 Old Generation"} 0.636 jvm_gc_pause_seconds_count{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation"} 22 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation"} 0.043 jvm_gc_pause_seconds_count{action="end of minor GC",cause="G1 Humongous Allocation",gc="G1 Young Generation"} 57 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="G1 Humongous Allocation",gc="G1 Young Generation"} 0.106 
+# 서버 생존: 1 (지표 응답=1)
