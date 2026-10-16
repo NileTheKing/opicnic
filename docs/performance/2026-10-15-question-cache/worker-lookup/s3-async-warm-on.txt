@@ -1,0 +1,28 @@
+# S3-async warm-on — 2026-10-15 15:15:38
+# base=http://localhost:18081 users=6 duration=1s topic=MOVIE_WATCHING/LEVEL_3 audio=scripts/test_audio.webm
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+user attemptId                             q   http  submit_s  complete_s
+1   b7790f03-fecb-42f7-97ab-1bb37ce3db74  3   202   0.021660  10.2 200 0.030300
+2   df8e7b99-68c8-470f-84fb-a12d21c6edbc  3   202   0.026522  10.3 200 0.030049
+3   9e8a8028-9e38-4fda-a7fa-a112e0754abc  3   202   0.029795  10.3 200 0.031023
+4   e781a671-e761-467a-82a2-67523a8977cf  2   202   0.063083  8.3 200 0.030083
+5   7bd47a77-3c35-45d0-b930-f4b95c84f1e0  3   202   0.025437  10.3 200 0.031505
+6   27188d14-2e49-49b1-9c82-97944bd2ee21  3   202   0.019238  10.2 200 0.030882
+
+# 콤보 6건 / 문항 17개 / 12s → 30 콤보/분
+# start 요청 6건: 200=6 비200=0   응답(클라이언트 측정) avg 0.031s  p50 0.030s  p95 0.031s  p99 0.031s  max 0.032s
+# 접수 HTTP: 202=6 비202=0  (SLO 100% 202)   R2 업로드 실패로 접수 안 함: 0건
+# 접수 응답(클라이언트 측정, TLS·네트워크 포함): avg 0.031s  p50 0.025s  p95 0.030s  p99 0.030s  max 0.063s
+# HikariCP 커넥션 획득: 173회 (콤보당 28.8회), 평균 대기 0.29ms
+# DB 문장 Δ(윈도우 전체, 워커 폴링 등 포함): Com_commit=185 Com_delete=0 Com_insert=57 Com_select=285 Com_update=77 Questions=1140  콤보 6 문항 17
+# 접수 응답(서버 측정, http_server_requests): avg 0.030s over 6건  (SLO p95 ≤ 0.5s — 서버 측 p95는 Grafana '제출 API p95' 패널)
+# 접수→완료(클라이언트 폴링 기준, +≤2s): avg 9.9s  p50 10.2s  p95 10.3s  max 10.3s
+# 큐 깊이(5s 샘플 3회): avg 0  max 0   처리 중: avg 11  max 17
+# HikariCP active: avg 0 max 0   pending max 0   힙 사용: avg 394MB max 506MB
+# 잡 상태: COMPLETED=6 
+# 문항 상태: DONE=17 
+# 접수→완료 DB(초): min 8 / avg 8.5 / max 9
+# GC 전: jvm_gc_pause_seconds_count{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 1 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 0.018 
+# GC 후: jvm_gc_pause_seconds_count{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 1 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 0.018 
+# 서버 생존: 1 (지표 응답=1)

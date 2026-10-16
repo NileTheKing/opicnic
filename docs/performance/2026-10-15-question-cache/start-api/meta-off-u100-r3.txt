@@ -1,0 +1,5 @@
+before: Com_select=852414 Questions=4756773  acq_count=636141 acq_sum=3859.256 
+after:  Com_select=900191 Questions=5043270  acq_count=683944 acq_sum=5265.531 
+hikari_max: active=50 pending=51
+digest(question 관련):
+  47648	0.617	SELECT DISTINCTROW `qs1_0` . `id` , `qs1_0` . `deleted` , `qs1_0` . `name` , `q1_0` . `question_set_id` , `q1_

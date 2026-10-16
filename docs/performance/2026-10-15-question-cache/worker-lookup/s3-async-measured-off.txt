@@ -1,0 +1,29 @@
+# S3-async measured-off — 2026-10-15 15:15:11
+# base=http://localhost:18081 users=4 duration=1s topic=MOVIE_WATCHING/LEVEL_3 audio=scripts/test_audio.webm
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+user attemptId                             q   http  submit_s  complete_s
+1   91452287-a863-49e0-bd4f-e948c19a6771  3   202   0.030490  10.3 200 0.006279
+2   bda6f669-26a5-48d0-8566-f8b3c6046b78  3   202   0.020087  10.2 200 0.006381
+3   cb4df1ff-dc4b-47e5-bc0b-e087f489284c  3   202   0.023916  10.3 200 0.006810
+4   2738d6d1-af0a-43e2-b01d-eabc9e3a07ec  3   202   0.031410  10.3 200 0.005607
+
+# 콤보 4건 / 문항 12개 / 12s → 20 콤보/분
+# start 요청 4건: 200=4 비200=0   응답(클라이언트 측정) avg 0.006s  p50 0.006s  p95 0.006s  p99 0.006s  max 0.007s
+# 접수 HTTP: 202=4 비202=0  (SLO 100% 202)   R2 업로드 실패로 접수 안 함: 0건
+# 접수 응답(클라이언트 측정, TLS·네트워크 포함): avg 0.026s  p50 0.024s  p95 0.030s  p99 0.030s  max 0.031s
+# HikariCP 커넥션 획득: 140회 (콤보당 35.0회), 평균 대기 0.26ms
+# DB 문장 Δ(윈도우 전체, 워커 폴링 등 포함): Com_commit=132 Com_delete=0 Com_insert=40 Com_select=217 Com_update=57 Questions=824  콤보 4 문항 12
+# 접수 응답(서버 측정, http_server_requests): avg 0.025s over 4건  (SLO p95 ≤ 0.5s — 서버 측 p95는 Grafana '제출 API p95' 패널)
+# 접수→완료(클라이언트 폴링 기준, +≤2s): avg 10.3s  p50 10.3s  p95 10.3s  max 10.3s
+# 큐 깊이(5s 샘플 3회): avg 0  max 0   처리 중: avg 8  max 12
+# HikariCP active: avg 0 max 0   pending max 0   힙 사용: avg 753MB max 810MB
+# 잡 상태: COMPLETED=4 
+# 문항 상태: DONE=12 
+# 접수→완료 DB(초): min 8.5 / avg 8.7 / max 8.9
+# DB digest (실행 횟수 / 평균 ms / 문장) — question 관련만:
+#   12	0.16	SELECT `q1_0` . `id` , `q1_0` . `content` , `qs1_0` . `id` , `qs1_0` . `deleted` , `qs1_0` . `name` , `qs1_0` . `topic` , `q1_0` . `question_type` FRO
+#   4	0.27	SELECT DISTINCTROW `qs1_0` . `id` , `qs1_0` . `deleted` , `qs1_0` . `name` , `q1_0` . `question_set_id` , `q1_0` . `id` , `q1_0` . `content` , `q1_0` 
+# GC 전: (GC 없음)
+# GC 후: (GC 없음)
+# 서버 생존: 1 (지표 응답=1)

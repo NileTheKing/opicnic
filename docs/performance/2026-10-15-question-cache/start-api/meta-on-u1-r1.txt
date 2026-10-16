@@ -1,0 +1,4 @@
+before: Com_select=900390 Questions=5057089  acq_count=2731 acq_sum=0.03 
+after:  Com_select=900453 Questions=5166618  acq_count=24692 acq_sum=0.045 
+hikari_max: active=2 pending=0
+digest(question 관련):

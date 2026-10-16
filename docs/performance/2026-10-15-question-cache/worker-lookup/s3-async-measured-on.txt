@@ -1,0 +1,28 @@
+# S3-async measured-on — 2026-10-15 15:15:51
+# base=http://localhost:18081 users=4 duration=1s topic=MOVIE_WATCHING/LEVEL_3 audio=scripts/test_audio.webm
+# 서버 기동 명령을 여기 손으로 적을 것:
+#   
+user attemptId                             q   http  submit_s  complete_s
+1   e73013ab-954b-495c-9e9f-144b0a7b3c64  2   202   0.027910  8.2 200 0.004647
+2   d23ca1a0-e9f5-4ccd-9164-5255467d3d29  3   202   0.032803  10.3 200 0.004564
+3   616e815c-7abe-4485-b978-bec566edd52a  2   202   0.029289  10.3 200 0.004887
+4   246bf1e5-55f4-462a-92d8-8d3a3ab83453  3   202   0.037441  10.3 200 0.003995
+
+# 콤보 4건 / 문항 10개 / 12s → 20 콤보/분
+# start 요청 4건: 200=4 비200=0   응답(클라이언트 측정) avg 0.005s  p50 0.005s  p95 0.005s  p99 0.005s  max 0.005s
+# 접수 HTTP: 202=4 비202=0  (SLO 100% 202)   R2 업로드 실패로 접수 안 함: 0건
+# 접수 응답(클라이언트 측정, TLS·네트워크 포함): avg 0.032s  p50 0.029s  p95 0.033s  p99 0.033s  max 0.037s
+# HikariCP 커넥션 획득: 116회 (콤보당 29.0회), 평균 대기 0.26ms
+# DB 문장 Δ(윈도우 전체, 워커 폴링 등 포함): Com_commit=119 Com_delete=0 Com_insert=34 Com_select=184 Com_update=51 Questions=736  콤보 4 문항 10
+# 접수 응답(서버 측정, http_server_requests): avg 0.031s over 4건  (SLO p95 ≤ 0.5s — 서버 측 p95는 Grafana '제출 API p95' 패널)
+# 접수→완료(클라이언트 폴링 기준, +≤2s): avg 9.8s  p50 10.3s  p95 10.3s  max 10.3s
+# 큐 깊이(5s 샘플 3회): avg 0  max 0   처리 중: avg 3  max 10
+# HikariCP active: avg 0 max 1   pending max 0   힙 사용: avg 748MB max 801MB
+# 잡 상태: COMPLETED=4 
+# 문항 상태: DONE=10 
+# 접수→완료 DB(초): min 8 / avg 8.3 / max 8.8
+# DB digest (실행 횟수 / 평균 ms / 문장) — question 관련만:
+#   2	0.14	SELECT `q1_0` . `id` , `q1_0` . `content` , `qs1_0` . `id` , `qs1_0` . `deleted` , `qs1_0` . `name` , `qs1_0` . `topic` , `q1_0` . `question_type` FRO
+# GC 전: jvm_gc_pause_seconds_count{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 1 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 0.018 
+# GC 후: jvm_gc_pause_seconds_count{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 1 jvm_gc_pause_seconds_sum{action="end of minor GC",cause="Metadata GC Threshold",gc="G1 Young Generation"} 0.018 
+# 서버 생존: 1 (지표 응답=1)
