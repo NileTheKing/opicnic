@@ -9,7 +9,6 @@ import com.opicnic.opicnic.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -26,9 +25,10 @@ public class QuestionAssemblyService {
     private final QuestionSetRepository questionSetRepository;
     private final Random random;
 
+    // 트랜잭션을 걸지 않는다: 걸면 캐시 히트에도 DB 커넥션을 잡는다(워커 questionById와 같은 이유, bed3fcb).
+    // 캐시 미스는 findByTopicWithDetails가 자기 트랜잭션에서 세트와 문항을 함께 읽고, 이후엔 이미 읽힌 것만 쓴다.
     private final Map<SurveyTopic, List<QuestionSet>> setCache = new ConcurrentHashMap<>();
 
-    @Transactional(readOnly = true)
     public List<QuestionDto> assemble(SurveyTopic topic, ComboPattern pattern) {
         boolean cacheHit = setCache.containsKey(topic);
         long start = System.currentTimeMillis();
@@ -59,7 +59,6 @@ public class QuestionAssemblyService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public QuestionDto assembleSingle(SurveyTopic topic, QuestionType type) {
         List<QuestionSet> sets = setCache.computeIfAbsent(
                 topic, questionSetRepository::findByTopicWithDetails);
@@ -81,7 +80,6 @@ public class QuestionAssemblyService {
     // 적용되지 않아 이 type을 낼 수 있는 세트가 하나도 없는 topic도 후보에 남아 있다가 뽑히면
     // assembleSingle()이 예외를 던지고, 다른 사용자 topic이 있어도 그냥 "연습 불가"로 끝났다.
     // 후보 topic 목록을 좁히는 단계에서 미리 걸러낼 수 있도록 공개 메서드로 노출한다.
-    @Transactional(readOnly = true)
     public boolean hasQuestionType(SurveyTopic topic, QuestionType type) {
         List<QuestionSet> sets = setCache.computeIfAbsent(topic, questionSetRepository::findByTopicWithDetails);
         return sets.stream().anyMatch(set -> hasAllTypes(set, List.of(type)));
