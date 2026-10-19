@@ -35,7 +35,8 @@ class GuestServiceTest {
     private final SurveyProfileRepository surveyProfileRepository = mock(SurveyProfileRepository.class);
     private final GuestSampleSource sampleSource = mock(GuestSampleSource.class);
     private final ExamScheduleRepository examScheduleRepository = mock(ExamScheduleRepository.class);
-    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, sampleSource, surveyProfileRepository, examScheduleRepository);
+    private final GuestService service = new GuestService(memberRepository, properties, sampleCopier, sampleSource, surveyProfileRepository, examScheduleRepository,
+            new GuestFunnelMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry()));
 
     GuestServiceTest() {
         when(sampleSource.get()).thenReturn(Optional.empty());

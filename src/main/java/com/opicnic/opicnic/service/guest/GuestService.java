@@ -40,6 +40,7 @@ public class GuestService {
     private final GuestSampleSource sampleSource;
     private final SurveyProfileRepository surveyProfileRepository;
     private final ExamScheduleRepository examScheduleRepository;
+    private final GuestFunnelMetrics funnelMetrics;
 
     // 방문자마다 새 회원 — 다른 방문자의 녹음·답변이 섞이면 안 된다. 권한은 항상 USER(ADMIN 불가).
     @Transactional
@@ -62,6 +63,7 @@ public class GuestService {
         surveyProfileRepository.save(defaultProfile(guest));
         // 시험 준비·오늘 할 일 화면이 비어 보이지 않게 — 날짜를 고정하면 언젠가 지나므로 만들 때마다 3주 뒤
         examScheduleRepository.save(defaultSchedule(guest, LocalDate.now()));
+        funnelMetrics.created();
         return guest;
     }
 

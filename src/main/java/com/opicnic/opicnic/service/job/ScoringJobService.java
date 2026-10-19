@@ -10,6 +10,8 @@ import com.opicnic.opicnic.exception.RateLimitExceededException;
 import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.ScoringJobRepository;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import com.opicnic.opicnic.service.guest.GuestFunnelMetrics;
+import com.opicnic.opicnic.service.guest.GuestProperties;
 import com.opicnic.opicnic.service.guest.GuestQuotaService;
 import com.opicnic.opicnic.storage.AudioStorage;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ public class ScoringJobService {
     private final AudioStorage audioStorage;
     private final RateLimiterService rateLimiterService;
     private final GuestQuotaService guestQuotaService;
+    private final GuestFunnelMetrics guestFunnelMetrics;
     private final Optional<DevTesterMember> devTesterMember;   // dev 프로파일에만 존재
 
     // 키는 서버가 정한다 — 클라이언트가 고르게 두지 않는다. submit 시 같은 규칙으로 다시 만들므로 저장할 필요 없음.
@@ -110,6 +113,7 @@ public class ScoringJobService {
             return jobRepository.findById(attemptId)
                     .orElseThrow(() -> new IllegalStateException("이미 다른 요청이 제출을 처리하고 있습니다."));
         }
+        boolean guestFirstSubmit = isGuest(owner) && !jobRepository.existsByMemberId(owner.getId());
         ScoringJob job = new ScoringJob(attemptId, owner, attempt.mode(), attempt.comboPatternKey(), attempt.comboCategory());
         List<Long> questionIds = attempt.questionIds();
         for (int i = 0; i < questionIds.size(); i++) {
@@ -117,8 +121,13 @@ public class ScoringJobService {
         }
         jobRepository.save(job);
         attemptService.confirmSubmitted(attemptId);
+        if (isGuest(owner)) guestFunnelMetrics.submitted(attempt.mode(), guestFirstSubmit);
         log.info("[ScoringJob] 접수 attempt={} items={}", attemptId, questionIds.size());
         return job;
+    }
+
+    private static boolean isGuest(Member member) {
+        return member != null && GuestProperties.PROVIDER.equals(member.getProvider());
     }
 
     @Transactional(readOnly = true)

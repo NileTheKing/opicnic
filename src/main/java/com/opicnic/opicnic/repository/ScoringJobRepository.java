@@ -14,6 +14,9 @@ import java.util.Optional;
 public interface ScoringJobRepository extends JpaRepository<ScoringJob, String> {
     Optional<ScoringJob> findByIdAndMemberId(String id, Long memberId);
 
+    // 게스트 첫 제출 판별(GuestFunnelMetrics)
+    boolean existsByMemberId(Long memberId);
+
     // 홈 배너: 사용자가 아직 결과를 안 본 가장 최근 잡(채점 중이거나, 끝났는데 안 봤거나).
     // since로 최근 것만 — resultSeenAt 컬럼이 생기기 전의 잡은 전부 null이라 옛 잡이 뜨지 않게 한다
     Optional<ScoringJob> findFirstByMemberIdAndResultSeenAtIsNullAndCreatedAtAfterOrderByCreatedAtDesc(Long memberId, LocalDateTime since);

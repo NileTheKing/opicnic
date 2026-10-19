@@ -43,6 +43,7 @@ class ScoringJobServiceTest {
     private final InMemoryAudioStorage storage = new InMemoryAudioStorage();
     private final Member member = Member.builder().id(7L).provider("kakao").providerId("p").build();
 
+    private final io.micrometer.core.instrument.simple.SimpleMeterRegistry meters = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
     private ScoringJobService service;
 
     // 자기소개(null) + 채점 문항 2개
@@ -51,7 +52,8 @@ class ScoringJobServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ScoringJobService(attemptService, jobRepository, memberRepository, storage, rateLimiter, guestQuota, Optional.empty());
+        service = new ScoringJobService(attemptService, jobRepository, memberRepository, storage, rateLimiter, guestQuota,
+                new com.opicnic.opicnic.service.guest.GuestFunnelMetrics(meters), Optional.empty());
         when(attemptService.requireValidAttempt("att-1")).thenReturn(mockAttempt);
         when(memberRepository.findById(7L)).thenReturn(Optional.of(member));
         when(jobRepository.findById(any())).thenReturn(Optional.empty());
@@ -68,6 +70,27 @@ class ScoringJobServiceTest {
 
         service.submit("att-1", null);
         verify(guestQuota, times(2)).assertCanSubmit(member, PracticeMode.MOCK_EXAM, 3);
+    }
+
+    @Test
+    @DisplayName("게스트 제출은 첫 제출과 이후 제출을 나눠 센다, 게스트가 아니면 안 센다")
+    void guestSubmit_countedWithFirstFlag() {
+        Member guest = Member.builder().id(8L).provider("guest").providerId("g").build();
+        when(memberRepository.findById(8L)).thenReturn(Optional.of(guest));
+        for (String id : List.of("g-1", "g-2")) {
+            when(attemptService.requireValidAttempt(id)).thenReturn(new PracticeAttempt(id, List.of(10L), 8L,
+                    PracticeMode.COMBO, null, null, Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS));
+            when(attemptService.tryStartFinalizing(id)).thenReturn(true);
+        }
+        when(jobRepository.existsByMemberId(8L)).thenReturn(false, true);
+
+        service.submit("g-1", null);
+        service.submit("g-2", null);
+        service.submit("att-1", null);   // 카카오 회원
+
+        assertThat(meters.counter("opicnic.guest.submitted", "first", "true", "mode", "COMBO").count()).isEqualTo(1);
+        assertThat(meters.counter("opicnic.guest.submitted", "first", "false", "mode", "COMBO").count()).isEqualTo(1);
+        assertThat(meters.find("opicnic.guest.submitted").tag("mode", "MOCK_EXAM").counter()).isNull();
     }
 
     @Test

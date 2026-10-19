@@ -51,6 +51,7 @@ class GuestLoginControllerTest {
     @MockBean com.opicnic.opicnic.service.guest.GuestSampleCopier sampleCopier;
     @MockBean com.opicnic.opicnic.service.guest.GuestSampleSource sampleSource;
     @MockBean com.opicnic.opicnic.repository.ExamScheduleRepository examScheduleRepository;
+    @MockBean com.opicnic.opicnic.service.guest.GuestFunnelMetrics funnelMetrics;
 
     private void stubSave() {
         when(memberRepository.save(any(Member.class))).thenAnswer(inv -> {
