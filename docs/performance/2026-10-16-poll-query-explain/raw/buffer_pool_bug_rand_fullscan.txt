@@ -1,0 +1,19 @@
+== BASE  before: fr_mb item_mb = 75.3	24.1
+   after:  fr_mb item_mb = 75.3	18.7
+== POLL_IDX  before: fr_mb item_mb = 75.3	18.7
+   poll cycles: 170
+   after:  fr_mb item_mb = 75.3	18.3
+== POLL_NOIDX  before: fr_mb item_mb = 75.3	18.3
+   poll cycles: 16
+   after:  fr_mb item_mb = 68.0	59.8
+== POLL_IDX2  before: fr_mb item_mb = 68.0	43.8
+   poll cycles: 171
+   after:  fr_mb item_mb = 68.0	37.1
++------------+---------+---------+------------------+----------------------+--------------------+
+| label      | batches | queries | avg_ms_per_query | disk_reads_per_query | worst_batch_avg_ms |
++------------+---------+---------+------------------+----------------------+--------------------+
+| BASE       |      26 |    5200 |           35.420 |                 0.00 |             38.342 |
+| POLL_IDX   |      28 |    5600 |           32.050 |                 0.00 |             34.476 |
+| POLL_NOIDX |      23 |    4600 |           38.789 |                11.27 |             48.325 |
+| POLL_IDX2  |      29 |    5800 |           31.436 |                 0.00 |             32.513 |
++------------+---------+---------+------------------+----------------------+--------------------+

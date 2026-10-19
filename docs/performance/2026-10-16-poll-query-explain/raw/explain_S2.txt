@@ -1,0 +1,121 @@
+### S2 Q1 I0
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_scoring_job_item_status) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+| id | select_type | table | partitions | type | possible_keys               | key                         | key_len | ref   | rows | filtered | Extra                              |
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | ref  | idx_scoring_job_item_status | idx_scoring_job_item_status | 1       | const | 5000 |    40.00 | Using index condition; Using where |
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=4947 rows=60) (actual time=3.84..3.84 rows=0 loops=1)
+    -> Filter: ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6))))  (cost=4947 rows=2000) (actual time=3.84..3.84 rows=0 loops=1)
+        -> Index lookup on s using idx_scoring_job_item_status (status='QUEUED'), with index condition: (s.`status` = 'QUEUED')  (cost=4947 rows=5000) (actual time=0.0245..3.62 rows=5000 loops=1)
+
+
+### S2 Q1 I1
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_item_status_next) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next | idx_item_status_next | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=2.11 rows=1) (actual time=0.0199..0.0199 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=2.11 rows=1) (actual time=0.0198..0.0198 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:07:48.540514'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=2.11 rows=1) (actual time=0.0162..0.0162 rows=0 loops=1)
+
+
+### S2 Q1 I2
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys            | key                      | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next_upd | idx_item_status_next_upd | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=2.11 rows=1) (actual time=0.0171..0.0171 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=2.11 rows=1) (actual time=0.0169..0.0169 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next_upd over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:07:48.705664'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=2.11 rows=1) (actual time=0.0134..0.0134 rows=0 loops=1)
+
+
+### S2 Q1 AUTO
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s  where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys                                                             | key                  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_scoring_job_item_status,idx_item_status_next,idx_item_status_next_upd | idx_item_status_next | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=2.11 rows=1) (actual time=0.0193..0.0193 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=2.11 rows=1) (actual time=0.0191..0.0191 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:07:48.886261'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=2.11 rows=1) (actual time=0.0147..0.0147 rows=0 loops=1)
+
+
+### S2 Q1 NONE
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s IGNORE INDEX (idx_scoring_job_item_status, idx_item_status_next, idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+---------------+------+---------+------+---------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows    | filtered | Extra                       |
++----+-------------+-------+------------+------+---------------+------+---------+------+---------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 4908238 |     0.11 | Using where; Using filesort |
++----+-------------+-------+------------+------+---------------+------+---------+------+---------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=584923 rows=60) (actual time=2545..2545 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=584923 rows=4.91e+6) (actual time=2545..2545 rows=0 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=584923 rows=4.91e+6) (actual time=2545..2545 rows=0 loops=1)
+            -> Table scan on s  (cost=584923 rows=4.91e+6) (actual time=0.0647..2402 rows=5.01e+6 loops=1)
+
+
+### S2 Q2 I0
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_scoring_job_item_status) where s.status = 'QUEUED' and s.next_attempt_at <= now(6) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+| id | select_type | table | partitions | type | possible_keys               | key                         | key_len | ref   | rows | filtered | Extra                              |
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | ref  | idx_scoring_job_item_status | idx_scoring_job_item_status | 1       | const | 5000 |    33.33 | Using index condition; Using where |
++----+-------------+-------+------------+------+-----------------------------+-----------------------------+---------+-------+------+----------+------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=4866 rows=60) (actual time=2.96..2.96 rows=0 loops=1)
+    -> Filter: (s.next_attempt_at <= <cache>(now(6)))  (cost=4866 rows=1666) (actual time=2.96..2.96 rows=0 loops=1)
+        -> Index lookup on s using idx_scoring_job_item_status (status='QUEUED'), with index condition: (s.`status` = 'QUEUED')  (cost=4866 rows=5000) (actual time=0.0347..2.84 rows=5000 loops=1)
+
+
+### S2 Q2 I1
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_item_status_next) where s.status = 'QUEUED' and s.next_attempt_at <= now(6) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next | idx_item_status_next | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=2.09 rows=1) (actual time=0.0228..0.0228 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=2.09 rows=1) (actual time=0.0226..0.0226 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next over (status = 'QUEUED' AND NULL < next_attempt_at <= '2026-10-16 08:08:10.457705'), with index condition: ((s.`status` = 'QUEUED') and (s.next_attempt_at <= <cache>(now(6))))  (cost=2.09 rows=1) (actual time=0.0192..0.0192 rows=0 loops=1)
+
+
+### S2 Q2 I2
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from scoring_job_item s USE INDEX (idx_item_status_next_upd) where s.status = 'QUEUED' and s.next_attempt_at <= now(6) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys            | key                      | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next_upd | idx_item_status_next_upd | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=2.09 rows=1) (actual time=0.0165..0.0165 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=2.09 rows=1) (actual time=0.0162..0.0162 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next_upd over (status = 'QUEUED' AND NULL < next_attempt_at <= '2026-10-16 08:08:10.617490'), with index condition: ((s.`status` = 'QUEUED') and (s.next_attempt_at <= <cache>(now(6))))  (cost=2.09 rows=1) (actual time=0.0128..0.0128 rows=0 loops=1)
+
+

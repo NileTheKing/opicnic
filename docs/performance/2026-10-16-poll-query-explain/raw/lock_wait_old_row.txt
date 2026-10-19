@@ -1,0 +1,9 @@
+INDEX	REPEATABLE READ	1	A_update_ms=2	B_old_row_update_ms=8
+NOINDEX	REPEATABLE READ	1	A_update_ms=3064	B_old_row_update_ms=2551
+NOINDEX	READ COMMITTED	1	A_update_ms=3861	B_old_row_update_ms=6
+INDEX	REPEATABLE READ	2	A_update_ms=1	B_old_row_update_ms=4
+NOINDEX	REPEATABLE READ	2	A_update_ms=2774	B_old_row_update_ms=2265
+NOINDEX	READ COMMITTED	2	A_update_ms=3716	B_old_row_update_ms=4
+INDEX	REPEATABLE READ	3	A_update_ms=0	B_old_row_update_ms=5
+NOINDEX	REPEATABLE READ	3	A_update_ms=2872	B_old_row_update_ms=2369
+NOINDEX	READ COMMITTED	3	A_update_ms=3709	B_old_row_update_ms=5

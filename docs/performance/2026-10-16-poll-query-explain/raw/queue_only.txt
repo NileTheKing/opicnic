@@ -1,0 +1,155 @@
+### QS2 I0
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_scoring_job_item_status) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type  | possible_keys               | key                         | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | s     | NULL       | index | idx_scoring_job_item_status | idx_scoring_job_item_status | 9       | NULL |   60 |    40.00 | Using where |
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=0.332 rows=24) (actual time=3.02..3.02 rows=0 loops=1)
+    -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=0.332 rows=24) (actual time=3.02..3.02 rows=0 loops=1)
+        -> Index scan on s using idx_scoring_job_item_status  (cost=0.332 rows=60) (actual time=0.0153..2.53 rows=5000 loops=1)
+
+
+### QS2 I1
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_item_status_next) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next | idx_item_status_next | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+----------------------+----------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=0.71 rows=1) (actual time=0.0185..0.0185 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=0.71 rows=1) (actual time=0.0183..0.0183 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:52:42.427913'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=0.71 rows=1) (actual time=0.0119..0.0119 rows=0 loops=1)
+
+
+### QS2 I2
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys            | key                      | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_item_status_next_upd | idx_item_status_next_upd | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+--------------------------+--------------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=0.71 rows=1) (actual time=0.0167..0.0167 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=0.71 rows=1) (actual time=0.0165..0.0165 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next_upd over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:52:42.614721'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=0.71 rows=1) (actual time=0.013..0.013 rows=0 loops=1)
+
+
+### QS2 AUTO
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s  where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys                                                             | key                  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s     | NULL       | range | idx_scoring_job_item_status,idx_item_status_next,idx_item_status_next_upd | idx_item_status_next | 10      | NULL |    1 |   100.00 | Using index condition; Using filesort |
++----+-------------+-------+------------+-------+---------------------------------------------------------------------------+----------------------+---------+------+------+----------+---------------------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=0.71 rows=1) (actual time=0.0217..0.0217 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=0.71 rows=1) (actual time=0.0214..0.0214 rows=0 loops=1)
+        -> Index range scan on s using idx_item_status_next over (status = 'QUEUED' AND NULL <= next_attempt_at <= '2026-10-16 08:52:42.809119'), with index condition: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=0.71 rows=1) (actual time=0.017..0.017 rows=0 loops=1)
+
+
+### QS2 NONE
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s IGNORE INDEX (idx_scoring_job_item_status, idx_item_status_next, idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 4819 |    40.00 | Using where; Using filesort |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=217 rows=60) (actual time=2.08..2.08 rows=0 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=217 rows=4819) (actual time=2.08..2.08 rows=0 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=217 rows=4819) (actual time=2.06..2.06 rows=0 loops=1)
+            -> Table scan on s  (cost=217 rows=4819) (actual time=0.0237..1.6 rows=5000 loops=1)
+
+
+### QS3 I0
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_scoring_job_item_status) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type  | possible_keys               | key                         | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | s     | NULL       | index | idx_scoring_job_item_status | idx_scoring_job_item_status | 9       | NULL |   60 |    40.00 | Using where |
++----+-------------+-------+------------+-------+-----------------------------+-----------------------------+---------+------+------+----------+-------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=0.332 rows=24) (actual time=0.0236..0.104 rows=60 loops=1)
+    -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=0.332 rows=24) (actual time=0.0233..0.101 rows=60 loops=1)
+        -> Index scan on s using idx_scoring_job_item_status  (cost=0.332 rows=60) (actual time=0.014..0.0847 rows=120 loops=1)
+
+
+### QS3 I1
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_item_status_next) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+----------------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys        | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+-------+------------+------+----------------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | idx_item_status_next | NULL | NULL    | NULL | 4819 |    51.88 | Using where; Using filesort |
++----+-------------+-------+------------+------+----------------------+------+---------+------+------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=506 rows=60) (actual time=2.43..2.43 rows=60 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=506 rows=4819) (actual time=2.43..2.43 rows=60 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=506 rows=4819) (actual time=0.0146..1.95 rows=2500 loops=1)
+            -> Table scan on s  (cost=506 rows=4819) (actual time=0.0114..1.5 rows=5000 loops=1)
+
+
+### QS3 I2
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s USE INDEX (idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys            | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | idx_item_status_next_upd | NULL | NULL    | NULL | 4819 |    51.88 | Using where; Using filesort |
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=506 rows=60) (actual time=2.39..2.39 rows=60 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=506 rows=4819) (actual time=2.39..2.39 rows=60 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=506 rows=4819) (actual time=0.0137..2 rows=2500 loops=1)
+            -> Table scan on s  (cost=506 rows=4819) (actual time=0.011..1.53 rows=5000 loops=1)
+
+
+### QS3 AUTO
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s  where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+---------------------------------------------------------------------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys                                                             | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+-------+------------+------+---------------------------------------------------------------------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | idx_scoring_job_item_status,idx_item_status_next,idx_item_status_next_upd | NULL | NULL    | NULL | 4819 |    40.00 | Using where; Using filesort |
++----+-------------+-------+------------+------+---------------------------------------------------------------------------+------+---------+------+------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=217 rows=60) (actual time=2.36..2.36 rows=60 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=217 rows=4819) (actual time=2.36..2.36 rows=60 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=217 rows=4819) (actual time=0.0137..1.9 rows=2500 loops=1)
+            -> Table scan on s  (cost=217 rows=4819) (actual time=0.0111..1.45 rows=5000 loops=1)
+
+
+### QS3 NONE
+select s.id, s.attempts, s.audio_key, s.failure_reason, s.feedback_result_id, s.invalid_outputs, s.job_id, s.last_error, s.next_attempt_at, s.question_id, s.question_index, s.status, s.stt_text, s.updated_at from queue_only s IGNORE INDEX (idx_scoring_job_item_status, idx_item_status_next, idx_item_status_next_upd) where s.status = 'QUEUED' and (s.next_attempt_at is null or s.next_attempt_at <= now(6)) order by s.updated_at limit 60
+
+-- EXPLAIN
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | s     | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 4819 |    40.00 | Using where; Using filesort |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+-- EXPLAIN ANALYZE
+-> Limit: 60 row(s)  (cost=217 rows=60) (actual time=2.7..2.71 rows=60 loops=1)
+    -> Sort: s.updated_at, limit input to 60 row(s) per chunk  (cost=217 rows=4819) (actual time=2.7..2.71 rows=60 loops=1)
+        -> Filter: ((s.`status` = 'QUEUED') and ((s.next_attempt_at is null) or (s.next_attempt_at <= <cache>(now(6)))))  (cost=217 rows=4819) (actual time=0.0218..2.19 rows=2500 loops=1)
+            -> Table scan on s  (cost=217 rows=4819) (actual time=0.0165..1.66 rows=5000 loops=1)
+
+

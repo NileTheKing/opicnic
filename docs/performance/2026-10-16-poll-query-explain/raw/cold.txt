@@ -1,0 +1,12 @@
+== USE INDEX (idx_scoring_job_item_status)
+3.7010
+4.6260
+3.8750
+== USE INDEX (idx_item_status_next)
+0.7600
+0.9640
+0.3530
+== USE INDEX (idx_item_status_next_upd)
+0.3940
+0.3700
+0.3380

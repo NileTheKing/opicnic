@@ -1,0 +1,2 @@
+scenario	queued_rows	next_null	ready	future
+S1	10	10	NULL	NULL
