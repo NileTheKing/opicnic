@@ -1,12 +1,32 @@
-name: Deploy to Production
+name: Deploy
 
+# 배포는 사람이 시작한다(배포 = 재시작이라 로그인 세션과 진행 중인 연습이 사라진다).
+#   gh workflow run deploy.yml                      # 테스트 통과 후 배포
+#   gh workflow run deploy.yml -f skip_tests=true   # 급할 때: 테스트 없이 배포
+# 비상구: Actions가 안 될 때는 VM에서 직접 `git pull --ff-only && ./deploy.sh`
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: '테스트 건너뛰기 (급할 때만)'
+        type: boolean
+        default: false
+
+# 배포끼리는 겹치지 않게 줄 세운다. 도중에 끊으면 반쯤 바뀐 상태가 되므로 취소하지 않는다
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
+  test:
+    if: ${{ !inputs.skip_tests }}
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: test
+    if: ${{ always() && github.ref == 'refs/heads/main' && (needs.test.result == 'success' || inputs.skip_tests) }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -14,7 +34,15 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 15m
           script: |
+            set -e
             cd ~/opicnic
-            git pull origin main
+            git pull --ff-only origin main
+            # 테스트한 커밋과 서버가 받은 커밋이 같아야 한다(그 사이 새 push가 있으면 멈춤)
+            if [ "$(git rev-parse HEAD)" != "${{ github.sha }}" ]; then
+              echo "서버 HEAD $(git rev-parse --short HEAD)가 실행 커밋 ${{ github.sha }}와 다릅니다. 최신 main으로 다시 실행하세요."
+              exit 1
+            fi
             ./deploy.sh
+            echo "skip_tests=${{ inputs.skip_tests }} commit=${{ github.sha }}"

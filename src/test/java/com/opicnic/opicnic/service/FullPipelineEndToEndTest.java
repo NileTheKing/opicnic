@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.domain.enums.QuestionType;
 import com.opicnic.opicnic.dto.QuestionDto;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // 실제 Groq API를 호출하는 통합 테스트 (GROQ_API_KEY, LLM_ENABLED=true 필요).
 // CoachingService.generate()가 실제로 구현하는 요소별+유형별 태그 집계 알고리즘을 여기서 먼저 검증한다.
+// 로컬 MySQL(localhost:3306)이나 실제 API 키가 있어야 도는 테스트. CI에서는 제외(build.gradle)
+@Tag("local")
 @SpringBootTest
 class FullPipelineEndToEndTest {
 

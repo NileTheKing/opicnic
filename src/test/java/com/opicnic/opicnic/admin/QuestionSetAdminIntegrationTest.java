@@ -61,6 +61,8 @@ public class QuestionSetAdminIntegrationTest {
         registry.add("spring.datasource.username", mysqlContainer::getUsername);
         registry.add("spring.datasource.password", mysqlContainer::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        // 전체 컨텍스트가 뜰 때 STT 설정이 키 자리를 요구한다. 외부 호출은 하지 않으므로 가짜 값(CI엔 실제 키가 없다)
+        registry.add("GROQ_API_KEY", () -> "test-placeholder");
     }
 
     @BeforeEach

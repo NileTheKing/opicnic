@@ -1,0 +1,35 @@
+name: CI
+
+# push·PR마다 테스트. 문서만 바뀐 커밋은 건너뛴다.
+# deploy.yml이 배포 전에 이 워크플로를 그대로 불러 쓴다(workflow_call).
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**.md']
+  pull_request:
+    paths-ignore: ['docs/**', '**.md']
+  workflow_call:
+
+# 같은 브랜치에 연달아 push하면 앞의 실행은 취소. 배포가 부른 실행은 이름(github.workflow = Deploy)이 달라 따로 돈다
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      # Testcontainers(MySQL)는 러너의 Docker를 쓴다. CI 환경 변수가 있으면 @Tag("local") 테스트는 빠진다(build.gradle)
+      - run: ./gradlew test --no-daemon
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: build/reports/tests/test

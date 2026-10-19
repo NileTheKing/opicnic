@@ -3,6 +3,7 @@ package com.opicnic.opicnic.benchmark;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.service.ComboPattern;
 import com.opicnic.opicnic.service.QuestionAssemblyService;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,6 +12,8 @@ import java.util.List;
 
 import static com.opicnic.opicnic.domain.enums.QuestionType.*;
 
+// 로컬 MySQL(localhost:3306)이나 실제 API 키가 있어야 도는 테스트. CI에서는 제외(build.gradle)
+@Tag("local")
 @SpringBootTest
 class QuestionSetCacheBenchmarkTest {
 

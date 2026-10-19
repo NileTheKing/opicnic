@@ -11,6 +11,7 @@ import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
 import com.opicnic.opicnic.repository.FeedbackTagRepository;
 import com.opicnic.opicnic.repository.MemberRepository;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,8 @@ import java.util.Map;
 
 // 로컬 DB 코칭 화면 수동 검증용 1회성 시더. 실제 LlmService(getOpicFeedback+extractFeedbackTags)를 호출해
 // 정식 파이프라인과 동일하게 FeedbackResult+FeedbackTag를 채운다. 검증 끝나면 이 파일은 삭제할 것.
+// 로컬 MySQL(localhost:3306)이나 실제 API 키가 있어야 도는 테스트. CI에서는 제외(build.gradle)
+@Tag("local")
 @SpringBootTest
 class ManualSeedRunner {
 
