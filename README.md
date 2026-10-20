@@ -113,20 +113,12 @@ OPIcnic은 이 판단들을 대신 내려 줍니다. 답변마다 등급과 고�
 <table>
 <tr>
 <td align="center">
-<strong>100%</strong><br>
-<sub>채점 완료율<br>접수 직후, 채점 중 서버 강제 종료 후 재기동</sub>
-</td>
-<td align="center">
-<strong>22.8% → 0%</strong><br>
-<sub>외부 API 45% 실패 주입 시 실패 문항<br>횟수 대신 시간 기준 재시도</sub>
+<strong>-43%%</strong><br>
+<sub>JVM 힙 사용량 43% 감소 및 OOM 감소<br>음성 답변파일을S3 Object Storage이용하여 처리</sub>
 </td>
 <td align="center">
 <strong>270s → 54s</strong><br>
-<sub>장애 복구 후 채점 완료(429 33% → 0.4%)<br>full jitter + 워커 동시성 제한</sub>
-</td>
-<td align="center">
-<strong>2.7배</strong><br>
-<sub>3문항 채점 12.9s → 4.7s<br>문항별 가상 스레드 병렬 처리</sub>
+<sub>외부API 장애 복구 후 백로그 처리시간<br>full jitter + 워커 동시성 제한</sub>
 </td>
 </tr>
 </table>
