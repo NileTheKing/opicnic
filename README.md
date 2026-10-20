@@ -113,7 +113,7 @@ OPIcnic은 이 판단들을 대신 내려 줍니다. 답변마다 등급과 고�
 <table>
 <tr>
 <td align="center">
-<strong>-43%%</strong><br>
+<strong>-43%</strong><br>
 <sub>JVM 힙 사용량 43% 감소 및 OOM 감소<br>음성 답변파일을S3 Object Storage이용하여 처리</sub>
 </td>
 <td align="center">
