@@ -17,6 +17,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,10 @@ public class LlmService {
 
     @Value("${spring.ai.openai.enabled:true}")
     private boolean aiEnabled;
+
+    // 외부 호출 직전에 토큰을 받는 속도 제한기. 기본 꺼짐(주입이 없으면 꺼진 것)
+    @Autowired(required = false)
+    private OutboundLimiter limiter = OutboundLimiter.off();
 
     @Value("${LLM_MOCK_DELAY_MS:0}")
     private long mockDelayMs;
@@ -95,12 +100,12 @@ public class LlmService {
 
     public Map<String, Object> getOpicFeedback(String speechText, QuestionDto question) {
         // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
-        return ExternalCallMetrics.record(meterRegistry, "score", () -> callOpicFeedback(speechText, question));
+        return limiter.call(ProviderKind.LLM, () -> ExternalCallMetrics.record(meterRegistry, "score", () -> callOpicFeedback(speechText, question)));
     }
 
     private Map<String, Object> callOpicFeedback(String speechText, QuestionDto question) {
         if (!aiEnabled) {
-            MockProvider.admit();
+            MockProvider.admit(ProviderKind.LLM);
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
@@ -165,13 +170,13 @@ public class LlmService {
 
     // 개별 피드백 텍스트 1건에서 카테고리별 태그를 추출 (Call1을 대체할 대상 — 향후엔 getOpicFeedback 호출 시점에 함께 추출)
     public String extractFeedbackTags(String questionType, String mainPoint, String expression, String accuracy, String content) {
-        return ExternalCallMetrics.record(meterRegistry, "tag",
-                () -> callFeedbackTags(questionType, mainPoint, expression, accuracy, content));
+        return limiter.call(ProviderKind.LLM, () -> ExternalCallMetrics.record(meterRegistry, "tag",
+                () -> callFeedbackTags(questionType, mainPoint, expression, accuracy, content)));
     }
 
     private String callFeedbackTags(String questionType, String mainPoint, String expression, String accuracy, String content) {
         if (!aiEnabled) {
-            MockProvider.admit();
+            MockProvider.admit(ProviderKind.LLM);
             return "{\"mainPoint\":[],\"expression\":{\"vocab\":[\"VOCAB_BASIC\"],\"sentence\":[],\"imagery\":[]},\"accuracy\":[],\"content\":[]}";
         }
 

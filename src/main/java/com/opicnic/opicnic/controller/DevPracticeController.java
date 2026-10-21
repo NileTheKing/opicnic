@@ -63,12 +63,20 @@ public class DevPracticeController {
 
     // 부하에 반응하는 가짜 제공자(MockProvider). 재시도 폭주 실험(scripts/retry-storm.sh)용 — 확률 주입과 달리 몰려서 부를수록 429가 는다.
     // down=true면 모든 호출 즉시 503, limitPerSecond>0이면 STT·채점·태깅 합쳐 초당 그만큼만 받는다.
+    // sttPerMinute·llmPerMinute>0이면 종류별 분당 토큰 버킷 한도, capacity(0~1)는 그 한도에 곱하는 용량 비율, headers=true면 한도 헤더를 준다(MockProvider 주석).
     @PostMapping("/mock-provider")
     public Map<String, Object> setMockProvider(@RequestParam(defaultValue = "false") boolean down,
-                                               @RequestParam(defaultValue = "0") int limitPerSecond) {
+                                               @RequestParam(defaultValue = "0") int limitPerSecond,
+                                               @RequestParam(defaultValue = "0") int sttPerMinute,
+                                               @RequestParam(defaultValue = "0") int llmPerMinute,
+                                               @RequestParam(defaultValue = "1.0") double capacity,
+                                               @RequestParam(defaultValue = "false") boolean headers) {
         MockProvider.configure(down, limitPerSecond);
-        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={}", down, limitPerSecond);
-        return Map.of("down", down, "limitPerSecond", limitPerSecond);
+        MockProvider.configureLimits(sttPerMinute, llmPerMinute, capacity, headers);
+        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={}",
+                down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers);
+        return Map.of("down", down, "limitPerSecond", limitPerSecond, "sttPerMinute", sttPerMinute,
+                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers);
     }
 
     @PostMapping("/start")

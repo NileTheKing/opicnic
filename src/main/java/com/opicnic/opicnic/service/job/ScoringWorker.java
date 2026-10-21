@@ -14,6 +14,7 @@ import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import com.opicnic.opicnic.repository.ScoringJobItemRepository;
 import com.opicnic.opicnic.repository.ScoringJobRepository;
 import com.opicnic.opicnic.service.FeedbackService;
+import com.opicnic.opicnic.service.OutboundLimiter;
 import com.opicnic.opicnic.service.attempt.FeedbackPersistenceService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import com.opicnic.opicnic.storage.AudioStorage;
@@ -67,7 +68,8 @@ public class ScoringWorker {
     private final Semaphore slots;
     private final FailureCircuit circuit;
     private final Duration retryBudget;
-    private final boolean backoffEnabled;
+    private final BackoffMode backoffMode;
+    private final OutboundLimiter limiter;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final AtomicInteger inFlight = new AtomicInteger();
     private final AtomicLong queued = new AtomicLong();
@@ -82,8 +84,11 @@ public class ScoringWorker {
                          @Value("${opicnic.worker.circuit.failure-ratio:0.8}") double circuitFailureRatio,
                          @Value("${opicnic.worker.circuit.open-seconds:30}") long circuitOpenSeconds,
                          @Value("${opicnic.worker.retry-budget:30m}") Duration retryBudget,
-                         // 재시도 폭주 실험의 대조군(scripts/retry-storm.sh)용. false면 실패 즉시 다음 폴링(1초)에 다시 집는다. 운영에선 끄지 않는다
-                         @Value("${opicnic.worker.backoff-enabled:true}") boolean backoffEnabled) {
+                         // 재시도 폭주 실험의 대조군(scripts/retry-storm.sh)용. false면 실패 즉시 다음 폴링(1초)에 다시 집는다(= immediate). 운영에선 끄지 않는다
+                         @Value("${opicnic.worker.backoff-enabled:true}") boolean backoffEnabled,
+                         // 용량·장애 실험 3단계 사다리용(docs/performance/2026-10-21-capacity-outage). 운영 기본은 full-jitter
+                         @Value("${opicnic.worker.backoff-mode:full-jitter}") String backoffMode,
+                         OutboundLimiter limiter) {
         this.jobRepository = jobRepository;
         this.itemRepository = itemRepository;
         this.attemptService = attemptService;
@@ -95,13 +100,14 @@ public class ScoringWorker {
         this.enabled = enabled;
         this.slots = new Semaphore(concurrency);
         this.retryBudget = retryBudget;
-        this.backoffEnabled = backoffEnabled;
+        this.backoffMode = backoffEnabled ? BackoffMode.parse(backoffMode) : BackoffMode.IMMEDIATE;
+        this.limiter = limiter;
         this.circuit = new FailureCircuit(circuitWindow, circuitFailureRatio, Duration.ofSeconds(circuitOpenSeconds));
         meterRegistry.gauge("opicnic.worker.in_flight", inFlight);
         meterRegistry.gauge("opicnic.worker.circuit_open", circuit, c -> c.isOpen() ? 1 : 0);
         meterRegistry.gauge("opicnic.worker.queued", queued);   // 큐 깊이(QUEUED 수). poll()마다 갱신 — 1초 지연의 대시보드용 값
         log.info("[Worker] enabled={} concurrency={} retryBudget={} backoff={} circuit(window={}, ratio={}, open={}s)",
-                enabled, concurrency, retryBudget, backoffEnabled, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
+                enabled, concurrency, retryBudget, this.backoffMode, circuitWindow, circuitFailureRatio, circuitOpenSeconds);
     }
 
     // 기동 직후: PROCESSING인 문항은 전부 죽은 프로세스의 것이다(단일 인스턴스 전제, ADR-0001 6절) — 5분 기다리지 않고
@@ -199,11 +205,17 @@ public class ScoringWorker {
         } catch (Exception e) {
             boolean rateLimited = isRateLimited(e);
             FailureKind kind = classify(e);
-            Duration backoff = backoffEnabled ? backoff(ctx.attempts(), rateLimited) : Duration.ZERO;
+            Duration backoff = backoff(ctx.attempts(), rateLimited, backoffMode);
+            // 헤더 방식: 제공자가 준 Retry-After 전에는 다시 부르지 않는다(백오프와 큰 쪽)
+            if (limiter.mode() == OutboundLimiter.Mode.HEADER) {
+                Duration retryAfter = retryAfter(e);
+                if (retryAfter != null && retryAfter.compareTo(backoff) > 0) backoff = retryAfter;
+            }
+            final Duration nextBackoff = backoff;
             ScoringJobItemStatus after = tx.execute(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();
                 ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
-                item.markFailed(e.getMessage(), kind, backoff, ctx.deadline());
+                item.markFailed(e.getMessage(), kind, nextBackoff, ctx.deadline());
                 job.markProcessing();
                 if (item.getStatus() == ScoringJobItemStatus.FAILED) {
                     job.refreshCompletion();
@@ -223,7 +235,7 @@ public class ScoringWorker {
                         "reason", rateLimited ? "429" : "other").increment();
             }
             log.warn("[Worker] 문항 {} 시도 {} 실패 [{}{}] → {} (backoff {}ms, 예산 {}까지): {}", ctx.questionIndex(),
-                    ctx.attempts(), kind, rateLimited ? ", 429" : "", outcome, backoff.toMillis(), ctx.deadline(),
+                    ctx.attempts(), kind, rateLimited ? ", 429" : "", outcome, nextBackoff.toMillis(), ctx.deadline(),
                     e.getMessage());
         } finally {
             MDC.clear();
@@ -242,9 +254,45 @@ public class ScoringWorker {
     // 장애가 길어지면 모든 문항이 60s 천장에 붙어 같은 박자로 몰렸다가(복구 후 60초 간격 파도) 한도에 걸려 또 60s를
     // 기다렸다 — 복구 후 완료가 보호 없는 쪽보다 4.5배 느렸다. 천장 안 전체로 흩어야 박자가 안 맞는다.
     static Duration backoff(int attempt, boolean rateLimited) {
+        return backoff(attempt, rateLimited, BackoffMode.FULL_JITTER);
+    }
+
+    // 재시도 방식 opicnic.worker.backoff-mode. 용량·장애 실험 3단계 사다리의 한 겹씩을 켜고 끄려고 둔 설정이다
+    //  immediate                 대기 0 — 다음 폴링(1초)에 바로 다시 집는다
+    //  exponential               천장(2s·4s·8s…, 429는 4s부터, 상한 60s)만큼 그대로 기다린다. 무작위 없음
+    //  exponential-small-jitter  천장 + 0~1초 무작위 (2026-09-26 이전 코드)
+    //  full-jitter (기본)        0 ~ 천장 무작위
+    enum BackoffMode {
+        IMMEDIATE, EXPONENTIAL, EXPONENTIAL_SMALL_JITTER, FULL_JITTER;
+
+        static BackoffMode parse(String s) {
+            return switch (s == null ? "full-jitter" : s.trim().toLowerCase()) {
+                case "immediate" -> IMMEDIATE;
+                case "exponential" -> EXPONENTIAL;
+                case "exponential-small-jitter" -> EXPONENTIAL_SMALL_JITTER;
+                case "full-jitter" -> FULL_JITTER;
+                default -> throw new IllegalArgumentException(
+                        "opicnic.worker.backoff-mode: immediate|exponential|exponential-small-jitter|full-jitter (받은 값: " + s + ")");
+            };
+        }
+    }
+
+    static Duration backoff(int attempt, boolean rateLimited, BackoffMode mode) {
+        if (mode == BackoffMode.IMMEDIATE) return Duration.ZERO;
         long base = rateLimited ? 4000L : 2000L;
         long ceiling = Math.min(MAX_BACKOFF_MS, base << Math.min(attempt - 1, 10));
-        return Duration.ofMillis(ThreadLocalRandom.current().nextLong(ceiling + 1));
+        return switch (mode) {
+            case EXPONENTIAL -> Duration.ofMillis(ceiling);
+            case EXPONENTIAL_SMALL_JITTER -> Duration.ofMillis(ceiling + ThreadLocalRandom.current().nextLong(1001));
+            default -> Duration.ofMillis(ThreadLocalRandom.current().nextLong(ceiling + 1));
+        };
+    }
+
+    static Duration retryAfter(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ExternalCallException x && x.retryAfter() != null) return x.retryAfter();
+        }
+        return null;
     }
 
     static final long MAX_BACKOFF_MS = 60_000L;

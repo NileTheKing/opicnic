@@ -4,7 +4,8 @@
 # - 외부 제공자는 mock(STT 3초, LLM 4.5초). 실제 외부 LLM/STT 호출 없음(키는 더미).
 # - 포트는 VM 루프백만. 실험 DB는 별도 mysql(문제 4개 테이블만 seed/questions.sql로 채움).
 # - R2는 실험 전용 버킷 opicnic-exp(R2 키는 같은 계정 키를 .env에서 받는다).
-# 실행마다 바뀌는 값: WORKER_CONCURRENCY(슬롯), OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO(서킷 끔=2, 켬=0.8)
+# 실행마다 바뀌는 값: WORKER_CONCURRENCY(슬롯), OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO(서킷 끔=2, 켬=0.8),
+#   3단계: OPICNIC_WORKER_BACKOFF_MODE, OPICNIC_OUTBOUND_LIMITER_*, APP_R2_ACCOUNT_ID(비움=메모리 저장소)
 services:
   mysql:
     image: mysql:8.0
@@ -45,7 +46,13 @@ services:
       - DB_PASSWORD=exp-pass
       - GROQ_API_KEY=dummy-not-used
       - GEMINI_API_KEY=dummy-not-used
-      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:?R2_ACCOUNT_ID가 .env에 필요}
+      # 3단계(메모리 저장소)는 APP_R2_ACCOUNT_ID를 빈 값으로 줘서 R2 대신 인메모리로 뜨게 한다
+      - R2_ACCOUNT_ID=${APP_R2_ACCOUNT_ID-${R2_ACCOUNT_ID:?R2_ACCOUNT_ID가 .env에 필요}}
+      - OPICNIC_STORAGE_MEMORY_UPLOAD_BASE=${OPICNIC_STORAGE_MEMORY_UPLOAD_BASE:-}
+      - OPICNIC_WORKER_BACKOFF_MODE=${OPICNIC_WORKER_BACKOFF_MODE:-full-jitter}
+      - OPICNIC_OUTBOUND_LIMITER_MODE=${OPICNIC_OUTBOUND_LIMITER_MODE:-off}
+      - OPICNIC_OUTBOUND_LIMITER_STT_PER_MINUTE=${OPICNIC_OUTBOUND_LIMITER_STT_PER_MINUTE:-5000}
+      - OPICNIC_OUTBOUND_LIMITER_LLM_PER_MINUTE=${OPICNIC_OUTBOUND_LIMITER_LLM_PER_MINUTE:-10000}
       - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID가 .env에 필요}
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY가 .env에 필요}
       - R2_BUCKET=opicnic-exp

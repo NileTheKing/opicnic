@@ -76,9 +76,22 @@ final class ExternalCallMetrics {
                 return new ExternalCallException(Reason.UNAVAILABLE, e.getMessage(), e);
             }
             Integer status = statusOf(c);
-            if (status != null) return new ExternalCallException(reasonOf(status), e.getMessage(), e);
+            if (status != null) return new ExternalCallException(reasonOf(status), e.getMessage(), e, retryAfterOf(c));
         }
         return e;
+    }
+
+    // 429 응답의 Retry-After(초). 없거나 숫자가 아니면 null
+    private static java.time.Duration retryAfterOf(Throwable e) {
+        if (!(e instanceof HttpStatusCodeException http) || http.getStatusCode().value() != 429) return null;
+        var headers = http.getResponseHeaders();
+        String v = headers == null ? null : headers.getFirst("Retry-After");
+        if (v == null) return null;
+        try {
+            return java.time.Duration.ofSeconds(Long.parseLong(v.trim()));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private static Reason reasonOf(int status) {

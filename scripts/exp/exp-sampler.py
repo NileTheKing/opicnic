@@ -10,7 +10,7 @@ out, stop, abort, mysql = sys.argv[1:5]
 interval = float(sys.argv[5]) if len(sys.argv) > 5 else 5.0
 PROM = "http://127.0.0.1:18081/actuator/prometheus"
 WANT = re.compile(r'^(opicnic_worker_queued|opicnic_worker_in_flight|opicnic_worker_circuit_open|opicnic_worker_items_total|'
-                  r'opicnic_retry_total|opicnic_worker_failures_total|opicnic_external_call_seconds_count|'
+                  r'opicnic_retry_total|opicnic_worker_failures_total|opicnic_outbound_limiter_rate|opicnic_external_call_seconds_count|'
                   r'hikaricp_connections_active|hikaricp_connections_pending|hikaricp_connections_max|process_cpu_usage|system_cpu_usage|'
                   r'jvm_gc_pause_seconds_count|jvm_gc_pause_seconds_sum|'
                   r'http_server_requests_seconds_count|http_server_requests_seconds_sum)(\{[^}]*\})? ([0-9.eE+-]+|NaN)$')

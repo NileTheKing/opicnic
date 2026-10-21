@@ -21,6 +21,10 @@ import java.net.URI;
 @Slf4j
 public class StorageConfig {
 
+    // 용량·장애 실험의 메모리 저장소용: 앱 주소를 주면 presign URL이 앱의 dev 업로드 엔드포인트를 가리킨다
+    @Value("${opicnic.storage.memory-upload-base:}")
+    private String memoryUploadBase = "";
+
     // R2_ACCOUNT_ID가 비어 있으면 인메모리로 뜬다 — 키 없는 로컬·CI에서도 앱이 기동되게. 운영은 반드시 R2.
     @Bean
     public AudioStorage audioStorage(@Value("${R2_ACCOUNT_ID:}") String accountId,
@@ -30,7 +34,7 @@ public class StorageConfig {
                                      @Value("${opicnic.storage.read-cache:false}") boolean readCache) {
         if (accountId.isBlank()) {
             log.warn("[Storage] R2_ACCOUNT_ID 없음 — 인메모리 AudioStorage로 기동. 재시작 시 오디오 유실. 운영에서는 안 됨");
-            return new InMemoryAudioStorage();
+            return new InMemoryAudioStorage(memoryUploadBase);
         }
         var credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
         var endpoint = URI.create("https://" + accountId + ".r2.cloudflarestorage.com");

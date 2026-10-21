@@ -101,7 +101,8 @@ HomeController (/practice/mock)
 | `CustomOAuth2UserService` | 카카오 OAuth2 로그인 연동 |
 | `guest/GuestService` · `GuestSampleCopier` · `GuestQuotaService` · `GuestCleanupService` | 게스트 체험(`provider="guest"`). 생성+principal 조립 / 예시 기록 복사(시각 이동, `sample=true`) / 하루 접수 한도(1인·전체, `ScoringJobService`가 호출) / 7일 지난 게스트와 종속 행·R2 오디오 삭제(스케줄). 설정은 `GuestProperties`(`opicnic.guest.*`) |
 | `job/ScoringJobService` | 비동기 접수 — presigned URL 발급 검증(범위·중복·≤4MB·audio/webm), submit(잡+문항 QUEUED 저장, 한도 소비, Caffeine attempt SUBMITTED 전이로 중복 접수 차단). R2 확인·외부 호출 없음 |
-| `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`, 천장 2s부터 2배·상한 60s 안에서 무작위 = full jitter), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
+| `job/ScoringWorker` | DB 폴링 워커. 집기·R2 읽기·STT·채점·저장·마무리. 동시 상한(`opicnic.worker.concurrency`), 백오프(`nextAttemptAt`, 천장 2s부터 2배·상한 60s 안에서 무작위 = full jitter. `opicnic.worker.backoff-mode`로 immediate/exponential/exponential-small-jitter 선택 가능, 기본 full-jitter), 실패율 서킷(`opicnic_worker_circuit_open`), 기동 시 고아 회수 |
+| `OutboundLimiter` | 외부 호출 직전 종류별(STT·LLM) 토큰 받기. `opicnic.outbound.limiter.mode` off(기본)/fixed/aimd/header, Bucket4j. 용량·장애 실험 3단계 사다리용(docs/performance/2026-10-21-capacity-outage). `MockProvider`는 가짜 제공자(종류별 분당 한도·용량 비율·한도 헤더, dev 스위치 `/mock-provider`) |
 | `job/DevTesterMember` | dev 전용 고정 회원. 로그인 없는 dev attempt를 비동기 제출할 때 잡·FeedbackResult의 주인. `FeedbackResult.member` nullable 대신 |
 
 ## 도메인 엔티티
@@ -121,7 +122,7 @@ HomeController (/practice/mock)
 
 ## 오디오 저장소 (`storage/`)
 
-`AudioStorage` 인터페이스 — `R2AudioStorage`(운영, AWS S3 SDK + R2 엔드포인트)와 `InMemoryAudioStorage`(테스트, R2 키 없는 로컬). `config/StorageConfig`가 `R2_ACCOUNT_ID` 유무로 고른다. presigned PUT은 서명에 `Content-Length`·`Content-Type`을 넣어 다른 크기·타입의 업로드를 R2가 403으로 거절하게 한다(`R2AudioStorageLiveTest`로 실제 확인). presign은 네트워크 호출이 아니라 로컬 서명이다.
+`AudioStorage` 인터페이스 — `R2AudioStorage`(운영, AWS S3 SDK + R2 엔드포인트)와 `InMemoryAudioStorage`(테스트, R2 키 없는 로컬. 같은 내용은 해시로 한 번만 보관, dev 프로필에서 `DevAudioUploadController`가 PUT을 대신 받음 — 부하 실험의 메모리 저장소). `config/StorageConfig`가 `R2_ACCOUNT_ID` 유무로 고른다. presigned PUT은 서명에 `Content-Length`·`Content-Type`을 넣어 다른 크기·타입의 업로드를 R2가 403으로 거절하게 한다(`R2AudioStorageLiveTest`로 실제 확인). presign은 네트워크 호출이 아니라 로컬 서명이다.
 
 ## PracticeAttempt / attemptId 설계 배경
 

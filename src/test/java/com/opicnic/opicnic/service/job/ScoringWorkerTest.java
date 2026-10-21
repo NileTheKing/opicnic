@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // 워커의 순수 로직만. 집기·회수·마무리 전이는 ScoringJobRepositoryTest(실제 DB), 전 구간은 scripts/s1-async.sh로 검증한다.
 class ScoringWorkerTest {
@@ -102,5 +103,51 @@ class ScoringWorkerTest {
         assertThat(circuit.isOpen()).isTrue();
         Thread.sleep(150);
         assertThat(circuit.isOpen()).isFalse();
+    }
+
+    @Test
+    @DisplayName("백오프 방식: 기본(2인자)은 full-jitter, 설정 이름 파싱, 기본 이름은 full-jitter")
+    void backoffModeDefaultsToFullJitter() {
+        assertThat(ScoringWorker.BackoffMode.parse(null)).isEqualTo(ScoringWorker.BackoffMode.FULL_JITTER);
+        assertThat(ScoringWorker.BackoffMode.parse("full-jitter")).isEqualTo(ScoringWorker.BackoffMode.FULL_JITTER);
+        assertThat(ScoringWorker.BackoffMode.parse("immediate")).isEqualTo(ScoringWorker.BackoffMode.IMMEDIATE);
+        assertThat(ScoringWorker.BackoffMode.parse("exponential")).isEqualTo(ScoringWorker.BackoffMode.EXPONENTIAL);
+        assertThat(ScoringWorker.BackoffMode.parse("exponential-small-jitter")).isEqualTo(ScoringWorker.BackoffMode.EXPONENTIAL_SMALL_JITTER);
+        assertThatThrownBy(() -> ScoringWorker.BackoffMode.parse("nope")).isInstanceOf(IllegalArgumentException.class);
+        // 3인자 FULL_JITTER는 기존 2인자와 같은 분포(천장 안 무작위)
+        for (int i = 0; i < 200; i++) {
+            assertThat(ScoringWorker.backoff(3, false, ScoringWorker.BackoffMode.FULL_JITTER).toMillis()).isBetween(0L, 8000L);
+        }
+    }
+
+    @Test
+    @DisplayName("백오프 방식: immediate는 0, exponential은 무작위 없이 천장 그대로(2s·4s…상한 60s, 429는 4s부터)")
+    void immediateAndExponentialAreDeterministic() {
+        assertThat(ScoringWorker.backoff(5, false, ScoringWorker.BackoffMode.IMMEDIATE)).isEqualTo(Duration.ZERO);
+        assertThat(ScoringWorker.backoff(1, false, ScoringWorker.BackoffMode.EXPONENTIAL)).isEqualTo(Duration.ofSeconds(2));
+        assertThat(ScoringWorker.backoff(3, false, ScoringWorker.BackoffMode.EXPONENTIAL)).isEqualTo(Duration.ofSeconds(8));
+        assertThat(ScoringWorker.backoff(1, true, ScoringWorker.BackoffMode.EXPONENTIAL)).isEqualTo(Duration.ofSeconds(4));
+        assertThat(ScoringWorker.backoff(40, true, ScoringWorker.BackoffMode.EXPONENTIAL)).isEqualTo(Duration.ofSeconds(60));
+    }
+
+    @Test
+    @DisplayName("백오프 방식: exponential-small-jitter는 천장 + 0~1초")
+    void smallJitterAddsUnderOneSecond() {
+        long min = Long.MAX_VALUE, max = 0;
+        for (int i = 0; i < 500; i++) {
+            long ms = ScoringWorker.backoff(2, false, ScoringWorker.BackoffMode.EXPONENTIAL_SMALL_JITTER).toMillis();
+            assertThat(ms).isBetween(4000L, 5000L);
+            min = Math.min(min, ms);
+            max = Math.max(max, ms);
+        }
+        assertThat(max - min).isGreaterThan(500L);
+    }
+
+    @Test
+    @DisplayName("Retry-After: 원인 체인에서 429 예외의 값을 찾는다")
+    void retryAfterFromCauseChain() {
+        var withHint = new ExternalCallException(Reason.RATE_LIMITED, "429", null, Duration.ofSeconds(7));
+        assertThat(ScoringWorker.retryAfter(new RuntimeException("wrap", withHint))).isEqualTo(Duration.ofSeconds(7));
+        assertThat(ScoringWorker.retryAfter(failure(Reason.RATE_LIMITED))).isNull();
     }
 }

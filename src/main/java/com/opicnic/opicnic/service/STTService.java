@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opicnic.opicnic.exception.InvalidModelOutputException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -43,6 +44,9 @@ public class STTService {
     private volatile double mock429Rate;
     private volatile double mock5xxRate;
     private volatile double mockTimeoutRate;
+    // 외부 호출 직전에 토큰을 받는 속도 제한기. 기본 꺼짐(주입이 없으면 꺼진 것)
+    @Autowired(required = false)
+    private OutboundLimiter limiter = OutboundLimiter.off();
 
     // mock 경로(enabled=false)에서만 의미 있다. 운영(enabled=true)에선 이 값을 읽지 않는다
     public void setMockFailureRates(double rate429, double rate5xx, double rateTimeout) {
@@ -76,12 +80,12 @@ public class STTService {
 
     public String sendStreamToStt(byte[] audioBytes, String filename) {
         // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
-        return ExternalCallMetrics.record(meterRegistry, "stt", () -> callStt(audioBytes, filename));
+        return limiter.call(ProviderKind.STT, () -> ExternalCallMetrics.record(meterRegistry, "stt", () -> callStt(audioBytes, filename)));
     }
 
     private String callStt(byte[] audioBytes, String filename) {
         if (!enabled) {
-            MockProvider.admit();
+            MockProvider.admit(ProviderKind.STT);
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }

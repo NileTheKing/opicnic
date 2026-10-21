@@ -13,10 +13,20 @@ public class ExternalCallException extends RuntimeException {
     }
 
     private final Reason reason;
+    private final java.time.Duration retryAfter;   // 429 응답의 Retry-After. 없으면 null
 
     public ExternalCallException(Reason reason, String message, Throwable cause) {
+        this(reason, message, cause, null);
+    }
+
+    public ExternalCallException(Reason reason, String message, Throwable cause, java.time.Duration retryAfter) {
         super(message, cause);
         this.reason = reason;
+        this.retryAfter = retryAfter;
+    }
+
+    public java.time.Duration retryAfter() {
+        return retryAfter;
     }
 
     public Reason reason() {

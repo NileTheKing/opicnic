@@ -12,6 +12,15 @@ if stage == '1':
               f"{f(q['avg'])}/{f(q['max'],0)}/{f(q['end'],0)} | {f(q['first60_avg'])}→{f(q['last60_avg'])} | {f(r['in_flight']['avg'],0)}/{f(r['in_flight']['max'],0)} | "
               f"{f(j['p50'])}/{f(j['p95'])}/{f(j['max'])} | {f(r['jobs_C']['p95'])} | {f(r['jobs_T']['p95'])} | {f(r['jobs_M']['p95'])} | {j['unfinished']} | "
               f"{f(r['heap_mb']['max'],0)} | {f(r['hikari_active']['max'],0)}/{f(r['hikari_pending']['max'],0)} | {f((r['proc_cpu'] or {}).get('avg'),2)} | {r['app_log']['ERROR_lines']} |")
+elif stage == '3':
+    print('| 회차 | 429 (감소 중/회복 후) | 헛호출 합(5xx·타임아웃·429) | 성공 호출 | 재시도 수(감소/회복) | 대기 줄 최대 (감소 후 초) | 정상 복귀(회복 후 s) | 접수→완료 p95 (전체/감소 중 접수) | 서버 접수 p95(ms) | 접수 202/전체 | 힙 최대(MB) | 호스트 여유 메모리 최소(MB) | 앱 ERROR 로그 (교착) | 운영 ERROR |')
+    print('|' + '---|' * 14)
+    for r in runs:
+        o = r['stage3']; k = r['k6']
+        ret = o['return_to_normal_s'] if o['returned'] else '미도달(' + str(r['outage']['drain_s']) + 's)'
+        print(f"| {r['run']} | {o['r429_total']} ({o['r429_cut']}/{o['r429_recovery']}) | {o['waste_total']} | {o['ok_total']} | {r['retries_outage']}/{r['retries_recovery']} | "
+              f"{f(o['queue_peak'],0)} ({o['queue_peak_at_s_from_cut']}) | {ret} | {f(r['jobs_all']['p95'])}/{f(r['jobs_created_during_cut']['p95'])} | {f(r['server_submit']['p95_ms'])} | "
+              f"{k['sub202']}/{k['iter']} | {f(o['heap_mb_max_all'],0)} | {f(o['host_mem_avail_min_all_mb'],0)} | {r['app_log']['ERROR_lines']} ({r['app_log']['deadlock_lines']}) | {r['marks'].get('PROD_ERROR_LINES')} |")
 else:
     print('| 회차 | 서킷 | 장애 중 헛호출(5xx+타임아웃) | 장애 중 성공 | 재시도 수(장애/복구) | 복구 후 헛호출 | 큐 최대 | 복구 시 큐 | 복구 후 대기 줄 0까지(s) | 복구 후 처리(문항/s) | 백오프 대기 몫(평균) | 백오프 대기 0까지(s) | 서킷 열림 표본(5s) | 접수 서버 p95(ms) | 접수 202/전체 | 접수→완료 p95(s) | 미완료 | ERROR 로그 |')
     print('|' + '---|' * 18)

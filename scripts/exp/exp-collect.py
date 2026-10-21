@@ -91,7 +91,7 @@ def dbt(n):
     s = marks[f'DBNOW_{n}'].replace('_', ' ')
     return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f' if '.' in s else '%Y-%m-%d %H:%M:%S')
 
-R = {'run': marks['RUN'], 'stage': stage, 'slots': int(marks['SLOTS']), 'circuit': marks['CIRCUIT']}
+R = {'run': marks['RUN'], 'stage': stage, 'slots': int(marks['SLOTS']), 'circuit': marks['CIRCUIT'], 'ladder': marks.get('LADDER'), 'storage': marks.get('STORAGE')}
 
 # ---- k6
 try:
@@ -154,7 +154,8 @@ if os.path.exists(f'{D}/jobs.tsv'):
         c, f = pdt(p[3]), pdt(p[4])
         if c is None or not (ja <= c <= jb): continue
         cls = 'M' if p[1] == 'MOCK_EXAM' else ('T' if int(p[5]) == 1 else 'C')
-        jobs.append({'cls': cls, 'status': p[2], 'dur': (f - c).total_seconds() if f else None, 'n': int(p[5])})
+        jobs.append({'cls': cls, 'status': p[2], 'dur': (f - c).total_seconds() if f else None, 'n': int(p[5]),
+                     'c_epoch': E('A') + (c - ja).total_seconds()})
 def jstat(js):
     d = [j['dur'] for j in js if j['dur'] is not None and j['status'] in ('COMPLETED', 'COMPLETED_WITH_FAILURES', 'FAILED')]
     return {'jobs': len(js), 'finished': len(d), 'unfinished': len(js) - len(d),
@@ -164,8 +165,8 @@ def jstat(js):
 R['jobs_all'] = jstat(jobs)
 for c in 'CTM': R[f'jobs_{c}'] = jstat([j for j in jobs if j['cls'] == c])
 
-# ---- 2단계 전용
-if stage == 2:
+# ---- 2단계, 3단계 공통(장애/용량 감소 -> 복구)
+if stage in (2, 3):
     Td, Tu = float(marks['T_DOWN']), float(marks['T_UP']); Tdr = float(marks['T_DRAIN']); Te = float(marks['T_END'])
     R['outage'] = {'down_s': round(Tu - Td), 'drain_s': round(Tdr - Tu), 'drained': marks.get('DRAINED'),
                    'queue_at_up': marks.get('Q_AT_UP'), 'backoff_at_up(count,max_remaining_s)': marks.get('BACKOFF_AT_UP')}
@@ -191,6 +192,31 @@ if stage == 2:
     sl = R['slots']; inf = [(ts - Tu, v) for ts, v in S.get('opicnic_worker_in_flight', []) if Tu <= ts <= Tdr]
     R['in_flight_after_up'] = {'avg': round(st.mean([v for _, v in inf]), 1) if inf else None,
                                'first_time_ge_90pct_slots_s': next((round(s) for s, v in inf if v >= 0.9 * sl), None)}
+
+if stage == 3:
+    R['jobs_created_during_cut'] = jstat([j for j in jobs if Td <= j['c_epoch'] < Tu])
+    R['jobs_created_after_up'] = jstat([j for j in jobs if j['c_epoch'] >= Tu])
+    th = float(marks['NORMAL_Q_THRESH'])
+    ser = [(ts, v) for ts, v in S.get('opicnic_worker_queued', []) if ts >= Tu]
+    ret = None
+    for i in range(len(ser) - 2):
+        if all(v <= th for _, v in ser[i:i + 3]): ret = round(ser[i][0] - Tu); break
+    pre = win('opicnic_worker_queued', Td - 30, Td)
+    peak_t = max(((v, ts) for ts, v in S.get('opicnic_worker_queued', []) if Td <= ts <= Tdr), default=None)
+    ext_all = ext_delta(Td, Tdr)
+    R['stage3'] = {'normal_q_threshold': th, 'base_q': marks.get('BASE_Q'), 'base_q_measured_avg': round(st.mean(pre), 1) if pre else None,
+                   'return_to_normal_s': ret, 'returned': ret is not None,
+                   'queue_peak': peak_t[0] if peak_t else None, 'queue_peak_at_s_from_cut': round(peak_t[1] - Td) if peak_t else None,
+                   'calls_cut_to_normal': ext_all,
+                   'r429_cut': sum(v for k, v in R['external_calls_outage'].items() if k.endswith('/429')),
+                   'r429_recovery': sum(v for k, v in R['external_calls_recovery'].items() if k.endswith('/429')),
+                   'r429_total': sum(v for k, v in ext_all.items() if k.endswith('/429')),
+                   'waste_total': sum(v for k, v in ext_all.items() if not k.endswith('/ok')),
+                   'ok_total': sum(v for k, v in ext_all.items() if k.endswith('/ok')),
+                   'limiter_rate_min': {k.split('"')[1]: min(v for ts, v in S[k] if Td <= ts <= Tdr)
+                                        for k in S if k.startswith('opicnic_outbound_limiter_rate') and any(Td <= ts <= Tdr for ts, _ in S[k])},
+                   'heap_mb_max_all': max([v for _, v in S.get('heap_used_mb', [])] or [None]),
+                   'host_mem_avail_min_all_mb': min([v for _, v in S.get('host_mem_avail_mb', [])] or [None])}
 
 import gzip
 try:

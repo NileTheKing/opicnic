@@ -16,6 +16,7 @@ const RATE = Number(__ENV.RATE || 6.7);
 const ORDER = 'CTCCTCMCTC';
 const TOPICS = (__ENV.TOPICS || 'MOVIE_WATCHING').split(',');
 const TYPE_PAIRS = (__ENV.TYPE_PAIRS || 'MOVIE_WATCHING:TYPE_1').split(',').map((s) => s.split(':'));
+const PUT_AUTH = __ENV.PUT_AUTH === '1';   // 메모리 저장소: PUT이 앱으로 오므로 쿠키·CSRF가 필요하다(R2에는 보내지 않는다)
 const JSON_H = { 'Content-Type': 'application/json' };
 
 export const options = {
@@ -80,7 +81,10 @@ export default function () {
 
   // 브라우저처럼 병렬 PUT. 하나라도 실패하면 접수하지 않는다.
   const tPut = Date.now();
-  const puts = http.batch(urls.map((u) => ['PUT', u, AUDIO, { headers: { 'Content-Type': 'audio/webm' }, timeout: '120s' }]));
+  const putParams = PUT_AUTH
+    ? { jar, headers: { 'Content-Type': 'audio/webm', ...hdr }, timeout: '120s' }
+    : { headers: { 'Content-Type': 'audio/webm' }, timeout: '120s' };
+  const puts = http.batch(urls.map((u) => ['PUT', u, AUDIO, putParams]));
   M[`put_ms_${ph}`].add(Date.now() - tPut);
   if (puts.some((r) => r.status !== 200)) { M[`fail_put_${ph}`].add(1); return; }
 
