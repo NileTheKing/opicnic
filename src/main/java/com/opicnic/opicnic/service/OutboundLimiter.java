@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 //          한 번 줄인 뒤 1초 안에 오는 429(이미 나간 호출의 것)는 또 줄이지 않는다.
 //   header 응답 헤더(남은 수 / 리셋까지 초)로 속도를 맞춘다: 속도 = 남은 수 / 리셋까지 시간. 429면 Retry-After 동안 모두 멈춘다.
 //
-// 토큰이 없으면 가상 스레드에서 기다린다. 30초를 넘기면 일시적 실패(UNAVAILABLE)로 던져 워커가 백오프로 다시 집게 한다.
+// 토큰이 없으면 가상 스레드에서 기다린다. 30초를 넘기면 일시적 실패(LOCAL_LIMIT)로 던져 워커가 백오프로 다시 집게 한다(제공자 문제가 아니므로 워커 서킷에는 세지 않는다).
 // 토큰 버킷은 Bucket4j. 버스트는 1초분(한도/60).
 @Component
 @Slf4j
@@ -177,12 +177,12 @@ public class OutboundLimiter {
                 if (left <= 0 || !bucket.asBlocking().tryConsume(1, Duration.ofNanos(left))) throw timeout();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new ExternalCallException(Reason.UNAVAILABLE, "속도 제한기 대기 중 인터럽트", e);
+                throw new ExternalCallException(Reason.LOCAL_LIMIT, "속도 제한기 대기 중 인터럽트", e);
             }
         }
 
         private static ExternalCallException timeout() {
-            return new ExternalCallException(Reason.UNAVAILABLE, "속도 제한기 대기 " + MAX_WAIT.toSeconds() + "초 초과", null);
+            return new ExternalCallException(Reason.LOCAL_LIMIT, "속도 제한기 대기 " + MAX_WAIT.toSeconds() + "초 초과", null);
         }
 
         void setRate(long perMinute) {

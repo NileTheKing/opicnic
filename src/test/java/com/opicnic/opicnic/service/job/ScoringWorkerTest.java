@@ -144,6 +144,14 @@ class ScoringWorkerTest {
     }
 
     @Test
+    @DisplayName("우리 속도 제한기의 대기 초과(LOCAL_LIMIT)는 일시적 실패지만 제공자 장애로 세지 않는다")
+    void localLimitIsTransientButNotProviderFault() {
+        assertThat(ScoringWorker.classify(failure(Reason.LOCAL_LIMIT))).isEqualTo(FailureKind.TRANSIENT);
+        assertThat(ScoringWorker.isLocalLimit(new RuntimeException("wrap", failure(Reason.LOCAL_LIMIT)))).isTrue();
+        assertThat(ScoringWorker.isLocalLimit(failure(Reason.UNAVAILABLE))).isFalse();
+    }
+
+    @Test
     @DisplayName("Retry-After: 원인 체인에서 429 예외의 값을 찾는다")
     void retryAfterFromCauseChain() {
         var withHint = new ExternalCallException(Reason.RATE_LIMITED, "429", null, Duration.ofSeconds(7));

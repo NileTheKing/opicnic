@@ -9,7 +9,8 @@ public class ExternalCallException extends RuntimeException {
         RATE_LIMITED,   // 429
         UNAVAILABLE,    // 5xx·타임아웃
         BAD_REQUEST,    // 400·413·415·422 — 보낸 요청(녹음 파일·입력) 자체를 거절
-        PROVIDER_ERROR  // 그 밖의 4xx(401·403·404 등) — 키·모델·설정 문제
+        PROVIDER_ERROR, // 그 밖의 4xx(401·403·404 등) — 키·모델·설정 문제
+        LOCAL_LIMIT     // 우리 쪽 속도 제한기가 토큰을 못 줘서 호출하지 못함(제공자 문제가 아님. 일시적 실패로 다시 집힌다)
     }
 
     private final Reason reason;

@@ -224,7 +224,8 @@ public class ScoringWorker {
                 return item.getStatus();
             });
             // 녹음 파일 문제는 제공자 상태와 무관하다 — 서킷(제공자 장애 감지)에 섞지 않는다
-            if (kind != FailureKind.PERMANENT) circuit.record(false);
+            // 우리 속도 제한기가 못 기다려 준 것(LOCAL_LIMIT)도 제공자 장애가 아니므로 서킷에 섞지 않는다
+            if (kind != FailureKind.PERMANENT && !isLocalLimit(e)) circuit.record(false);
             String outcome = after == ScoringJobItemStatus.FAILED ? "failed" : "retry";
             meterRegistry.counter("opicnic.worker.items", "outcome", outcome).increment();
             meterRegistry.counter("opicnic.worker.failures", "kind", kind.name().toLowerCase()).increment();
@@ -286,6 +287,13 @@ public class ScoringWorker {
             case EXPONENTIAL_SMALL_JITTER -> Duration.ofMillis(ceiling + ThreadLocalRandom.current().nextLong(1001));
             default -> Duration.ofMillis(ThreadLocalRandom.current().nextLong(ceiling + 1));
         };
+    }
+
+    static boolean isLocalLimit(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ExternalCallException x && x.reason() == Reason.LOCAL_LIMIT) return true;
+        }
+        return false;
     }
 
     static Duration retryAfter(Throwable e) {
