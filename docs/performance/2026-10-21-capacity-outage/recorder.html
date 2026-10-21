@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>실험용 녹음기</title>
+<style>
+  :root { --bg: #fafaf9; --fg: #1c1917; --muted: #78716c; --accent: #dc2626; --card: #ffffff; --line: #e7e5e4; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c1917; --fg: #f5f5f4; --muted: #a8a29e; --card: #292524; --line: #44403c; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .q { font-weight: 600; }
+  .script { white-space: pre-line; color: var(--fg); }
+  .timer { font-size: 40px; font-variant-numeric: tabular-nums; margin: 8px 0; }
+  button { font-size: 16px; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; margin-right: 8px; }
+  button.rec { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:disabled { opacity: .4; cursor: default; }
+  .muted { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>실험용 녹음기</h1>
+  <p class="muted">앱(practice/question.html)과 같은 설정으로 녹음해요: MediaRecorder, audio/webm;codecs=opus, 최대 2분. 끝나면 .webm 파일로 저장돼요.</p>
+
+  <div class="card">
+    <div class="q">Tell me about a park you often go to. What does it look like, and what do you usually do there?</div>
+    <p class="script">Okay, so there's a park near my apartment that I go to almost every weekend. It's called Riverside Park, and it's right next to the Han River, so the view is really nice, especially in the evening.
+
+When you walk in, the first thing you see is this long walking path with cherry trees on both sides. In spring, the trees are full of pink flowers, and honestly, it looks like a scene from a movie. There's also a big grass field in the middle, a small playground for kids, and a few food trucks near the entrance.
+
+Usually, I go there on Saturday mornings. I start with a short run along the river, maybe thirty minutes or so. After that, I grab a coffee from one of the food trucks and just sit on a bench for a while. Sometimes I read a book, and sometimes I just watch people walking their dogs.
+
+The reason I love this park is that it helps me relax. During the week, I'm always busy with school and work, so this is my time to slow down and clear my head. Whenever I feel stressed, I just go there, and I feel much better.</p>
+  </div>
+
+  <div class="card">
+    <div class="timer" id="timer">0:00</div>
+    <button id="start" class="rec">녹음 시작</button>
+    <button id="stop" disabled>정지</button>
+    <button id="save" disabled>파일 저장</button>
+    <p class="muted" id="status">대기 중</p>
+    <audio id="player" controls style="width:100%; display:none"></audio>
+  </div>
+</main>
+<script>
+  const MAX_RECORDING_SECONDS = 120;
+  let recorder, chunks = [], blob, startedAt, tick;
+  const $ = id => document.getElementById(id);
+
+  function fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+  $('start').onclick = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      chunks = [];
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        blob = new Blob(chunks, { type: 'audio/webm' });
+        const secs = Math.round((Date.now() - startedAt) / 1000);
+        const kbps = Math.round(blob.size * 8 / secs / 1000);
+        $('status').textContent = `녹음 끝: ${fmt(secs)}, ${(blob.size / 1024).toFixed(0)}KB, 약 ${kbps}kbps`;
+        $('player').src = URL.createObjectURL(blob);
+        $('player').style.display = 'block';
+        $('save').disabled = false;
+      };
+      recorder.start();
+      startedAt = Date.now();
+      $('start').disabled = true; $('stop').disabled = false; $('save').disabled = true;
+      $('status').textContent = '녹음 중...';
+      tick = setInterval(() => {
+        const s = Math.floor((Date.now() - startedAt) / 1000);
+        $('timer').textContent = fmt(Math.min(s, MAX_RECORDING_SECONDS));
+        if (s >= MAX_RECORDING_SECONDS) $('stop').click();
+      }, 250);
+    } catch (err) {
+      $('status').textContent = '마이크 접근 오류: ' + err.message;
+    }
+  };
+
+  $('stop').onclick = () => {
+    clearInterval(tick);
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    $('start').disabled = false; $('stop').disabled = true;
+  };
+
+  $('save').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'exp_recording.webm';
+    a.click();
+  };
+</script>
+</body>
+</html>

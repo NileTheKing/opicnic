@@ -48,7 +48,8 @@ class DevPracticeControllerStartMockTest {
         when(attemptService.createAttempt(any(), any(), any(), any(), any())).thenReturn(attempt);
 
         DevPracticeController controller = new DevPracticeController(attemptService, feedbackService, mockExamService,
-                Mockito.mock(STTService.class), Mockito.mock(LlmService.class));
+                Mockito.mock(STTService.class), Mockito.mock(LlmService.class),
+                Mockito.mock(com.opicnic.opicnic.service.QuestionAssemblyService.class));
 
         ResponseEntity<?> response = controller.startMockAttempt();
 

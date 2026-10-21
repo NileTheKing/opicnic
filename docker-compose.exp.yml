@@ -1,0 +1,62 @@
+# 용량·장애 실험 전용 (docs/performance/2026-10-21-capacity-outage/README.md).
+# 운영 compose와 완전히 분리된 프로젝트: docker compose -p opicnic-exp -f docker-compose.exp.yml ...
+# - 운영 컨테이너/네트워크/볼륨을 건드리지 않는다(프로젝트 이름이 다르므로 이름이 겹치지 않음).
+# - 외부 제공자는 mock(STT 3초, LLM 4.5초). 실제 외부 LLM/STT 호출 없음(키는 더미).
+# - 포트는 VM 루프백만. 실험 DB는 별도 mysql(문제 4개 테이블만 seed/questions.sql로 채움).
+# - R2는 실험 전용 버킷 opicnic-exp(R2 키는 같은 계정 키를 .env에서 받는다).
+# 실행마다 바뀌는 값: WORKER_CONCURRENCY(슬롯), OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO(서킷 끔=2, 켬=0.8)
+services:
+  mysql:
+    image: mysql:8.0
+    command: ["--default-time-zone=+09:00"]
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: exp-root-pass
+      MYSQL_DATABASE: opicnic
+      MYSQL_USER: exp
+      MYSQL_PASSWORD: exp-pass
+    volumes:
+      - ./seed/questions.sql:/docker-entrypoint-initdb.d/questions.sql:ro
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pexp-root-pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    mem_limit: 4g
+    ports:
+      - "127.0.0.1:18081:8080"
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms3g -Xmx3g
+      - SPRING_PROFILES_ACTIVE=dev
+      - LLM_PROVIDER=gemini
+      - STT_ENABLED=false
+      - LLM_ENABLED=false
+      - STT_MOCK_DELAY_MS=3000
+      - LLM_MOCK_DELAY_MS=4500
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/opicnic?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      - SPRING_JPA_SHOW_SQL=false
+      - DB_USERNAME=exp
+      - DB_PASSWORD=exp-pass
+      - GROQ_API_KEY=dummy-not-used
+      - GEMINI_API_KEY=dummy-not-used
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:?R2_ACCOUNT_ID가 .env에 필요}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID가 .env에 필요}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY가 .env에 필요}
+      - R2_BUCKET=opicnic-exp
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-60}
+      - OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO=${OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO:-0.8}
+      - GUEST_ENABLED=false
+    depends_on:
+      mysql:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "200m"
+        max-file: "3"

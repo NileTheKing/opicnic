@@ -1,0 +1,162 @@
+{
+ "run": "s1-slots60-r2",
+ "stage": 1,
+ "slots": 60,
+ "circuit": "on",
+ "k6": {
+  "iter": 2011,
+  "sub202": 2011,
+  "sub_other": 0,
+  "fail": {
+   "csrf": 0,
+   "start": 0,
+   "urls": 0,
+   "put": 0
+  },
+  "questions": 7015,
+  "kinds": {
+   "C": 1207,
+   "T": 603,
+   "M": 201
+  },
+  "submit_ms": {
+   "avg": 14.521356734957726,
+   "med": 12.964047,
+   "p(95)": 23.354436999999997,
+   "p(99)": 31.10446959999999,
+   "max": 50.911182
+  },
+  "put_ms": {
+   "avg": 286.00099453008454,
+   "p(95)": 463.99999999999983,
+   "max": 1352
+  },
+  "dropped_total": 0,
+  "vus_max": 150
+ },
+ "window_s": 299,
+ "server_submit": {
+  "count": 2004,
+  "avg_ms": 14.0,
+  "p95_ms": 23.0,
+  "p99_ms": 31.3,
+  "non202": 0
+ },
+ "items_done": 2150,
+ "items_per_s": 7.19,
+ "queue": {
+  "avg": 3407.3,
+  "max": 5803.0,
+  "end": 5803.0,
+  "first60_avg": 1456.3,
+  "last60_avg": 5355.3
+ },
+ "in_flight": {
+  "avg": 55.07,
+  "max": 60.0,
+  "min": 41.0
+ },
+ "heap_mb": {
+  "avg": 1982.07,
+  "max": 3040.0,
+  "min": 681.0
+ },
+ "hikari_active": {
+  "avg": 0.38,
+  "max": 4.0,
+  "min": 0.0
+ },
+ "hikari_pending": {
+  "avg": 0.0,
+  "max": 0.0,
+  "min": 0.0
+ },
+ "proc_cpu": {
+  "avg": 0.08,
+  "max": 0.21031746031746032,
+  "min": 0.05202913631633715
+ },
+ "host_cpu": {
+  "avg": 19.91,
+  "max": 43.1,
+  "min": 14.7
+ },
+ "host_mem_avail_min_mb": 6127.0,
+ "circuit_open_max": 0.0,
+ "external_calls_window": {
+  "score/ok": 2089,
+  "stt/ok": 2143,
+  "tag/ok": 2089
+ },
+ "jobs_all": {
+  "jobs": 2004,
+  "finished": 508,
+  "unfinished": 1496,
+  "p50": 231.3,
+  "p95": 308.4,
+  "max": 316.3,
+  "avg": 231.4,
+  "statuses": {
+   "COMPLETED": 508,
+   "PROCESSING": 20,
+   "QUEUED": 1476
+  }
+ },
+ "jobs_C": {
+  "jobs": 1203,
+  "finished": 306,
+  "unfinished": 897,
+  "p50": 231.1,
+  "p95": 308.5,
+  "max": 316.3,
+  "avg": 231.4,
+  "statuses": {
+   "COMPLETED": 306,
+   "PROCESSING": 12,
+   "QUEUED": 885
+  }
+ },
+ "jobs_T": {
+  "jobs": 601,
+  "finished": 152,
+  "unfinished": 449,
+  "p50": 232.3,
+  "p95": 308.3,
+  "max": 315.9,
+  "avg": 231.3,
+  "statuses": {
+   "COMPLETED": 152,
+   "PROCESSING": 6,
+   "QUEUED": 443
+  }
+ },
+ "jobs_M": {
+  "jobs": 200,
+  "finished": 50,
+  "unfinished": 150,
+  "p50": 231.6,
+  "p95": 307.1,
+  "max": 314.8,
+  "avg": 232.0,
+  "statuses": {
+   "COMPLETED": 50,
+   "PROCESSING": 2,
+   "QUEUED": 148
+  }
+ },
+ "app_log": {
+  "ERROR_lines": 0,
+  "deadlock_lines": 0,
+  "WARN_lines": 2
+ },
+ "marks": {
+  "MEM_PRE_MB": "10494",
+  "MEM_POST_MB": "6930",
+  "CPU_PRE_MEAN": "2.6",
+  "CPU_PRE_MAX": "3.7",
+  "PROD_ERROR_LINES": "0",
+  "LEFT_QUEUED": "5187",
+  "LEFT_INFLIGHT": "49",
+  "RESULT": "ok"
+ }
+}

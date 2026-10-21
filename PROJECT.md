@@ -77,7 +77,7 @@ HomeController (/practice/mock)
 | `AdminController` | `/admin` | View | 질문 세트 관리 화면(뷰만, CRUD는 아래 API) |
 | `AdminQuestionSetApiController` | `/api/admin/question-sets` | **REST API** | 질문 세트 생성/수정/삭제. `/api/admin/**`은 인증 필요(`SecurityConfig`에서 `/api/**` permitAll 예외 처리됨) |
 | `EnumController` | `/api/enums` | **REST API** | 지역/주제/난이도 enum 목록 |
-| `DevPracticeController` | `/api/practice-attempts/csrf`, `/start`, `/start-mock` | **REST API, dev 전용** | 로그인 없이 attempt 생성 — k6·수동 측정용. `@Profile("dev")` |
+| `DevPracticeController` | `/api/practice-attempts/csrf`, `/start`, `/start-type`, `/start-mock` | **REST API, dev 전용** | 로그인 없이 attempt 생성 — k6·수동 측정용. `@Profile("dev")` |
 | `DevPracticeViewController` | `/dev/practice/mock` | **View, dev 전용** | 로그인 없이 모의고사 화면(question.html, asyncScoring=true) — 브라우저에서 비동기 제출 흐름 확인용 |
 | `ScoringJobViewController` | `/practice/result/{jobId}` | View | 비동기 채점 결과(모의고사·콤보). 처리 중이면 `progress.html`(2초 폴링, 끝나면 새로고침), 끝났으면 DB `FeedbackResult`를 `FeedbackDTO.from()`으로 바꿔 기존 `feedback.html`에. 세션 무관 — 탭 닫았다 와도, 재시작돼도 같은 URL |
 | `ScoringJobApiController` | `/api/practice-attempts/{id}/upload-urls`, `/api/scoring-jobs` | **REST API** | 비동기 채점(ADR-0001, 1단계 모의고사만). URL 발급(녹음 후, 크기가 서명에 박힘) → `POST /api/scoring-jobs {attemptId}` = 접수(잡 생성, **202 + Location**, DB만 씀, 멱등) → `GET /api/scoring-jobs/{id}` 폴링. 제출 전 리소스는 practice-attempts(Caffeine), 제출 후는 scoring-jobs(DB) |

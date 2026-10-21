@@ -2,12 +2,15 @@ package com.opicnic.opicnic.controller;
 
 import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.enums.PracticeMode;
+import com.opicnic.opicnic.domain.enums.QuestionType;
+import com.opicnic.opicnic.domain.enums.SurveyTopic;
 import com.opicnic.opicnic.domain.enums.SurveyDifficulty;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.service.FeedbackService;
 import com.opicnic.opicnic.service.LlmService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.MockProvider;
+import com.opicnic.opicnic.service.QuestionAssemblyService;
 import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class DevPracticeController {
     private final MockExamService mockExamService;
     private final STTService sttService;
     private final LlmService llmService;
+    private final QuestionAssemblyService questionAssemblyService;
 
     // 측정 스크립트는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/api/scoring-jobs 등)는 CSRF를 그대로
     // 강제해야 하므로(SEC-06), 여기서 토큰을 미리 발급받아 이후 POST에 실어 보내게 한다.
@@ -82,6 +86,22 @@ public class DevPracticeController {
                 "attemptId", attempt.attemptId(),
                 "questionIndexes", indexes,
                 "questionCount", combo.questions().size()
+        ));
+    }
+
+    // 유형 연습(1문항) 측정용. 실제 흐름(PracticeTypeController /practice/type)은 로그인한 회원의 관심 주제 중
+    // 하나를 고르지만, dev 부하테스트엔 회원이 없으므로 주제를 파라미터로 받는다. 이후 경로는 동일(memberId=null).
+    @PostMapping("/start-type")
+    public ResponseEntity<?> startTypeAttempt(@RequestParam String topic,
+                                              @RequestParam String type) {
+        QuestionDto question = questionAssemblyService.assembleSingle(
+                SurveyTopic.valueOf(topic), QuestionType.valueOf(type));
+        var attempt = attemptService.createAttempt(
+                List.of(question), null, PracticeMode.COMBO, null, null);
+        return ResponseEntity.ok(Map.of(
+                "attemptId", attempt.attemptId(),
+                "questionIndexes", List.of(0),
+                "questionCount", 1
         ));
     }
 
