@@ -74,3 +74,6 @@ scripts/*.webm
 .claude/launch.json
 
 __pycache__/
+
+# Cloudflare wrangler 로컬 캐시(계정 ID 등)
+.wrangler/
