@@ -201,11 +201,20 @@ if stage == 3:
     ret = None
     for i in range(len(ser) - 2):
         if all(v <= th for _, v in ser[i:i + 3]): ret = round(ser[i][0] - Tu); break
+    if ret is not None and ret > (Tdr - Tu) + 10: ret = None   # 관찰 상한 뒤(k6 중단 후 유입 없음)의 값은 정상 복귀로 안 친다
     pre = win('opicnic_worker_queued', Td - 30, Td)
+    # 외삽: 회복(Tu) 후 120~300초 대기 줄을 직선으로 맞춰 0까지 걸리는 시간. est = 300 + q(300) / (-기울기)
+    pts = [(ts - Tu, v) for ts, v in S.get('opicnic_worker_queued', []) if 120 <= ts - Tu <= 300]
+    est = None; slope = None
+    if len(pts) >= 10:
+        mx = st.mean(x for x, _ in pts); my = st.mean(y for _, y in pts)
+        slope = sum((x - mx) * (y - my) for x, y in pts) / sum((x - mx) ** 2 for x, _ in pts)
+        q300 = my + slope * (300 - mx)
+        est = round(300 + q300 / -slope) if slope < 0 else None
     peak_t = max(((v, ts) for ts, v in S.get('opicnic_worker_queued', []) if Td <= ts <= Tdr), default=None)
     ext_all = ext_delta(Td, Tdr)
     R['stage3'] = {'normal_q_threshold': th, 'base_q': marks.get('BASE_Q'), 'base_q_measured_avg': round(st.mean(pre), 1) if pre else None,
-                   'return_to_normal_s': ret, 'returned': ret is not None,
+                   'return_to_normal_s': ret, 'returned': ret is not None, 'est_drain_s': est, 'slope_per_s': round(slope, 2) if slope is not None else None,
                    'queue_peak': peak_t[0] if peak_t else None, 'queue_peak_at_s_from_cut': round(peak_t[1] - Td) if peak_t else None,
                    'calls_cut_to_normal': ext_all,
                    'r429_cut': sum(v for k, v in R['external_calls_outage'].items() if k.endswith('/429')),

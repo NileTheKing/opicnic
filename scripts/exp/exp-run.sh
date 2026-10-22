@@ -11,7 +11,7 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."          # ~/opicnic-exp
 RUN=${1:?run_id}; STAGE=${2:?stage}; SLOTS=${3:?slots}; CIRCUIT=${4:?on|off}; LADDER=${5:-${LADDER:-none}}
 if [ "$STAGE" = 3 ]; then WARM_DEF=120; RATE_DEF=13.2; STORAGE=${STORAGE:-mem}; else WARM_DEF=60; RATE_DEF=6.7; STORAGE=${STORAGE:-r2}; fi
-WARM_S=${WARM_S:-$WARM_DEF}; MEASURE_S=${MEASURE_S:-300}; OUTAGE_S=${OUTAGE_S:-300}; MAX_RECOVER_S=${MAX_RECOVER_S:-1200}
+WARM_S=${WARM_S:-$WARM_DEF}; MEASURE_S=${MEASURE_S:-300}; OUTAGE_S=${OUTAGE_S:-300}; MAX_RECOVER_S=${MAX_RECOVER_S:-360}
 RATE=${RATE:-$RATE_DEF}
 # 3단계 사다리 -> 설정. 제공자 한도는 STT 분당 5,000 / LLM 분당 10,000 (시즌 필요량의 약 1.8배)
 BACKOFF_MODE=full-jitter; LIMITER_MODE=off; MOCK_HEADERS=false; STT_PM=0; LLM_PM=0

@@ -17,7 +17,7 @@ elif stage == '3':
     print('|' + '---|' * 14)
     for r in runs:
         o = r['stage3']; k = r['k6']
-        ret = o['return_to_normal_s'] if o['returned'] else '미도달(' + str(r['outage']['drain_s']) + 's)'
+        ret = o['return_to_normal_s'] if o['returned'] else '외삽 ' + str(o.get('est_drain_s')) + ' (관찰 ' + str(r['outage']['drain_s']) + 's 미도달, 기울기 ' + str(o.get('slope_per_s')) + '/s)'
         print(f"| {r['run']} | {o['r429_total']} ({o['r429_cut']}/{o['r429_recovery']}) | {o['waste_total']} | {o['ok_total']} | {r['retries_outage']}/{r['retries_recovery']} | "
               f"{f(o['queue_peak'],0)} ({o['queue_peak_at_s_from_cut']}) | {ret} | {f(r['jobs_all']['p95'])}/{f(r['jobs_created_during_cut']['p95'])} | {f(r['server_submit']['p95_ms'])} | "
               f"{k['sub202']}/{k['iter']} | {f(o['heap_mb_max_all'],0)} | {f(o['host_mem_avail_min_all_mb'],0)} | {r['app_log']['ERROR_lines']} ({r['app_log']['deadlock_lines']}) | {r['marks'].get('PROD_ERROR_LINES')} |")

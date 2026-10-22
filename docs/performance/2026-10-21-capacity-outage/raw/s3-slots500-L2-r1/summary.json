@@ -1,0 +1,477 @@
+{
+ "run": "s3-slots500-L2-r1",
+ "stage": 3,
+ "slots": 500,
+ "circuit": "on",
+ "ladder": "L2",
+ "storage": "mem",
+ "k6": {
+  "iter": 19801,
+  "sub202": 19793,
+  "sub_other": 6,
+  "fail": {
+   "csrf": 0,
+   "start": 0,
+   "urls": 2,
+   "put": 0
+  },
+  "questions": 68902,
+  "kinds": {
+   "C": 11880,
+   "T": 5941,
+   "M": 1980
+  },
+  "submit_ms": {
+   "avg": 16.08511646406388,
+   "med": 14.572977,
+   "p(95)": 27.857101599999996,
+   "p(99)": 43.383907799999974,
+   "max": 153.661267
+  },
+  "put_ms": {
+   "avg": 6.938077680690944,
+   "p(95)": 19,
+   "max": 177
+  },
+  "dropped_total": 0,
+  "vus_max": 150
+ },
+ "window_s": 1533,
+ "server_submit": {
+  "count": 19774,
+  "avg_ms": 15.6,
+  "p95_ms": 27.4,
+  "p99_ms": 42.6,
+  "non202": 6
+ },
+ "items_done": 69227,
+ "items_per_s": 45.15,
+ "queue": {
+  "avg": 6383.3,
+  "max": 12042.0,
+  "end": 0.0,
+  "first60_avg": 931.3,
+  "last60_avg": 934.8
+ },
+ "in_flight": {
+  "avg": 331.77,
+  "max": 500.0,
+  "min": 0.0
+ },
+ "heap_mb": {
+  "avg": 1866.89,
+  "max": 3058.0,
+  "min": 72.0
+ },
+ "hikari_active": {
+  "avg": 2.83,
+  "max": 15.0,
+  "min": 0.0
+ },
+ "hikari_pending": {
+  "avg": 0.0,
+  "max": 0.0,
+  "min": 0.0
+ },
+ "proc_cpu": {
+  "avg": 0.16,
+  "max": 0.6000000000000001,
+  "min": 0.041237113402061855
+ },
+ "host_cpu": {
+  "avg": 38.16,
+  "max": 70.4,
+  "min": 13.3
+ },
+ "host_mem_avail_min_mb": 4921.0,
+ "circuit_open_max": 1.0,
+ "external_calls_window": {
+  "score/429": 20,
+  "score/ok": 67262,
+  "stt/429": 1721,
+  "stt/ok": 69079,
+  "tag/ok": 67244
+ },
+ "jobs_all": {
+  "jobs": 19773,
+  "finished": 19773,
+  "unfinished": 0,
+  "p50": 149.3,
+  "p95": 236.4,
+  "max": 445.0,
+  "avg": 150.2,
+  "statuses": {
+   "COMPLETED": 19773
+  }
+ },
+ "jobs_C": {
+  "jobs": 11866,
+  "finished": 11866,
+  "unfinished": 0,
+  "p50": 149.3,
+  "p95": 236.4,
+  "max": 445.0,
+  "avg": 150.0,
+  "statuses": {
+   "COMPLETED": 11866
+  }
+ },
+ "jobs_T": {
+  "jobs": 5933,
+  "finished": 5933,
+  "unfinished": 0,
+  "p50": 149.2,
+  "p95": 236.3,
+  "max": 444.9,
+  "avg": 149.8,
+  "statuses": {
+   "COMPLETED": 5933
+  }
+ },
+ "jobs_M": {
+  "jobs": 1974,
+  "finished": 1974,
+  "unfinished": 0,
+  "p50": 150.1,
+  "p95": 236.9,
+  "max": 444.8,
+  "avg": 151.8,
+  "statuses": {
+   "COMPLETED": 1974
+  }
+ },
+ "outage": {
+  "down_s": 300,
+  "drain_s": 1203,
+  "drained": "0",
+  "queue_at_up": "10937",
+  "backoff_at_up(count,max_remaining_s)": "0,0"
+ },
+ "external_calls_pre_outage": {},
+ "external_calls_outage": {
+  "score/429": 20,
+  "score/ok": 3202,
+  "stt/429": 1587,
+  "stt/ok": 3099,
+  "tag/ok": 3184
+ },
+ "external_calls_recovery": {
+  "score/ok": 62411,
+  "stt/429": 134,
+  "stt/ok": 64459,
+  "tag/ok": 62411
+ },
+ "retries_outage": 1607,
+ "retries_recovery": 134,
+ "items_done_pre_outage_per_s": -0.0,
+ "items_done_recovery_per_s": 53.42,
+ "queue_peak": 12042.0,
+ "circuit_open_samples_outage": 54,
+ "circuit_open_samples_total": 60,
+ "backoff_share": {
+  "samples": 240,
+  "avg_share": 0.0,
+  "series_every_30s": [
+   [
+    4,
+    86,
+    10800
+   ],
+   [
+    34,
+    0,
+    11939
+   ],
+   [
+    64,
+    0,
+    11684
+   ],
+   [
+    94,
+    0,
+    11434
+   ],
+   [
+    124,
+    0,
+    11106
+   ],
+   [
+    154,
+    0,
+    10870
+   ],
+   [
+    184,
+    0,
+    10585
+   ],
+   [
+    214,
+    0,
+    10338
+   ],
+   [
+    244,
+    0,
+    10057
+   ],
+   [
+    274,
+    0,
+    9784
+   ],
+   [
+    304,
+    0,
+    9518
+   ],
+   [
+    334,
+    0,
+    9262
+   ],
+   [
+    364,
+    0,
+    8993
+   ],
+   [
+    394,
+    0,
+    8655
+   ],
+   [
+    424,
+    0,
+    8469
+   ],
+   [
+    454,
+    0,
+    8160
+   ],
+   [
+    484,
+    0,
+    7934
+   ],
+   [
+    514,
+    0,
+    7638
+   ],
+   [
+    544,
+    0,
+    7373
+   ],
+   [
+    574,
+    0,
+    7082
+   ],
+   [
+    604,
+    0,
+    6787
+   ],
+   [
+    634,
+    0,
+    6537
+   ],
+   [
+    664,
+    0,
+    6254
+   ],
+   [
+    694,
+    0,
+    5955
+   ],
+   [
+    724,
+    0,
+    5690
+   ],
+   [
+    754,
+    0,
+    5447
+   ],
+   [
+    784,
+    0,
+    5192
+   ],
+   [
+    814,
+    0,
+    4964
+   ],
+   [
+    844,
+    0,
+    4714
+   ],
+   [
+    874,
+    0,
+    4427
+   ],
+   [
+    900,
+    0,
+    4198
+   ],
+   [
+    904,
+    0,
+    4167
+   ],
+   [
+    934,
+    0,
+    3885
+   ],
+   [
+    960,
+    0,
+    3679
+   ],
+   [
+    964,
+    0,
+    3609
+   ],
+   [
+    990,
+    0,
+    3347
+   ],
+   [
+    994,
+    0,
+    3355
+   ],
+   [
+    1020,
+    0,
+    3047
+   ],
+   [
+    1050,
+    0,
+    2753
+   ],
+   [
+    1054,
+    0,
+    2756
+   ],
+   [
+    1080,
+    0,
+    2523
+   ],
+   [
+    1084,
+    0,
+    2439
+   ],
+   [
+    1110,
+    0,
+    2212
+   ],
+   [
+    1140,
+    0,
+    1900
+   ],
+   [
+    1170,
+    0,
+    1645
+   ],
+   [
+    1200,
+    0,
+    1308
+   ]
+  ],
+  "first_time_no_backoff_waiting_s": 9
+ },
+ "in_flight_after_up": {
+  "avg": 395.8,
+  "first_time_ge_90pct_slots_s": 39
+ },
+ "jobs_created_during_cut": {
+  "jobs": 3948,
+  "finished": 3948,
+  "unfinished": 0,
+  "p50": 232.7,
+  "p95": 371.9,
+  "max": 445.0,
+  "avg": 221.6,
+  "statuses": {
+   "COMPLETED": 3948
+  }
+ },
+ "jobs_created_after_up": {
+  "jobs": 15825,
+  "finished": 15825,
+  "unfinished": 0,
+  "p50": 132.1,
+  "p95": 220.4,
+  "max": 229.8,
+  "avg": 132.3,
+  "statuses": {
+   "COMPLETED": 15825
+  }
+ },
+ "stage3": {
+  "normal_q_threshold": 66.0,
+  "base_q": "31",
+  "base_q_measured_avg": 31.2,
+  "return_to_normal_s": null,
+  "returned": false,
+  "est_drain_s": 1361,
+  "slope_per_s": -8.98,
+  "queue_peak": 12042.0,
+  "queue_peak_at_s_from_cut": 334,
+  "calls_cut_to_normal": {
+   "score/429": 20,
+   "score/ok": 65613,
+   "stt/429": 1721,
+   "stt/ok": 67558,
+   "tag/ok": 65595
+  },
+  "r429_cut": 1607,
+  "r429_recovery": 134,
+  "r429_total": 1741,
+  "waste_total": 1741,
+  "ok_total": 198766,
+  "limiter_rate_min": {},
+  "heap_mb_max_all": 3058.0,
+  "host_mem_avail_min_all_mb": 4921.0
+ },
+ "app_log": {
+  "ERROR_lines": 57,
+  "deadlock_lines": 24,
+  "WARN_lines": 1861
+ },
+ "marks": {
+  "MEM_PRE_MB": "10019",
+  "MEM_POST_MB": "6636",
+  "CPU_PRE_MEAN": "5.2",
+  "CPU_PRE_MAX": "19.5",
+  "PROD_ERROR_LINES": "0",
+  "LEFT_QUEUED": "0",
+  "LEFT_INFLIGHT": "0",
+  "RESULT": "ok"
+ }
+}
