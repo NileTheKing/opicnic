@@ -67,6 +67,7 @@ public class ScoringWorker {
     private final boolean enabled;
     private final Semaphore slots;
     private final FailureCircuit circuit;
+    private final boolean circuitCountRateLimited;
     private final Duration retryBudget;
     private final BackoffMode backoffMode;
     private final OutboundLimiter limiter;
@@ -88,7 +89,10 @@ public class ScoringWorker {
                          @Value("${opicnic.worker.backoff-enabled:true}") boolean backoffEnabled,
                          // 용량·장애 실험 3단계 사다리용(docs/performance/2026-10-21-capacity-outage). 운영 기본은 full-jitter
                          @Value("${opicnic.worker.backoff-mode:full-jitter}") String backoffMode,
+                         // 429(RATE_LIMITED)를 서킷 창에 실패로 셀지. false면 429는 성공으로도 실패로도 넣지 않는다(용량·장애 실험 3단계 추가). 기본 true = 기존 동작
+                         @Value("${opicnic.worker.circuit.count-rate-limited:true}") boolean circuitCountRateLimited,
                          OutboundLimiter limiter) {
+        this.circuitCountRateLimited = circuitCountRateLimited;
         this.jobRepository = jobRepository;
         this.itemRepository = itemRepository;
         this.attemptService = attemptService;
@@ -225,7 +229,7 @@ public class ScoringWorker {
             });
             // 녹음 파일 문제는 제공자 상태와 무관하다 — 서킷(제공자 장애 감지)에 섞지 않는다
             // 우리 속도 제한기가 못 기다려 준 것(LOCAL_LIMIT)도 제공자 장애가 아니므로 서킷에 섞지 않는다
-            if (kind != FailureKind.PERMANENT && !isLocalLimit(e)) circuit.record(false);
+            if (countsAgainstCircuit(kind, e, circuitCountRateLimited)) circuit.record(false);
             String outcome = after == ScoringJobItemStatus.FAILED ? "failed" : "retry";
             meterRegistry.counter("opicnic.worker.items", "outcome", outcome).increment();
             meterRegistry.counter("opicnic.worker.failures", "kind", kind.name().toLowerCase()).increment();
@@ -287,6 +291,12 @@ public class ScoringWorker {
             case EXPONENTIAL_SMALL_JITTER -> Duration.ofMillis(ceiling + ThreadLocalRandom.current().nextLong(1001));
             default -> Duration.ofMillis(ThreadLocalRandom.current().nextLong(ceiling + 1));
         };
+    }
+
+    // 서킷 창에 실패로 넣을 것인가. 429는 count-rate-limited=false면 창에서 제외(503·타임아웃 같은 일시적 실패는 그대로 센다)
+    static boolean countsAgainstCircuit(FailureKind kind, Throwable e, boolean countRateLimited) {
+        if (kind == FailureKind.PERMANENT || isLocalLimit(e)) return false;
+        return countRateLimited || !isRateLimited(e);
     }
 
     static boolean isLocalLimit(Throwable e) {

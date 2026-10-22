@@ -152,6 +152,34 @@ class ScoringWorkerTest {
     }
 
     @Test
+    @DisplayName("서킷 집계: 기본(429 센다)은 기존 동작, false면 429만 제외하고 503·타임아웃은 센다, LOCAL_LIMIT·영구 실패는 항상 안 센다")
+    void circuitCountingRespectsRateLimitedSetting() {
+        var r429 = failure(Reason.RATE_LIMITED);
+        var r503 = failure(Reason.UNAVAILABLE);
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, r429, true)).isTrue();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, r503, true)).isTrue();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, r429, false)).isFalse();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, new RuntimeException("wrap", r429), false)).isFalse();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, r503, false)).isTrue();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, new RuntimeException("timeout"), false)).isTrue();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, failure(Reason.LOCAL_LIMIT), true)).isFalse();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.PERMANENT, r503, true)).isFalse();
+    }
+
+    @Test
+    @DisplayName("count-rate-limited=false: 429만 이어져도 서킷이 열리지 않고, 기본(true)에서는 열린다")
+    void rateLimitedOnlyDoesNotOpenCircuitWhenNotCounted() {
+        for (boolean count : new boolean[]{false, true}) {
+            var circuit = new ScoringWorker.FailureCircuit(10, 0.8, Duration.ofSeconds(30));
+            var e = failure(Reason.RATE_LIMITED);
+            for (int i = 0; i < 100; i++) {
+                if (ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, e, count)) circuit.record(false);
+            }
+            assertThat(circuit.isOpen()).as("count=%s", count).isEqualTo(count);
+        }
+    }
+
+    @Test
     @DisplayName("Retry-After: 원인 체인에서 429 예외의 값을 찾는다")
     void retryAfterFromCauseChain() {
         var withHint = new ExternalCallException(Reason.RATE_LIMITED, "429", null, Duration.ofSeconds(7));
