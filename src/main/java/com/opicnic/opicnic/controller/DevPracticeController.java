@@ -13,8 +13,10 @@ import com.opicnic.opicnic.service.MockProvider;
 import com.opicnic.opicnic.service.QuestionAssemblyService;
 import com.opicnic.opicnic.service.STTService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -40,6 +42,15 @@ public class DevPracticeController {
     private final STTService sttService;
     private final LlmService llmService;
     private final QuestionAssemblyService questionAssemblyService;
+
+    // 가짜 제공자가 거절한 요청도 한도에 치는지의 기본값(opicnic.mock.count-rejected, 기본 false). /mock-provider의 countRejected로 실행 중에 바꾼다.
+    @Value("${opicnic.mock.count-rejected:false}")
+    private boolean countRejectedDefault;
+
+    @PostConstruct
+    void applyMockDefaults() {
+        MockProvider.setCountRejected(countRejectedDefault);
+    }
 
     // 측정 스크립트는 로그인 세션이 없어 CSRF 토큰도 없다. 프로덕션 경로(/api/scoring-jobs 등)는 CSRF를 그대로
     // 강제해야 하므로(SEC-06), 여기서 토큰을 미리 발급받아 이후 POST에 실어 보내게 한다.
@@ -70,13 +81,16 @@ public class DevPracticeController {
                                                @RequestParam(defaultValue = "0") int sttPerMinute,
                                                @RequestParam(defaultValue = "0") int llmPerMinute,
                                                @RequestParam(defaultValue = "1.0") double capacity,
-                                               @RequestParam(defaultValue = "false") boolean headers) {
+                                               @RequestParam(defaultValue = "false") boolean headers,
+                                               @RequestParam(required = false) Boolean countRejected) {
+        boolean count = countRejected != null ? countRejected : countRejectedDefault;
         MockProvider.configure(down, limitPerSecond);
         MockProvider.configureLimits(sttPerMinute, llmPerMinute, capacity, headers);
-        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={}",
-                down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers);
+        MockProvider.setCountRejected(count);
+        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={} countRejected={}",
+                down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers, count);
         return Map.of("down", down, "limitPerSecond", limitPerSecond, "sttPerMinute", sttPerMinute,
-                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers);
+                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers, "countRejected", count);
     }
 
     @PostMapping("/start")

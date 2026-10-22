@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 //  1) limitPerSecond: 제공자 하나(Groq)가 STT·채점·태깅을 합쳐 초당 그만큼만 받는다(고정 1초 창). 넘으면 즉시 429. down이면 즉시 503.
 //  2) 종류별 분당 한도(sttPerMinute, llmPerMinute): 토큰 버킷. 1초마다 한도/60씩 채우고 최대 버스트는 한도/60 x 5.
 //     capacity(0~1)는 한도에 곱하는 용량 비율 — 0.4면 제공자가 갑자기 용량의 40%만 낸다. 호출하는 쪽은 원래 한도만 안다.
+//     countRejected=true면 토큰이 없어 429로 거절할 때도 토큰 1개를 쓴다(실제 OpenAI는 실패한 요청도 분당 한도에 센다고 문서에 적음).
+//     잔고가 음수가 되고 하한은 -(현재 용량 기준 분당 한도) 즉 최대 1분치 빚. 채우는 속도와 버스트 상한은 그대로. 기본 false.
 //     headers=true면 응답마다 x-ratelimit-remaining-requests(남은 토큰)와 x-ratelimit-reset-requests(버킷이 다 찰 때까지 초),
 //     429에는 Retry-After(토큰 1개가 생길 때까지 초)를 준다. OpenAI·Groq가 응답마다 한도 헤더를 주는 것을 흉내낸다.
 public final class MockProvider {
@@ -23,6 +25,7 @@ public final class MockProvider {
     private static volatile boolean down;
     private static volatile int limitPerSecond;   // 0 = 무제한
     private static volatile boolean headers;
+    private static volatile boolean countRejected;
     private static long windowSecond;
     private static int windowCount;
     private static final Lane STT = new Lane();
@@ -40,6 +43,17 @@ public final class MockProvider {
         MockProvider.headers = headers;
         STT.configure(sttPerMinute, capacity);
         LLM.configure(llmPerMinute, capacity);
+    }
+
+    public static void setCountRejected(boolean countRejected) {
+        MockProvider.countRejected = countRejected;
+        STT.clampDebt();
+        LLM.clampDebt();
+    }
+
+    // 테스트용: 종류별 현재 토큰 잔고(음수 = 거절 빚)
+    static double tokensForTest(ProviderKind kind) {
+        return (kind == ProviderKind.STT ? STT : LLM).tokens();
     }
 
     static void admit(ProviderKind kind) {
@@ -95,11 +109,16 @@ public final class MockProvider {
             long now = System.currentTimeMillis();
             // 한도 자체가 바뀌면 가득 찬 상태로 시작, 용량 비율만 바뀌면 지금 토큰을 새 상한으로 자른다
             tokens = (perMinute != basePerMinute || max == 0) ? newMax : Math.min(tokens, newMax);
+            tokens = Math.max(tokens, -rate * 60);
             basePerMinute = perMinute;
             ratePerSecond = rate;
             max = newMax;
             lastRefillMs = now;
         }
+
+        synchronized double tokens() { return tokens; }
+
+        synchronized void clampDebt() { tokens = Math.max(tokens, -ratePerSecond * 60); }
 
         synchronized Result take() {
             if (basePerMinute <= 0) return null;
@@ -111,9 +130,10 @@ public final class MockProvider {
             }
             boolean ok = tokens >= 1;
             if (ok) tokens -= 1;
+            else if (countRejected) tokens = Math.max(tokens - 1, -ratePerSecond * 60);   // 거절도 한도에 침, 하한 = 1분치 빚
             double reset = ratePerSecond > 0 ? (max - tokens) / ratePerSecond : 0;
             long retryAfter = ok ? 0 : (ratePerSecond > 0 ? Math.max(1, (long) Math.ceil((1 - tokens) / ratePerSecond)) : 60);
-            return new Result(ok, (int) Math.floor(tokens), reset, retryAfter);
+            return new Result(ok, (int) Math.max(0, Math.floor(tokens)), reset, retryAfter);
         }
     }
 }
