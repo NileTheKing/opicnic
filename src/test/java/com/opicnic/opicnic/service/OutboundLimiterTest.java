@@ -33,7 +33,8 @@ class OutboundLimiterTest {
     @DisplayName("기본(off): 아무것도 하지 않고 호출을 그대로 통과시킨다. 예외도 그대로")
     void offIsPassThrough() {
         var limiter = OutboundLimiter.off();
-        assertThat(limiter.mode()).isEqualTo(OutboundLimiter.Mode.OFF);
+        assertThat(limiter.mode(ProviderKind.STT)).isEqualTo(OutboundLimiter.Mode.OFF);
+        assertThat(limiter.mode(ProviderKind.LLM)).isEqualTo(OutboundLimiter.Mode.OFF);
         assertThat(limiter.call(ProviderKind.STT, () -> "ok")).isEqualTo("ok");
         var e = rateLimited(null);
         assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw e; })).isSameAs(e);
@@ -80,6 +81,27 @@ class OutboundLimiterTest {
             assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw new ExternalCallException(Reason.UNAVAILABLE, "503", null); }))
                     .isInstanceOf(ExternalCallException.class);
             assertThat(limiter.currentRatePerMinute(ProviderKind.LLM)).isEqualTo(6000);
+        } finally {
+            limiter.shutdown();
+        }
+    }
+
+    @Test
+    @DisplayName("종류마다 방식을 따로: STT는 꺼짐, LLM만 aimd면 429에 LLM만 줄고 STT는 기다리지 않는다")
+    void modesArePerKind() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.OFF, OutboundLimiter.Mode.AIMD, 60, 6000, null);
+        try {
+            assertThat(limiter.mode(ProviderKind.STT)).isEqualTo(OutboundLimiter.Mode.OFF);
+            assertThat(limiter.mode(ProviderKind.LLM)).isEqualTo(OutboundLimiter.Mode.AIMD);
+            assertThat(limiter.usesHeaders()).isFalse();
+            assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw rateLimited(null); }))
+                    .isInstanceOf(ExternalCallException.class);
+            assertThat(limiter.currentRatePerMinute(ProviderKind.LLM)).isEqualTo(3000);
+            // STT 한도는 분당 60이지만 꺼져 있어 한꺼번에 불러도 기다리지 않는다
+            long t0 = System.nanoTime();
+            for (int i = 0; i < 200; i++) limiter.call(ProviderKind.STT, () -> "x");
+            assertThat(Duration.ofNanos(System.nanoTime() - t0)).isLessThan(Duration.ofSeconds(1));
+            assertThat(new OutboundLimiter(OutboundLimiter.Mode.HEADER, OutboundLimiter.Mode.FIXED, 60, 60, null).usesHeaders()).isTrue();
         } finally {
             limiter.shutdown();
         }

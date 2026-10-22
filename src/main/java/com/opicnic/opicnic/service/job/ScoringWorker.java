@@ -211,7 +211,7 @@ public class ScoringWorker {
             FailureKind kind = classify(e);
             Duration backoff = backoff(ctx.attempts(), rateLimited, backoffMode);
             // 헤더 방식: 제공자가 준 Retry-After 전에는 다시 부르지 않는다(백오프와 큰 쪽)
-            if (limiter.mode() == OutboundLimiter.Mode.HEADER) {
+            if (limiter.usesHeaders()) {
                 Duration retryAfter = retryAfter(e);
                 if (retryAfter != null && retryAfter.compareTo(backoff) > 0) backoff = retryAfter;
             }

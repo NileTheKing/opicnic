@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 //
 // 토큰이 없으면 가상 스레드에서 기다린다. 30초를 넘기면 일시적 실패(LOCAL_LIMIT)로 던져 워커가 백오프로 다시 집게 한다(제공자 문제가 아니므로 워커 서킷에는 세지 않는다).
 // 토큰 버킷은 Bucket4j. 버스트는 1초분(한도/60).
+// 방식은 종류마다 따로 고른다(stt-mode, llm-mode, 없으면 mode). 제공자마다 맞는 방식이 달라서다 — 남은 분당 한도를 헤더로 주는
+// 제공자(OpenAI)는 header, 헤더가 없는 제공자(Gemini)는 aimd, 한도가 고정이고 알려진 무료 등급은 fixed.
 @Component
 @Slf4j
 public class OutboundLimiter {
@@ -61,7 +63,6 @@ public class OutboundLimiter {
     static final Duration MAX_WAIT = Duration.ofSeconds(30);
     private static final long ADJUST_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(200);
 
-    private final Mode mode;
     private final Lane stt;
     private final Lane llm;
     private final ScheduledExecutorService ticker;
@@ -72,18 +73,22 @@ public class OutboundLimiter {
     }
 
     @Autowired
-    public OutboundLimiter(@Value("${opicnic.outbound.limiter.mode:off}") String mode,
+    public OutboundLimiter(@Value("${opicnic.outbound.limiter.stt-mode:${opicnic.outbound.limiter.mode:off}}") String sttMode,
+                           @Value("${opicnic.outbound.limiter.llm-mode:${opicnic.outbound.limiter.mode:off}}") String llmMode,
                            @Value("${opicnic.outbound.limiter.stt-per-minute:5000}") int sttPerMinute,
                            @Value("${opicnic.outbound.limiter.llm-per-minute:10000}") int llmPerMinute,
                            MeterRegistry registry) {
-        this(Mode.parse(mode), sttPerMinute, llmPerMinute, registry);
+        this(Mode.parse(sttMode), Mode.parse(llmMode), sttPerMinute, llmPerMinute, registry);
     }
 
     OutboundLimiter(Mode mode, int sttPerMinute, int llmPerMinute, MeterRegistry registry) {
-        this.mode = mode;
-        this.stt = new Lane(sttPerMinute);
-        this.llm = new Lane(llmPerMinute);
-        if (mode == Mode.AIMD) {
+        this(mode, mode, sttPerMinute, llmPerMinute, registry);
+    }
+
+    OutboundLimiter(Mode sttMode, Mode llmMode, int sttPerMinute, int llmPerMinute, MeterRegistry registry) {
+        this.stt = new Lane(sttMode, sttPerMinute);
+        this.llm = new Lane(llmMode, llmPerMinute);
+        if (sttMode == Mode.AIMD || llmMode == Mode.AIMD) {
             ticker = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "outbound-limiter-ticker");
                 t.setDaemon(true);
@@ -93,8 +98,8 @@ public class OutboundLimiter {
         } else {
             ticker = null;
         }
-        if (mode != Mode.OFF) {
-            log.info("[Limiter] mode={} stt={}/min llm={}/min", mode, sttPerMinute, llmPerMinute);
+        if (sttMode != Mode.OFF || llmMode != Mode.OFF) {
+            log.info("[Limiter] stt={} {}/min, llm={} {}/min", sttMode, sttPerMinute, llmMode, llmPerMinute);
             if (registry != null) {
                 registry.gauge("opicnic.outbound.limiter.rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "stt")), stt, l -> l.ratePerMinute);
                 registry.gauge("opicnic.outbound.limiter.rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "llm")), llm, l -> l.ratePerMinute);
@@ -102,13 +107,23 @@ public class OutboundLimiter {
         }
     }
 
-    public Mode mode() {
-        return mode;
+    public Mode mode(ProviderKind kind) {
+        return lane(kind).mode;
+    }
+
+    // 헤더 방식인 종류가 하나라도 있으면 워커가 제공자의 Retry-After를 지킨다
+    public boolean usesHeaders() {
+        return stt.mode == Mode.HEADER || llm.mode == Mode.HEADER;
+    }
+
+    private Lane lane(ProviderKind kind) {
+        return kind == ProviderKind.STT ? stt : llm;
     }
 
     public <T> T call(ProviderKind kind, Supplier<T> call) {
+        Lane lane = lane(kind);
+        Mode mode = lane.mode;
         if (mode == Mode.OFF) return call.get();
-        Lane lane = kind == ProviderKind.STT ? stt : llm;
         lane.acquire();
         HEADERS.remove();
         try {
@@ -129,7 +144,7 @@ public class OutboundLimiter {
     private void tick() {
         long now = System.nanoTime();
         for (Lane lane : new Lane[]{stt, llm}) {
-            if (now - lane.last429Nanos >= TimeUnit.SECONDS.toNanos(1)) {
+            if (lane.mode == Mode.AIMD && now - lane.last429Nanos >= TimeUnit.SECONDS.toNanos(1)) {
                 lane.setRate(lane.ratePerMinute + Math.max(1, lane.base * 2 / 100));
             }
         }
@@ -137,7 +152,7 @@ public class OutboundLimiter {
 
     // 테스트·진단용
     long currentRatePerMinute(ProviderKind kind) {
-        return (kind == ProviderKind.STT ? stt : llm).ratePerMinute;
+        return lane(kind).ratePerMinute;
     }
 
     @PreDestroy
@@ -146,6 +161,7 @@ public class OutboundLimiter {
     }
 
     private static final class Lane {
+        final Mode mode;
         final long base;                 // 원래 한도(분당). 0 이하면 제한 없음
         final LocalBucket bucket;
         volatile long ratePerMinute;
@@ -154,7 +170,8 @@ public class OutboundLimiter {
         volatile long lastDecreaseNanos = Long.MIN_VALUE / 2;
         volatile long lastAdjustNanos = Long.MIN_VALUE / 2;
 
-        Lane(long base) {
+        Lane(Mode mode, long base) {
+            this.mode = mode;
             this.base = base;
             this.ratePerMinute = base;
             this.bucket = base <= 0 ? null : io.github.bucket4j.Bucket.builder().addLimit(limit(base)).build();

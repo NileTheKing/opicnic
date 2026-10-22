@@ -24,10 +24,13 @@ spring:
 
 # 외부 호출 속도 제한 (service/OutboundLimiter). 지금은 무료 등급이라 한도가 고정이고 알려져 있어 fixed.
 # Groq whisper 분당 20(429 본문 실측), Gemini 3.5 Flash Lite 분당 15(AI Studio). 모의고사 한 번(LLM 30회)이 한꺼번에 나가 429가 나던 것을 미리 나눠 보낸다.
-# 종량제로 바꾸면 환경변수로 aimd(용량이 변하는 제공자)나 한도 값을 덮는다 (docs/performance/2026-10-21-capacity-outage).
+# 종량제로 바꾸면 환경변수로 종류마다 방식과 한도 값을 덮는다 (docs/performance/2026-10-21-capacity-outage).
+# 예: 헤더로 남은 분당 한도를 주는 STT는 header, 헤더가 없는 Gemini는 aimd.
 opicnic:
   outbound:
     limiter:
       mode: ${OUTBOUND_LIMITER_MODE:fixed}
+      stt-mode: ${OUTBOUND_STT_MODE:${OUTBOUND_LIMITER_MODE:fixed}}
+      llm-mode: ${OUTBOUND_LLM_MODE:${OUTBOUND_LIMITER_MODE:fixed}}
       stt-per-minute: ${OUTBOUND_STT_PER_MINUTE:20}
       llm-per-minute: ${OUTBOUND_LLM_PER_MINUTE:15}
