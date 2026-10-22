@@ -1,0 +1,52 @@
+{
+ "run": "s3n-slots500-L0-cfalse",
+ "ladder": "L0",
+ "count_rate_limited": "false",
+ "count_rejected": "true",
+ "warm_s": "120",
+ "outage_s": 300,
+ "base_q": 30.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 47.09,
+ "pile_5min_extrap": 14126,
+ "r429_rate_per_s": 95.48,
+ "r429_5min_extrap": 28645,
+ "waste_5min_extrap": 28645,
+ "stt_ok_per_s_cut": 0.0,
+ "llm_ok_per_s_cut": 5.9,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 13081,
+ "backoff_at_up": "0,0",
+ "obs_after_up_s": 480,
+ "post_up_q_change_first120": 5540,
+ "post_slope_120_180_per_s": 46.82,
+ "r429_first120_after_up": 11876,
+ "return_extrap_s": null,
+ "actual": {
+  "pile": 13051,
+  "r429_5min": 28053,
+  "waste_5min": 28053,
+  "circuit_open_ratio_first120": 0.0
+ },
+ "error_pct": {
+  "pile": 8.2,
+  "r429": 2.1
+ },
+ "server_submit_p95_ms": 26.5,
+ "heap_mb_max": 3049.0,
+ "app_error_lines": 2,
+ "deadlock_lines": 1,
+ "prod_error_lines": "0",
+ "host_mem_avail_min_mb": 5114.0,
+ "calls_cut_total": {
+  "stt/ok": 722,
+  "score/ok": 1068,
+  "tag/ok": 909,
+  "score/429": 531,
+  "stt/429": 27400,
+  "tag/429": 122
+ }
+}

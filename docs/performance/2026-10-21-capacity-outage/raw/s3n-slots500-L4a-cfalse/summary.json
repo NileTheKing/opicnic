@@ -1,0 +1,319 @@
+{
+ "run": "s3n-slots500-L4a-cfalse",
+ "stage": 3,
+ "slots": 500,
+ "circuit": "on",
+ "ladder": "L4a",
+ "storage": "mem",
+ "k6": {
+  "iter": 8713,
+  "sub202": 8713,
+  "sub_other": 0,
+  "fail": {
+   "csrf": 0,
+   "start": 0,
+   "urls": 0,
+   "put": 0
+  },
+  "questions": 30332,
+  "kinds": {
+   "C": 5227,
+   "T": 2614,
+   "M": 872
+  },
+  "submit_ms": {
+   "avg": 16.455374153448822,
+   "med": 14.76887,
+   "p(95)": 28.03591999999999,
+   "p(99)": 44.225170479999996,
+   "max": 204.168834
+  },
+  "put_ms": {
+   "avg": 7.429817514059452,
+   "p(95)": 21,
+   "max": 189
+  },
+  "dropped_total": 0,
+  "vus_max": 150
+ },
+ "window_s": 774,
+ "server_submit": {
+  "count": 8707,
+  "avg_ms": 16.0,
+  "p95_ms": 27.5,
+  "p99_ms": 43.4,
+  "non202": 0
+ },
+ "items_done": 30768,
+ "items_per_s": 39.77,
+ "queue": {
+  "avg": 5314.4,
+  "max": 8859.0,
+  "end": 0.0,
+  "first60_avg": 357.3,
+  "last60_avg": 1250.9
+ },
+ "in_flight": {
+  "avg": 427.62,
+  "max": 500.0,
+  "min": 40.0
+ },
+ "heap_mb": {
+  "avg": 1938.29,
+  "max": 3062.0,
+  "min": 89.0
+ },
+ "hikari_active": {
+  "avg": 2.6,
+  "max": 17.0,
+  "min": 0.0
+ },
+ "hikari_pending": {
+  "avg": 0.0,
+  "max": 0.0,
+  "min": 0.0
+ },
+ "proc_cpu": {
+  "avg": 0.15,
+  "max": 0.2576576576576577,
+  "min": 0.04020100502512563
+ },
+ "host_cpu": {
+  "avg": 36.11,
+  "max": 66.8,
+  "min": 18.0
+ },
+ "host_mem_avail_min_mb": 5545.0,
+ "circuit_open_max": 0.0,
+ "external_calls_window": {
+  "score/429": 45,
+  "score/ok": 29913,
+  "stt/429": 1519,
+  "stt/ok": 30556,
+  "tag/ok": 29890
+ },
+ "jobs_all": {
+  "jobs": 8705,
+  "finished": 8705,
+  "unfinished": 0,
+  "p50": 152.3,
+  "p95": 267.8,
+  "max": 386.7,
+  "avg": 147.7,
+  "statuses": {
+   "COMPLETED": 8705
+  }
+ },
+ "jobs_C": {
+  "jobs": 5223,
+  "finished": 5223,
+  "unfinished": 0,
+  "p50": 152.3,
+  "p95": 268.0,
+  "max": 386.7,
+  "avg": 147.8,
+  "statuses": {
+   "COMPLETED": 5223
+  }
+ },
+ "jobs_T": {
+  "jobs": 2611,
+  "finished": 2611,
+  "unfinished": 0,
+  "p50": 151.5,
+  "p95": 248.5,
+  "max": 382.2,
+  "avg": 146.2,
+  "statuses": {
+   "COMPLETED": 2611
+  }
+ },
+ "jobs_M": {
+  "jobs": 871,
+  "finished": 871,
+  "unfinished": 0,
+  "p50": 153.8,
+  "p95": 287.5,
+  "max": 383.0,
+  "avg": 151.4,
+  "statuses": {
+   "COMPLETED": 871
+  }
+ },
+ "outage": {
+  "down_s": 300,
+  "drain_s": 363,
+  "drained": "0",
+  "queue_at_up": "7961",
+  "backoff_at_up(count,max_remaining_s)": "0,0"
+ },
+ "external_calls_pre_outage": {},
+ "external_calls_outage": {
+  "score/429": 45,
+  "score/ok": 5692,
+  "stt/429": 1519,
+  "stt/ok": 5584,
+  "tag/ok": 5669
+ },
+ "external_calls_recovery": {
+  "score/ok": 18091,
+  "stt/ok": 18816,
+  "tag/ok": 18091
+ },
+ "retries_outage": 2846,
+ "retries_recovery": 0,
+ "items_done_pre_outage_per_s": -0.0,
+ "items_done_recovery_per_s": 51.32,
+ "queue_peak": 8859.0,
+ "circuit_open_samples_outage": 0,
+ "circuit_open_samples_total": 0,
+ "backoff_share": {
+  "samples": 72,
+  "avg_share": 0.0,
+  "series_every_30s": [
+   [
+    4,
+    0,
+    8130
+   ],
+   [
+    34,
+    0,
+    8811
+   ],
+   [
+    64,
+    0,
+    8516
+   ],
+   [
+    94,
+    0,
+    8347
+   ],
+   [
+    124,
+    0,
+    8021
+   ],
+   [
+    154,
+    0,
+    7791
+   ],
+   [
+    184,
+    0,
+    7526
+   ],
+   [
+    214,
+    0,
+    7178
+   ],
+   [
+    244,
+    0,
+    6963
+   ],
+   [
+    274,
+    0,
+    6711
+   ],
+   [
+    304,
+    0,
+    6408
+   ],
+   [
+    330,
+    0,
+    6182
+   ],
+   [
+    334,
+    0,
+    6147
+   ],
+   [
+    360,
+    0,
+    5928
+   ]
+  ],
+  "first_time_no_backoff_waiting_s": 4
+ },
+ "in_flight_after_up": {
+  "avg": 415.4,
+  "first_time_ge_90pct_slots_s": 4
+ },
+ "jobs_created_during_cut": {
+  "jobs": 3952,
+  "finished": 3952,
+  "unfinished": 0,
+  "p50": 167.9,
+  "p95": 295.5,
+  "max": 386.7,
+  "avg": 152.1,
+  "statuses": {
+   "COMPLETED": 3952
+  }
+ },
+ "jobs_created_after_up": {
+  "jobs": 4753,
+  "finished": 4753,
+  "unfinished": 0,
+  "p50": 145.0,
+  "p95": 171.5,
+  "max": 174.7,
+  "avg": 144.0,
+  "statuses": {
+   "COMPLETED": 4753
+  }
+ },
+ "stage3": {
+  "normal_q_threshold": 65.0,
+  "base_q": "30",
+  "base_q_measured_avg": 30.7,
+  "return_to_normal_s": null,
+  "returned": false,
+  "est_drain_s": 1011,
+  "slope_per_s": -9.06,
+  "queue_peak": 8859.0,
+  "queue_peak_at_s_from_cut": 329,
+  "calls_cut_to_normal": {
+   "score/429": 45,
+   "score/ok": 23783,
+   "stt/429": 1519,
+   "stt/ok": 24400,
+   "tag/ok": 23760
+  },
+  "r429_cut": 1564,
+  "r429_recovery": 0,
+  "r429_total": 1564,
+  "waste_total": 1564,
+  "ok_total": 71943,
+  "limiter_rate_min": {
+   "llm": 1650.0,
+   "stt": 500.0
+  },
+  "heap_mb_max_all": 3064.0,
+  "host_mem_avail_min_all_mb": 5545.0
+ },
+ "app_log": {
+  "ERROR_lines": 14,
+  "deadlock_lines": 7,
+  "WARN_lines": 3011
+ },
+ "marks": {
+  "MEM_PRE_MB": "10045",
+  "MEM_POST_MB": "6599",
+  "CPU_PRE_MEAN": "2.6",
+  "CPU_PRE_MAX": "3.8",
+  "PROD_ERROR_LINES": "0",
+  "LEFT_QUEUED": "0",
+  "LEFT_INFLIGHT": "0",
+  "RESULT": "ok"
+ }
+}

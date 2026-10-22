@@ -38,6 +38,8 @@ if [ "$STORAGE" = mem ]; then export APP_R2_ACCOUNT_ID="" OPICNIC_STORAGE_MEMORY
 if [ "$CIRCUIT" = off ]; then export OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO=2; else export OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO=0.8; fi
 # 환경 변수 COUNT_RATE_LIMITED=false 면 서킷이 429를 창에서 제외(3단계 추가 실험). 기본 true
 export OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED=${COUNT_RATE_LIMITED:-true}
+# 환경 변수 COUNT_REJECTED=true 면 가짜 제공자가 거절(429)한 요청도 한도에 친다(opicnic.mock.count-rejected, 3단계 새 가정). 기본 false
+COUNT_REJECTED=${COUNT_REJECTED:-false}
 export AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY AWS_DEFAULT_REGION=auto
 R2EP="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
 APP=http://127.0.0.1:18081
@@ -61,7 +63,7 @@ check_abort() { [ -f "$ABORT" ] && abort "감시: $(cat "$ABORT")"; }
 trap 'cleanup' EXIT
 
 log "== run $RUN stage=$STAGE slots=$SLOTS circuit=$CIRCUIT rate=$RATE ladder=$LADDER storage=$STORAGE backoff=$BACKOFF_MODE limiter=$LIMITER_MODE"
-mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
+mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark COUNT_REJECTED "$COUNT_REJECTED"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
 mark RUN "$RUN"; mark STAGE "$STAGE"; mark SLOTS "$SLOTS"; mark CIRCUIT "$CIRCUIT"; mark WARM_S $WARM_S; mark MEASURE_S $MEASURE_S
 mark OUTAGE_S $OUTAGE_S; mark MAX_RECOVER_S $MAX_RECOVER_S; mark RATE $RATE
 
@@ -109,7 +111,7 @@ curl -sf -m 3 "$APP/actuator/health" >/dev/null 2>&1 || abort "앱 기동 실패
 log "앱 기동 완료 (slots=$SLOTS circuit=$CIRCUIT)"
 CSRF=$(curl -s -c "$OUT/csrf.jar" "$APP/api/practice-attempts/csrf")
 TOKEN=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["token"])' "$CSRF"); HDR=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["headerName"])' "$CSRF")
-mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS"; }
+mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS&countRejected=$COUNT_REJECTED"; }
 log "mock 기본값 확인: $(mock false)"
 
 # ---- 4. 샘플러 + 부하
