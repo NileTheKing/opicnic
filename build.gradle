@@ -83,8 +83,8 @@ tasks.withType(JavaCompile).configureEach {
 // .env를 읽어서 bootRun의 자식 프로세스 환경변수로 전달 — 로컬 개발자가 매번 `source .env` 안 해도 되게.
 // 파일 없으면(CI 등) 조용히 무시.
 def envFile = file('.env')
+def envVars = [:]
 if (envFile.exists()) {
-	def envVars = [:]
 	envFile.eachLine { line ->
 		line = line.trim()
 		if (line && !line.startsWith('#') && line.contains('=')) {
@@ -99,6 +99,11 @@ if (envFile.exists()) {
 
 bootRun {
 	jvmArgs(['--enable-preview'])
+	// 프로파일 미지정 실행은 dev 전용 통로가 닫힌 상태라, 로컬 bootRun만 dev를 기본으로 건다.
+	// 셸이나 .env에서 SPRING_PROFILES_ACTIVE를 주면 그 값이 우선. 운영은 bootRun을 안 쓴다.
+	if (System.getenv('SPRING_PROFILES_ACTIVE') == null && !(envVars.containsKey('SPRING_PROFILES_ACTIVE'))) {
+		environment 'SPRING_PROFILES_ACTIVE', 'dev'
+	}
 }
 
 tasks.named('test') {

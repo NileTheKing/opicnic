@@ -1,6 +1,5 @@
 spring:
   profiles:
-    default: dev
     # LLM 공급자 묶음(주소·모델·옵션)은 application-<공급자>.yml에 있다. .env의 LLM_PROVIDER로 하나를 고른다.
     # 바꾸기 전에 docs/performance/2026-10-07-grading-calibration의 보정 실험을 그 공급자로 돌려 볼 것 — 모델마다 등급이 다르게 나온다
     include: ${LLM_PROVIDER:groq}

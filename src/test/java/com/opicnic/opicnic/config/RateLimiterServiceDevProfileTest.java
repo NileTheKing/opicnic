@@ -22,16 +22,15 @@ class RateLimiterServiceDevProfileTest {
         }
     }
 
-    // spring.profiles.default=dev라 활성 프로파일을 아무것도 지정하지 않은 실행도 dev로 판정돼야 한다.
+    // 활성 프로파일을 지정하지 않은 실행은 dev가 아니므로 익명도 기존 한도를 따라야 한다.
     @Test
-    void defaultDevProfileWithNullMemberIdNeverConsumesTheBucket() {
-        MockEnvironment defaultDevEnv = new MockEnvironment();
-        defaultDevEnv.setDefaultProfiles("dev"); // 활성 프로파일은 지정하지 않음
-        RateLimiterService limiter = new RateLimiterService(defaultDevEnv);
+    void noProfileWithNullMemberIdKeepsNormalLimit() {
+        RateLimiterService limiter = new RateLimiterService(new MockEnvironment());
 
-        for (int i = 0; i < RateLimiterService.CAPACITY_PER_HOUR + 100; i++) {
+        for (int i = 0; i < RateLimiterService.CAPACITY_PER_HOUR; i++) {
             assertThat(limiter.tryConsume(1, null)).isTrue();
         }
+        assertThat(limiter.tryConsume(1, null)).isFalse();
     }
 
     @Test

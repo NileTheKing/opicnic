@@ -261,6 +261,7 @@ set -a && source .env && set +a
 ./gradlew bootRun
 ```
 
+- `bootRun`은 `SPRING_PROFILES_ACTIVE`가 없으면 `dev`로 띄웁니다(dev 전용 통로 포함). jar/컨테이너는 프로파일을 지정하지 않으면 dev 통로가 닫힙니다.
 - `STT_ENABLED=false LLM_ENABLED=false`로 실행하면 외부 API 없이 mock 응답으로 동작합니다.
 - R2 키(`R2_*`)가 비어 있으면 인메모리 저장소로 기동합니다(로컬 확인용, 재시작 시 녹음 유실).
 

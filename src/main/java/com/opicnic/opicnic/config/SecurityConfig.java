@@ -33,7 +33,7 @@ public class SecurityConfig {
 
         init();
         // 측정 스크립트(k6)는 로그인 없이 시작·업로드 URL·접수·폴링·결과 화면을 부른다. dev에서만 연다.
-        // acceptsProfiles는 활성 프로파일이 없으면 spring.profiles.default(dev)로 판정한다 — RateLimiterService와 같은 기준
+        // 활성 프로파일에 dev가 있을 때만 연다(프로파일 미지정이면 닫힘) — RateLimiterService와 같은 기준
         boolean dev = environment.acceptsProfiles(Profiles.of("dev"));
 
         http
@@ -47,6 +47,8 @@ public class SecurityConfig {
                     }
                     // 기본은 로그인 필수, 공개할 것만 연다. 이전엔 /api/**를 통째로 열고 컨트롤러가 각자 막았다 —
                     // 새 API에서 검사를 빠뜨리면 그대로 공개되는 구조라 뒤집었다. 소유권(남의 것인가)은 여전히 컨트롤러가 본다
+                    // /actuator/**: Prometheus가 compose 네트워크에서 app:8080으로 직접 긁는다. 외부 /actuator/는 nginx가 막고,
+                    // 정확히 /actuator(링크 목록)는 운영에서 discovery를 꺼 404 (application-prod.yml)
                     auth.requestMatchers("/", "/auth/**", "/api/enums/**", "/actuator/**", "/css/**", "/js/**").permitAll();
                     auth.anyRequest().authenticated();
                 })

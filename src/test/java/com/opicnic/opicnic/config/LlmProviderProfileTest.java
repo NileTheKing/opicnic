@@ -16,10 +16,14 @@ class LlmProviderProfileTest {
     static class Empty {}
 
     // 운영에선 LLM_PROVIDER가 환경변수로 들어온다 — 기본 속성(.properties)은 프로필 결정에 안 쓰여서 시스템 속성으로 흉내낸다
-    private Map<String, String> boot(String... props) {
+    // 키도 시스템 속성으로 고정한다 — 기본 속성은 셸의 진짜 환경변수보다 우선순위가 낮아서, 키가 있으면 실제 키가 읽혀 실패 메시지에 찍혔다
+    private Map<String, String> boot(String... given) {
+        String[] props = new String[given.length + 2];
+        System.arraycopy(given, 0, props, 0, given.length);
+        props[given.length] = "GROQ_API_KEY=g";
+        props[given.length + 1] = "GEMINI_API_KEY=m";
         for (String p : props) System.setProperty(p.substring(0, p.indexOf('=')), p.substring(p.indexOf('=') + 1));
-        try (var ctx = new SpringApplicationBuilder(Empty.class).web(WebApplicationType.NONE)
-                .properties("GROQ_API_KEY=g", "GEMINI_API_KEY=m").run()) {
+        try (var ctx = new SpringApplicationBuilder(Empty.class).web(WebApplicationType.NONE).run()) {
             var env = ctx.getEnvironment();
             Map<String, String> out = new HashMap<>();
             for (String k : new String[]{"spring.ai.openai.base-url", "spring.ai.openai.api-key", "spring.ai.openai.chat.completions-path",
