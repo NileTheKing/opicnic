@@ -255,7 +255,44 @@
     const elapsedAtLoad = /*[[${elapsedMillis}]]*/ 0;
     const loadedAt = Date.now();
     const DELAY_NOTICE_MS = 30000;
+    // 장애로 오래 밀리면 기다리는 화면이 쌓여 DB가 가장 바쁠 때 폴링도 가장 많아진다 — 오래될수록 덜 묻고, 10분이면 멈춘다
+    const STOP_POLLING_MS = 600000;
     let pollFailures = 0;
+    let pollTimer = null;
+    let polling = false;   // 요청 중이거나 끝까지 다 받았으면 true — 탭 전환으로 겹쳐 묻지 않게
+    let stopped = false;
+
+    function elapsed() {
+        return elapsedAtLoad + (Date.now() - loadedAt);
+    }
+
+    function nextDelay() {
+        const t = elapsed();
+        if (t < 30000) return 2000;
+        if (t < 120000) return 5000;
+        if (t < 300000) return 10000;
+        return 30000;
+    }
+
+    function schedule() {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+        polling = false;
+        if (stopped) return;
+        if (elapsed() >= STOP_POLLING_MS) {
+            stopped = true;
+            document.getElementById('delay-notice').querySelector('p').innerHTML =
+                '채점이 많이 늦어지고 있어 자동 확인을 멈췄어요.<br>완료되면 홈에서 알려드릴게요. 새로고침하면 지금 상태를 다시 볼 수 있어요.';
+            return;
+        }
+        // 안 보이는 탭은 묻지 않는다. 다시 보이면 바로 한 번 묻는다
+        if (document.hidden) return;
+        pollTimer = setTimeout(poll, nextDelay());
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !stopped && !polling && pollTimer === null) poll();
+    });
 
     function pendingCards() {
         return Array.from(document.querySelectorAll('#cards [data-state="PENDING"]'));
@@ -280,6 +317,7 @@
     }
 
     async function poll() {
+        polling = true;
         try {
             const res = await fetch(`/api/scoring-jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
             if (!res.ok) throw new Error('상태 조회 실패 (' + res.status + ')');
@@ -309,11 +347,11 @@
                 el.classList.remove('hidden');
             }
         }
-        if (elapsedAtLoad + (Date.now() - loadedAt) >= DELAY_NOTICE_MS && pendingCards().length > 0) {
+        if (elapsed() >= DELAY_NOTICE_MS && pendingCards().length > 0) {
             document.getElementById('progress-hint').classList.add('hidden');
             document.getElementById('delay-notice').classList.remove('hidden');
         }
-        setTimeout(poll, 2000);
+        schedule();
     }
     poll();
 </script>
