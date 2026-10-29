@@ -51,6 +51,8 @@ R['queue_slope_cut_per_s'] = round(sl_o, 2)
 R['pile_5min_extrap'] = round(sl_o * 300)
 R['r429_rate_per_s'] = round(r429 / dur, 2); R['r429_5min_extrap'] = round(r429 / dur * 300)
 R['waste_5min_extrap'] = round(waste / dur * 300)
+r5xx = sum(v for k, v in ext(w0, w1).items() if k.endswith('/5xx')); R['r5xx_5min_extrap'] = round(r5xx / dur * 300)   # 과부하 가정(MOCK_OVERLOAD)의 거절
+R['mock_overload'] = marks.get('MOCK_OVERLOAD'); R['congestion'] = marks.get('CONGESTION')
 R['stt_ok_per_s_cut'] = round(stt_ok / dur, 1); R['llm_ok_per_s_cut'] = round(llm_ok / dur, 1)   # llm = 채점 + 태깅 호출
 oc = [v for t, v in S['opicnic_worker_circuit_open'] if Td <= t <= Tu]
 R['circuit_open_ratio'] = round(sum(1 for v in oc if v >= 1) / len(oc), 3) if oc else None

@@ -23,6 +23,12 @@ class OutboundLimiterTest {
     void resetProvider() {
         MockProvider.configure(false, 0);
         MockProvider.configureLimits(0, 0, 1.0, false);
+        MockProvider.setOverload(false);
+        MockProvider.setCountRejected(false);
+    }
+
+    private static ExternalCallException overloaded() {
+        return new ExternalCallException(Reason.UNAVAILABLE, "503 overloaded", null);
     }
 
     private static ExternalCallException rateLimited(Duration retryAfter) {
@@ -192,5 +198,100 @@ class OutboundLimiterTest {
         assertThat(((ExternalCallException) ExternalCallMetrics.translate(with)).retryAfter()).isEqualTo(Duration.ofSeconds(7));
         assertThat(((ExternalCallException) ExternalCallMetrics.translate(without)).retryAfter()).isNull();
         assertThat(((ExternalCallException) ExternalCallMetrics.translate(server)).retryAfter()).isNull();
+    }
+
+    @Test
+    @DisplayName("혼잡: 1초 안에 성공과 5xx가 섞이면 혼잡 속도가 절반, 5xx가 없으면 한도의 2%씩 오른다")
+    void congestionHalvesWhenSuccessAndOverloadMix() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.AIMD, OutboundLimiter.Mode.AIMD, 6000, 6000, true, null);
+        limiter.shutdown();   // 1초 틱을 멈추고 adjustCongestionNow로 직접 조정한다
+        try {
+            limiter.call(ProviderKind.STT, () -> "ok");
+            assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw overloaded(); })).isInstanceOf(ExternalCallException.class);
+            limiter.adjustCongestionNow(ProviderKind.STT);
+            assertThat(limiter.congestionRatePerMinute(ProviderKind.STT)).isEqualTo(3000);
+            assertThat(limiter.currentRatePerMinute(ProviderKind.STT)).isEqualTo(6000);   // 5xx는 한도 쪽 속도를 건드리지 않는다
+            assertThat(limiter.effectiveRatePerMinute(ProviderKind.STT)).isEqualTo(3000);
+            limiter.call(ProviderKind.STT, () -> "ok");
+            limiter.adjustCongestionNow(ProviderKind.STT);
+            assertThat(limiter.congestionRatePerMinute(ProviderKind.STT)).isEqualTo(3120);   // + 6000의 2%
+        } finally {
+            limiter.shutdown();
+        }
+    }
+
+    @Test
+    @DisplayName("혼잡: 전부 실패(완전 장애)면 혼잡 속도를 줄이지 않는다 - 서킷 몫이고, 줄이면 복구 뒤 바닥에서 천천히 올라온다")
+    void congestionHoldsWhenAllFail() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.OFF, OutboundLimiter.Mode.OFF, 6000, 6000, true, null);
+        limiter.shutdown();   // 1초 틱을 멈추고 adjustCongestionNow로 직접 조정한다
+        try {
+            for (int s = 0; s < 5; s++) {
+                for (int i = 0; i < 20; i++) {
+                    assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw overloaded(); })).isInstanceOf(ExternalCallException.class);
+                }
+                limiter.adjustCongestionNow(ProviderKind.LLM);
+            }
+            assertThat(limiter.congestionRatePerMinute(ProviderKind.LLM)).isEqualTo(6000);
+            assertThat(limiter.effectiveRatePerMinute(ProviderKind.LLM)).isEqualTo(6000);
+        } finally {
+            limiter.shutdown();
+        }
+    }
+
+    @Test
+    @DisplayName("혼잡: 실제 속도는 한도 쪽(429)과 혼잡 쪽(5xx) 중 작은 값이고, 429는 혼잡 속도를 건드리지 않는다")
+    void effectiveRateIsMinOfQuotaAndCongestion() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.AIMD, OutboundLimiter.Mode.AIMD, 6000, 6000, true, null);
+        limiter.shutdown();   // 1초 틱을 멈추고 adjustCongestionNow로 직접 조정한다
+        try {
+            assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw rateLimited(null); })).isInstanceOf(ExternalCallException.class);
+            assertThat(limiter.currentRatePerMinute(ProviderKind.STT)).isEqualTo(3000);
+            assertThat(limiter.effectiveRatePerMinute(ProviderKind.STT)).isEqualTo(3000);
+            for (int s = 0; s < 2; s++) {
+                limiter.call(ProviderKind.STT, () -> "ok");
+                assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw overloaded(); })).isInstanceOf(ExternalCallException.class);
+                limiter.adjustCongestionNow(ProviderKind.STT);
+            }
+            assertThat(limiter.congestionRatePerMinute(ProviderKind.STT)).isEqualTo(1500);
+            assertThat(limiter.effectiveRatePerMinute(ProviderKind.STT)).isEqualTo(1500);
+        } finally {
+            limiter.shutdown();
+        }
+    }
+
+    @Test
+    @DisplayName("혼잡 끔(기본): 5xx가 섞여도 속도는 그대로, off 방식이면 기다리지도 않는다")
+    void congestionOffByDefault() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.OFF, 60, 60, null);
+        limiter.call(ProviderKind.STT, () -> "ok");
+        assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw overloaded(); })).isInstanceOf(ExternalCallException.class);
+        limiter.adjustCongestionNow(ProviderKind.STT);
+        assertThat(limiter.congestionRatePerMinute(ProviderKind.STT)).isEqualTo(60);
+        long t0 = System.nanoTime();
+        for (int i = 0; i < 200; i++) limiter.call(ProviderKind.STT, () -> "x");
+        assertThat(Duration.ofNanos(System.nanoTime() - t0)).isLessThan(Duration.ofSeconds(1));
+    }
+
+    @Test
+    @DisplayName("가짜 제공자 overload: 한도를 넘으면 429 대신 과부하 503, 거절은 countRejected여도 한도를 쓰지 않는다")
+    void mockProviderOverloadRejectsWith503() {
+        MockProvider.setOverload(true);
+        MockProvider.setCountRejected(true);
+        MockProvider.configureLimits(600, 0, 1.0, true);   // 초당 10, 버스트 50
+        int ok = 0, overloaded = 0;
+        for (int i = 0; i < 300; i++) {
+            try { MockProvider.admit(ProviderKind.STT); ok++; }
+            catch (HttpServerErrorException e) {
+                assertThat(e.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                assertThat(e.getResponseBodyAsString()).contains("overloaded");
+                overloaded++;
+            }
+        }
+        assertThat(ok).isBetween(50, 62);
+        assertThat(overloaded).isEqualTo(300 - ok);
+        assertThat(MockProvider.tokensForTest(ProviderKind.STT)).isGreaterThanOrEqualTo(0.0);   // 빚이 생기지 않는다
+        assertThat(ExternalCallMetrics.translate(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "x", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8)))
+                .isInstanceOfSatisfying(ExternalCallException.class, x -> assertThat(x.reason()).isEqualTo(Reason.UNAVAILABLE));
     }
 }

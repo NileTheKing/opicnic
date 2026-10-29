@@ -17,6 +17,9 @@ import java.nio.charset.StandardCharsets;
 //     잔고가 음수가 되고 하한은 -(현재 용량 기준 분당 한도) 즉 최대 1분치 빚. 채우는 속도와 버스트 상한은 그대로. 기본 false.
 //     headers=true면 응답마다 x-ratelimit-remaining-requests(남은 토큰)와 x-ratelimit-reset-requests(버킷이 다 찰 때까지 초),
 //     429에는 Retry-After(토큰 1개가 생길 때까지 초)를 준다. OpenAI·Groq가 응답마다 한도 헤더를 주는 것을 흉내낸다.
+//     overload=true면 토큰이 없을 때 429 대신 503 "model is overloaded"로 거절한다 — 제공자 사정으로 받아주는 양이 준 것은
+//     실제로 이렇게 온다(Gemini API 503, OpenAI 503 server_is_overloaded). 과부하 거절은 내 한도와 무관하니 countRejected와 상관없이
+//     토큰을 쓰지 않고 한도 헤더도 주지 않는다. 기본 false.
 public final class MockProvider {
 
     private static final String HDR_REMAINING = "x-ratelimit-remaining-requests";
@@ -26,6 +29,7 @@ public final class MockProvider {
     private static volatile int limitPerSecond;   // 0 = 무제한
     private static volatile boolean headers;
     private static volatile boolean countRejected;
+    private static volatile boolean overload;
     private static long windowSecond;
     private static int windowCount;
     private static final Lane STT = new Lane();
@@ -51,6 +55,10 @@ public final class MockProvider {
         LLM.clampDebt();
     }
 
+    public static void setOverload(boolean overload) {
+        MockProvider.overload = overload;
+    }
+
     // 테스트용: 종류별 현재 토큰 잔고(음수 = 거절 빚)
     static double tokensForTest(ProviderKind kind) {
         return (kind == ProviderKind.STT ? STT : LLM).tokens();
@@ -68,6 +76,11 @@ public final class MockProvider {
         Lane lane = kind == ProviderKind.STT ? STT : LLM;
         Lane.Result r = lane.take();
         if (r == null) return;   // 이 종류는 한도 없음
+        if (!r.admitted && overload) {
+            throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", HttpHeaders.EMPTY,
+                    "{\"error\":{\"code\":503,\"message\":\"The model is overloaded. Please try again later.\",\"status\":\"UNAVAILABLE\"}}"
+                            .getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        }
         if (headers) OutboundLimiter.reportHeaders(r.remaining, r.resetSeconds);
         if (!r.admitted) {
             HttpHeaders h = new HttpHeaders();
@@ -130,7 +143,7 @@ public final class MockProvider {
             }
             boolean ok = tokens >= 1;
             if (ok) tokens -= 1;
-            else if (countRejected) tokens = Math.max(tokens - 1, -ratePerSecond * 60);   // 거절도 한도에 침, 하한 = 1분치 빚
+            else if (countRejected && !overload) tokens = Math.max(tokens - 1, -ratePerSecond * 60);   // 거절도 한도에 침, 하한 = 1분치 빚
             double reset = ratePerSecond > 0 ? (max - tokens) / ratePerSecond : 0;
             long retryAfter = ok ? 0 : (ratePerSecond > 0 ? Math.max(1, (long) Math.ceil((1 - tokens) / ratePerSecond)) : 60);
             return new Result(ok, (int) Math.max(0, Math.floor(tokens)), reset, retryAfter);
