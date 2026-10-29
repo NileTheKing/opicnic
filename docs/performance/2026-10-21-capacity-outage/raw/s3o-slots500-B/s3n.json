@@ -1,0 +1,43 @@
+{
+ "run": "s3o-slots500-B",
+ "ladder": "L4a",
+ "count_rate_limited": "false",
+ "count_rejected": "false",
+ "warm_s": "60",
+ "outage_s": 120,
+ "base_q": 26.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 24.54,
+ "pile_5min_extrap": 7361,
+ "r429_rate_per_s": 0.0,
+ "r429_5min_extrap": 0,
+ "waste_5min_extrap": 1066,
+ "r5xx_5min_extrap": 1066,
+ "mock_overload": "true",
+ "congestion": "true",
+ "stt_ok_per_s_cut": 22.0,
+ "llm_ok_per_s_cut": 41.5,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 2554,
+ "backoff_at_up": "58,5",
+ "obs_after_up_s": 218,
+ "post_up_q_change_first120": 29,
+ "post_slope_120_180_per_s": -8.5,
+ "r429_first120_after_up": 0,
+ "return_extrap_s": 993,
+ "server_submit_p95_ms": 27.4,
+ "heap_mb_max": 2996.0,
+ "app_error_lines": 6,
+ "deadlock_lines": 3,
+ "prod_error_lines": "0",
+ "host_mem_avail_min_mb": 1963.0,
+ "calls_cut_total": {
+  "stt/ok": 2848,
+  "score/ok": 2763,
+  "tag/ok": 2763,
+  "stt/5xx": 362
+ }
+}
