@@ -30,15 +30,19 @@ spring:
           kakao:
             redirect-uri: https://${DOMAIN}/login/oauth2/code/kakao
 
-# 외부 호출 속도 제한 (service/OutboundLimiter). 지금은 무료 등급이라 한도가 고정이고 알려져 있어 fixed.
+# 외부 호출 속도 제한 (service/OutboundLimiter). 둘 다 aimd: 아래 분당 값을 상한으로 두고, 429를 받으면 절반으로 줄였다가 조용하면 다시 올린다.
 # Groq whisper 분당 20(429 본문 실측), Gemini 3.5 Flash Lite 분당 15(AI Studio). 모의고사 한 번(LLM 30회)이 한꺼번에 나가 429가 나던 것을 미리 나눠 보낸다.
-# 종량제로 바꾸면 환경변수로 종류마다 방식과 한도 값을 덮는다 (docs/performance/2026-10-21-capacity-outage).
-# 예: 헤더로 남은 분당 한도를 주는 STT는 header, 헤더가 없는 Gemini는 aimd.
+# header는 실제 제공자 클라이언트가 아직 한도 헤더를 넘기지 않아(가짜 제공자만 넘김) 쓰지 않는다. Groq의 요청 수 헤더는 하루 기준이라
+# 분당 헤더를 주는 제공자로 옮길 때 붙인다. 근거와 실험: docs/performance/2026-10-21-capacity-outage (3단계 본 결과).
 opicnic:
   outbound:
     limiter:
-      mode: ${OUTBOUND_LIMITER_MODE:fixed}
-      stt-mode: ${OUTBOUND_STT_MODE:${OUTBOUND_LIMITER_MODE:fixed}}
-      llm-mode: ${OUTBOUND_LLM_MODE:${OUTBOUND_LIMITER_MODE:fixed}}
+      mode: ${OUTBOUND_LIMITER_MODE:aimd}
+      stt-mode: ${OUTBOUND_STT_MODE:${OUTBOUND_LIMITER_MODE:aimd}}
+      llm-mode: ${OUTBOUND_LLM_MODE:${OUTBOUND_LIMITER_MODE:aimd}}
       stt-per-minute: ${OUTBOUND_STT_PER_MINUTE:20}
       llm-per-minute: ${OUTBOUND_LLM_PER_MINUTE:15}
+  # 속도는 위 제한기가 맡으니 429는 서킷 실패율에 넣지 않는다(503·타임아웃만 센다). 제한기 없이 이것만 끄면 회복하지 못한다(같은 실험).
+  worker:
+    circuit:
+      count-rate-limited: ${OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED:false}
