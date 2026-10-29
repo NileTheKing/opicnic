@@ -84,6 +84,13 @@ class SecurityConfigApiAccessTest {
     class Prod extends Base {
 
         @Test
+        void 운영에선_dev_업로드_경로도_로그인_필수() throws Exception {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/dev/audio/k.webm")
+                            .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
         void 익명_API_요청은_컨트롤러에_닿기_전에_401_JSON() throws Exception {
             mockMvc.perform(get("/api/scoring-jobs/job-1"))
                     .andExpect(status().isUnauthorized())
@@ -140,6 +147,15 @@ class SecurityConfigApiAccessTest {
         @Test
         void dev에서도_남의_잡은_익명이면_컨트롤러가_401() throws Exception {
             mockMvc.perform(get("/api/scoring-jobs/job-1")).andExpect(status().isUnauthorized());
+        }
+
+        // 실험(메모리 저장소)은 녹음 업로드가 앱의 PUT /api/dev/audio/**로 온다. 2026-10-23 로그인 필수 전환 때 빠져 실험 업로드가 전부 401이었다
+        @Test
+        void 측정_스크립트의_녹음_업로드는_로그인_없이_통과한다() throws Exception {
+            int code = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/dev/audio/k.webm")
+                            .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                    .andReturn().getResponse().getStatus();
+            org.assertj.core.api.Assertions.assertThat(code).isNotIn(401, 403);
         }
     }
 }

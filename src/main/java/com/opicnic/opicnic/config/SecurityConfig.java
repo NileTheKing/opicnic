@@ -43,7 +43,7 @@ public class SecurityConfig {
                     // 여기서 hasAuthority("ADMIN")만 걸면 된다. 뷰 라우트(/admin/**)도 API와 동일하게 보호한다.
                     auth.requestMatchers("/admin/**", "/api/admin/**").hasAuthority("ADMIN");
                     if (dev) {
-                        auth.requestMatchers("/api/practice-attempts/**", "/api/scoring-jobs/**", "/practice/result/**", "/dev/**").permitAll();
+                        auth.requestMatchers("/api/practice-attempts/**", "/api/scoring-jobs/**", "/practice/result/**", "/dev/**", "/api/dev/**").permitAll();
                     }
                     // 기본은 로그인 필수, 공개할 것만 연다. 이전엔 /api/**를 통째로 열고 컨트롤러가 각자 막았다 —
                     // 새 API에서 검사를 빠뜨리면 그대로 공개되는 구조라 뒤집었다. 소유권(남의 것인가)은 여전히 컨트롤러가 본다
