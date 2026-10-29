@@ -295,13 +295,21 @@ public class ScoringWorker {
 
     // 서킷 창에 실패로 넣을 것인가. 429는 count-rate-limited=false면 창에서 제외(503·타임아웃 같은 일시적 실패는 그대로 센다)
     static boolean countsAgainstCircuit(FailureKind kind, Throwable e, boolean countRateLimited) {
-        if (kind == FailureKind.PERMANENT || isLocalLimit(e)) return false;
+        if (kind == FailureKind.PERMANENT || isLocalLimit(e) || isCongested(e)) return false;
         return countRateLimited || !isRateLimited(e);
     }
 
     static boolean isLocalLimit(Throwable e) {
         for (Throwable c = e; c != null; c = c.getCause()) {
             if (c instanceof ExternalCallException x && x.reason() == Reason.LOCAL_LIMIT) return true;
+        }
+        return false;
+    }
+
+    // 성공이 섞인 5xx(혼잡 제한기가 다룸). 서킷은 전부 실패하는 완전 장애만 본다
+    static boolean isCongested(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ExternalCallException x && x.reason() == Reason.CONGESTED) return true;
         }
         return false;
     }

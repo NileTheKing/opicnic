@@ -39,6 +39,8 @@ import java.util.function.Supplier;
 // "덜 보내면 나아지는가"로 나눈다: 1초 동안 5xx·타임아웃과 성공이 섞여 있으면 일부만 받아주는 것이니 혼잡 속도를 절반으로,
 // 5xx가 없으면 한도의 2%씩 올린다. 전부 실패면 손대지 않는다 — 완전 장애는 서킷 몫이고, 여기서 줄이면 복구 뒤에도 바닥에서 천천히 올라온다.
 // 실제로 보내는 속도 = min(한도 쪽 속도, 혼잡 속도). 두 신호를 한 속도에 섞으면 어느 쪽이 줄였는지 모르게 되어 따로 둔다.
+// 같은 종류 호출이 최근 2초 안에 성공했으면 그 5xx는 CONGESTED로 바꿔 던진다 — 서킷이 과부하 5xx까지 세면 제한기가 반응하기 전에
+// 열리고(빠른 거절이 창을 채운다), 열린 30초 동안 혼잡 속도가 다시 올라 닫히자마자 또 몰린다(2026-10-29 과부하 실험 B 첫 실행).
 @Component
 @Slf4j
 public class OutboundLimiter {
@@ -68,6 +70,7 @@ public class OutboundLimiter {
 
     static final Duration MAX_WAIT = Duration.ofSeconds(30);
     private static final long ADJUST_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(200);
+    static final long RECENT_SUCCESS_NANOS = TimeUnit.SECONDS.toNanos(2);
 
     private final Lane stt;
     private final Lane llm;
@@ -142,10 +145,18 @@ public class OutboundLimiter {
         try {
             T result = call.get();
             if (mode == Mode.HEADER) lane.onHeaders(HEADERS.get(), null, false);
-            if (lane.congestion) lane.tickOk.incrementAndGet();
+            if (lane.congestion) {
+                lane.tickOk.incrementAndGet();
+                lane.lastOkNanos = System.nanoTime();
+            }
             return result;
         } catch (ExternalCallException e) {
-            if (lane.congestion && e.reason() == Reason.UNAVAILABLE) lane.tickOverload.incrementAndGet();
+            if (lane.congestion && e.reason() == Reason.UNAVAILABLE) {
+                lane.tickOverload.incrementAndGet();
+                if (System.nanoTime() - lane.lastOkNanos < RECENT_SUCCESS_NANOS) {
+                    throw new ExternalCallException(Reason.CONGESTED, e.getMessage(), e);
+                }
+            }
             if (e.reason() == Reason.RATE_LIMITED) {
                 if (mode == Mode.AIMD) lane.onRateLimited();
                 if (mode == Mode.HEADER) lane.onHeaders(HEADERS.get(), e.retryAfter(), true);
@@ -204,6 +215,7 @@ public class OutboundLimiter {
         volatile long last429Nanos = Long.MIN_VALUE / 2;
         volatile long lastDecreaseNanos = Long.MIN_VALUE / 2;
         volatile long lastAdjustNanos = Long.MIN_VALUE / 2;
+        volatile long lastOkNanos = Long.MIN_VALUE / 2;
 
         Lane(Mode mode, long base, boolean congestion) {
             this.mode = mode;

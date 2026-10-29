@@ -167,6 +167,15 @@ class ScoringWorkerTest {
     }
 
     @Test
+    @DisplayName("서킷 집계: 성공이 섞인 5xx(CONGESTED)는 혼잡 제한기 몫이라 어떤 설정에서도 세지 않는다")
+    void congestedIsNeverCounted() {
+        var congested = failure(Reason.CONGESTED);
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, congested, true)).isFalse();
+        assertThat(ScoringWorker.countsAgainstCircuit(FailureKind.TRANSIENT, new RuntimeException("wrap", congested), false)).isFalse();
+        assertThat(ScoringWorker.classify(congested)).isEqualTo(FailureKind.TRANSIENT);   // 재시도는 그대로
+    }
+
+    @Test
     @DisplayName("count-rate-limited=false: 429만 이어져도 서킷이 열리지 않고, 기본(true)에서는 열린다")
     void rateLimitedOnlyDoesNotOpenCircuitWhenNotCounted() {
         for (boolean count : new boolean[]{false, true}) {

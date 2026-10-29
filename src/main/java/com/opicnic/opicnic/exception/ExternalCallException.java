@@ -10,7 +10,9 @@ public class ExternalCallException extends RuntimeException {
         UNAVAILABLE,    // 5xx·타임아웃
         BAD_REQUEST,    // 400·413·415·422 — 보낸 요청(녹음 파일·입력) 자체를 거절
         PROVIDER_ERROR, // 그 밖의 4xx(401·403·404 등) — 키·모델·설정 문제
-        LOCAL_LIMIT     // 우리 쪽 속도 제한기가 토큰을 못 줘서 호출하지 못함(제공자 문제가 아님. 일시적 실패로 다시 집힌다)
+        LOCAL_LIMIT,    // 우리 쪽 속도 제한기가 토큰을 못 줘서 호출하지 못함(제공자 문제가 아님. 일시적 실패로 다시 집힌다)
+        CONGESTED       // 5xx·타임아웃인데 같은 종류 호출이 최근 성공하고 있음 = 일부만 받아주는 과부하. 혼잡 제한기가 속도로 다루고
+                        // 서킷(완전 장애 감지)은 세지 않는다. 혼잡 제한이 켜졌을 때만 OutboundLimiter가 UNAVAILABLE을 이것으로 바꾼다. 원래 예외는 cause
     }
 
     private final Reason reason;

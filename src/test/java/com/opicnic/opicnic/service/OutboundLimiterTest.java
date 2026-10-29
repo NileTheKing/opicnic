@@ -294,4 +294,38 @@ class OutboundLimiterTest {
         assertThat(ExternalCallMetrics.translate(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "x", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8)))
                 .isInstanceOfSatisfying(ExternalCallException.class, x -> assertThat(x.reason()).isEqualTo(Reason.UNAVAILABLE));
     }
+
+    @Test
+    @DisplayName("혼잡: 최근 2초 안에 성공이 있으면 5xx를 CONGESTED로 바꿔 던지고, 전부 실패(완전 장애)면 UNAVAILABLE 그대로")
+    void overloadWithRecentSuccessIsRelabeledCongested() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.AIMD, OutboundLimiter.Mode.AIMD, 6000, 6000, true, null);
+        limiter.shutdown();
+        var original = overloaded();
+        // 성공 전: 완전 장애와 구분할 수 없으니 그대로
+        assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw original; })).isSameAs(original);
+        limiter.call(ProviderKind.STT, () -> "ok");
+        // LLM은 아직 성공이 없다 - 종류별로 본다
+        assertThatThrownBy(() -> limiter.call(ProviderKind.LLM, () -> { throw original; })).isSameAs(original);
+        assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw original; }))
+                .isInstanceOfSatisfying(ExternalCallException.class, x -> {
+                    assertThat(x.reason()).isEqualTo(Reason.CONGESTED);
+                    assertThat(x.getCause()).isSameAs(original);
+                });
+        // 429는 바꾸지 않는다
+        var r429 = rateLimited(null);
+        assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw r429; })).isSameAs(r429);
+    }
+
+    @Test
+    @DisplayName("혼잡 끔: 성공 뒤의 5xx도 UNAVAILABLE 그대로(서킷이 센다)")
+    void noRelabelWhenCongestionOff() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.AIMD, 6000, 6000, null);
+        try {
+            limiter.call(ProviderKind.STT, () -> "ok");
+            var original = overloaded();
+            assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw original; })).isSameAs(original);
+        } finally {
+            limiter.shutdown();
+        }
+    }
 }
