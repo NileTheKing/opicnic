@@ -10,7 +10,7 @@ P=$HOME/opicnic-exp-results/progress.log
 for spec in A:false B:true; do
   n=${spec%%:*}; g=${spec##*:}
   [ -n "$ONLY" ] && case " $ONLY " in *" $n "*) ;; *) continue ;; esac
-  id="s3o-slots${SLOTS}-${n}"
+  id="s3o-slots${SLOTS}-${n}${DECREASE:+-d$DECREASE}"
   echo "$(date '+%F %T') START $id (congestion=$g)" >> "$P"
   MOCK_OVERLOAD=true CONGESTION=$g COUNT_REJECTED=false COUNT_RATE_LIMITED=false WARM_S=60 OUTAGE_S=120 MAX_RECOVER_S=180 \
     scripts/exp/exp-run.sh "$id" 3 "$SLOTS" on L4a >> "$HOME/opicnic-exp-results/master.log" 2>&1

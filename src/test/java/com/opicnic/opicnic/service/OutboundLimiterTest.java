@@ -328,4 +328,17 @@ class OutboundLimiterTest {
             limiter.shutdown();
         }
     }
+
+    @Test
+    @DisplayName("혼잡: 줄이는 비율(congestion-decrease)을 설정할 수 있고 0과 1 사이만 받는다")
+    void congestionDecreaseIsConfigurable() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.OFF, OutboundLimiter.Mode.OFF, 6000, 6000, true, 0.7, null);
+        limiter.shutdown();
+        limiter.call(ProviderKind.STT, () -> "ok");
+        assertThatThrownBy(() -> limiter.call(ProviderKind.STT, () -> { throw overloaded(); })).isInstanceOf(ExternalCallException.class);
+        limiter.adjustCongestionNow(ProviderKind.STT);
+        assertThat(limiter.congestionRatePerMinute(ProviderKind.STT)).isEqualTo(4200);
+        assertThatThrownBy(() -> new OutboundLimiter(OutboundLimiter.Mode.OFF, OutboundLimiter.Mode.OFF, 60, 60, true, 1.0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
