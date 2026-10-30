@@ -25,6 +25,7 @@ class OutboundLimiterTest {
         MockProvider.configureLimits(0, 0, 1.0, false);
         MockProvider.setOverload(false);
         MockProvider.setCountRejected(false);
+        MockProvider.configureTokenLimits(0, 0, 1.0);
     }
 
     private static ExternalCallException overloaded() {
@@ -388,5 +389,33 @@ class OutboundLimiterTest {
         assertThat(e).isInstanceOf(org.springframework.web.client.ResourceAccessException.class);
         assertThat(ExternalCallMetrics.translate(e)).isInstanceOfSatisfying(ExternalCallException.class, x -> assertThat(x.reason()).isEqualTo(Reason.UNAVAILABLE));
         assertThat(ExternalCallMetrics.outcomeOf(e)).isEqualTo("timeout");
+    }
+
+    @Test
+    @DisplayName("가짜 제공자 토큰 한도: 요청 수가 남아도 토큰이 모자라면 429, 거절은 토큰을 쓰지 않는다")
+    void mockProviderTokenLimit() {
+        MockProvider.configureLimits(0, 60000, 1.0, false);          // 요청 수 초당 1,000 (넉넉)
+        MockProvider.configureTokenLimits(0, 60000, 1.0);            // 토큰 초당 1,000, 버스트 5,000
+        int ok = 0, rejected = 0;
+        for (int i = 0; i < 10; i++) {
+            try { MockProvider.admit(ProviderKind.LLM, 1500); ok++; } catch (HttpClientErrorException e) { rejected++; }
+        }
+        assertThat(ok).isEqualTo(3);                                  // 5,000 / 1,500 = 3건
+        assertThat(rejected).isEqualTo(7);
+        assertThat(MockProvider.tokenLeftForTest(ProviderKind.LLM)).isCloseTo(500.0, org.assertj.core.data.Offset.offset(1.0));
+        MockProvider.admit(ProviderKind.STT, 99999);                  // STT는 한도 없음
+    }
+
+    @Test
+    @DisplayName("fixed + 토큰: 분당 토큰을 넘는 속도로 부르면 토큰이 찰 때까지 기다린다")
+    void fixedPrecountsTokens() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.FIXED, 600000, 600000, null);   // 요청 수는 넉넉
+        limiter.configureTokens(0, 60000);                                                       // 토큰 초당 1,000, 버스트 1,000
+        long t0 = System.nanoTime();
+        for (int i = 0; i < 3; i++) limiter.call(ProviderKind.LLM, 1000, () -> "x");
+        assertThat(Duration.ofNanos(System.nanoTime() - t0).toMillis()).isGreaterThan(1500L);    // 2건은 1초씩 기다림
+        t0 = System.nanoTime();
+        for (int i = 0; i < 50; i++) limiter.call(ProviderKind.STT, 1000, () -> "x");             // STT 토큰 한도 없음
+        assertThat(Duration.ofNanos(System.nanoTime() - t0)).isLessThan(Duration.ofSeconds(1));
     }
 }

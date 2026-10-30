@@ -20,6 +20,9 @@ import java.nio.charset.StandardCharsets;
 //     overload=true면 토큰이 없을 때 429 대신 503 "model is overloaded"로 거절한다 — 제공자 사정으로 받아주는 양이 준 것은
 //     실제로 이렇게 온다(Gemini API 503, OpenAI 503 server_is_overloaded). 과부하 거절은 내 한도와 무관하니 countRejected와 상관없이
 //     토큰을 쓰지 않고 한도 헤더도 주지 않는다. 기본 false.
+//  3) 종류별 분당 토큰 한도(sttTokensPerMinute, llmTokensPerMinute, 0 = 끔). 실제 제공자는 요청 수와 토큰 중 먼저 차는 쪽에서 429를 준다.
+//     호출마다 CallTokens의 값만큼 쓴다(OpenAI 계산 규칙: max(max_tokens, 입력 추정)). 채우기·버스트·용량 비율은 요청 수 버킷과 같다.
+//     거절된 호출은 토큰을 쓰지 않는다(요청 수는 countRejected를 따른다) — 거절이 토큰 한도를 깎는다는 문서가 없다.
 //     overloadTimeoutMs(종류별, 0 = 끔)를 주면 과부하 거절을 503 대신 그 시간만큼 기다린 뒤 읽기 타임아웃으로 낸다 — 과부하가 응답 지연으로
 //     나타나 우리 read-timeout에 걸리는 경우. 기다리는 동안 호출한 쪽(워커 슬롯)이 묶인다.
 public final class MockProvider {
@@ -53,6 +56,11 @@ public final class MockProvider {
         LLM.configure(llmPerMinute, capacity);
     }
 
+    public static void configureTokenLimits(int sttTokensPerMinute, int llmTokensPerMinute, double capacity) {
+        STT.configureTokens(sttTokensPerMinute, capacity);
+        LLM.configureTokens(llmTokensPerMinute, capacity);
+    }
+
     public static void setCountRejected(boolean countRejected) {
         MockProvider.countRejected = countRejected;
         STT.clampDebt();
@@ -69,12 +77,21 @@ public final class MockProvider {
         MockProvider.llmOverloadTimeoutMs = Math.max(0, llmTimeoutMs);
     }
 
+    // 테스트용: 종류별 남은 토큰(토큰 한도)
+    static double tokenLeftForTest(ProviderKind kind) {
+        return (kind == ProviderKind.STT ? STT : LLM).tokenLeftForTest();
+    }
+
     // 테스트용: 종류별 현재 토큰 잔고(음수 = 거절 빚)
     static double tokensForTest(ProviderKind kind) {
         return (kind == ProviderKind.STT ? STT : LLM).tokens();
     }
 
     static void admit(ProviderKind kind) {
+        admit(kind, 0);
+    }
+
+    static void admit(ProviderKind kind, int callTokens) {
         if (down) {
             throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable",
                     HttpHeaders.EMPTY, "Service Unavailable".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
@@ -84,7 +101,7 @@ public final class MockProvider {
                     HttpHeaders.EMPTY, "Rate limit reached (mock provider)".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
         }
         Lane lane = kind == ProviderKind.STT ? STT : LLM;
-        Lane.Result r = lane.take();
+        Lane.Result r = lane.take(callTokens);
         if (r == null) return;   // 이 종류는 한도 없음
         if (!r.admitted && overload) {
             long wait = kind == ProviderKind.STT ? sttOverloadTimeoutMs : llmOverloadTimeoutMs;
@@ -129,6 +146,8 @@ public final class MockProvider {
         private double max;
         private double tokens;
         private long lastRefillMs;
+        private int tokensPerMinute;          // 토큰 한도. 0 = 없음
+        private double tokenRatePerSecond, tokenMax, tokenLeft;
 
         record Result(boolean admitted, int remaining, double resetSeconds, long retryAfterSeconds) {}
 
@@ -145,21 +164,38 @@ public final class MockProvider {
             lastRefillMs = now;
         }
 
+        synchronized void configureTokens(int perMinute, double capacity) {
+            double rate = perMinute <= 0 ? 0 : perMinute * Math.max(0, capacity) / 60.0;
+            double newMax = rate * 5;
+            tokenLeft = (perMinute != tokensPerMinute || tokenMax == 0) ? newMax : Math.min(tokenLeft, newMax);
+            tokensPerMinute = perMinute;
+            tokenRatePerSecond = rate;
+            tokenMax = newMax;
+        }
+
         synchronized double tokens() { return tokens; }
+
+        synchronized double tokenLeftForTest() { return tokenLeft; }
 
         synchronized void clampDebt() { tokens = Math.max(tokens, -ratePerSecond * 60); }
 
-        synchronized Result take() {
-            if (basePerMinute <= 0) return null;
+        synchronized Result take(int callTokens) {
+            if (basePerMinute <= 0 && tokensPerMinute <= 0) return null;
             long now = System.currentTimeMillis();
             long secs = (now - lastRefillMs) / 1000;
             if (secs > 0) {
                 tokens = Math.min(max, tokens + secs * ratePerSecond);
+                tokenLeft = Math.min(tokenMax, tokenLeft + secs * tokenRatePerSecond);
                 lastRefillMs += secs * 1000;
             }
-            boolean ok = tokens >= 1;
-            if (ok) tokens -= 1;
-            else if (countRejected && !overload) tokens = Math.max(tokens - 1, -ratePerSecond * 60);   // 거절도 한도에 침, 하한 = 1분치 빚
+            boolean reqOk = basePerMinute <= 0 || tokens >= 1;
+            boolean tokOk = tokensPerMinute <= 0 || tokenLeft >= callTokens;
+            boolean ok = reqOk && tokOk;
+            if (ok) {
+                if (basePerMinute > 0) tokens -= 1;
+                if (tokensPerMinute > 0) tokenLeft -= callTokens;
+            }
+            else if (countRejected && !overload && basePerMinute > 0) tokens = Math.max(tokens - 1, -ratePerSecond * 60);   // 거절도 한도에 침, 하한 = 1분치 빚
             double reset = ratePerSecond > 0 ? (max - tokens) / ratePerSecond : 0;
             long retryAfter = ok ? 0 : (ratePerSecond > 0 ? Math.max(1, (long) Math.ceil((1 - tokens) / ratePerSecond)) : 60);
             return new Result(ok, (int) Math.max(0, Math.floor(tokens)), reset, retryAfter);

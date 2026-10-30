@@ -25,6 +25,8 @@ import java.util.function.Supplier;
 //
 //   off    (기본) 아무것도 하지 않는다. 지금 동작과 같다.
 //   fixed  설정한 분당 한도(stt-per-minute, llm-per-minute)로 고정. 제공자 용량이 줄어도 모른다.
+//          분당 토큰 한도(stt-tokens-per-minute, llm-tokens-per-minute, 0 = 끔)를 주면 호출마다 CallTokens만큼 토큰도 미리 센다 —
+//          한도를 공개하는 제공자(OpenAI 등급표)에서 요청 수와 토큰 둘 다 넘기 전에 멈추는 방식(OpenAI cookbook의 병렬 처리 예제와 같다).
 //   aimd   429를 받으면 현재 속도를 절반(최소 한도의 10%). 1초 동안 429가 없으면 한도의 2%씩 올린다(상한 한도).
 //          한 번 줄인 뒤 1초 안에 오는 429(이미 나간 호출의 것)는 또 줄이지 않는다.
 //   header 응답 헤더(남은 수 / 리셋까지 초)로 속도를 맞춘다: 속도 = 남은 수 / 리셋까지 시간. 429면 Retry-After 동안 모두 멈춘다.
@@ -96,9 +98,21 @@ public class OutboundLimiter {
                            @Value("${opicnic.outbound.limiter.congestion-method:aimd}") String congestionMethod,
                            @Value("${opicnic.outbound.limiter.congestion-k:2.0}") double congestionK,
                            @Value("${opicnic.outbound.limiter.congestion-window-seconds:10}") int congestionWindowSeconds,
+                           @Value("${opicnic.outbound.limiter.stt-tokens-per-minute:0}") int sttTokensPerMinute,
+                           @Value("${opicnic.outbound.limiter.llm-tokens-per-minute:0}") int llmTokensPerMinute,
                            MeterRegistry registry) {
         this(Mode.parse(sttMode), Mode.parse(llmMode), sttPerMinute, llmPerMinute, congestion, congestionDecrease,
                 parseSre(congestionMethod), congestionK, congestionWindowSeconds, registry);
+        configureTokens(sttTokensPerMinute, llmTokensPerMinute);
+    }
+
+    // fixed 방식에서 토큰도 미리 센다. 0 = 끔
+    void configureTokens(int sttTokensPerMinute, int llmTokensPerMinute) {
+        stt.configureTokens(sttTokensPerMinute);
+        llm.configureTokens(llmTokensPerMinute);
+        if (sttTokensPerMinute > 0 || llmTokensPerMinute > 0) {
+            log.info("[Limiter] 토큰도 미리 셈(fixed 방식만): stt {}/min, llm {}/min", sttTokensPerMinute, llmTokensPerMinute);
+        }
     }
 
     private static boolean parseSre(String method) {
@@ -176,6 +190,11 @@ public class OutboundLimiter {
     }
 
     public <T> T call(ProviderKind kind, Supplier<T> call) {
+        return call(kind, 0, call);
+    }
+
+    // callTokens: 이 호출이 제공자 토큰 한도에서 쓸 양(CallTokens). fixed 방식에 토큰 한도가 있을 때만 쓴다
+    public <T> T call(ProviderKind kind, int callTokens, Supplier<T> call) {
         Lane lane = lane(kind);
         Mode mode = lane.mode;
         if (mode == Mode.OFF && !lane.congestion) return call.get();
@@ -184,6 +203,7 @@ public class OutboundLimiter {
             throw new ExternalCallException(Reason.LOCAL_LIMIT, "혼잡 제한(SRE) 스스로 거절", null);
         }
         lane.acquire();
+        if (mode == Mode.FIXED && callTokens > 0) lane.acquireTokens(callTokens);
         HEADERS.remove();
         try {
             T result = call.get();
@@ -294,6 +314,24 @@ public class OutboundLimiter {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ExternalCallException(Reason.LOCAL_LIMIT, "속도 제한기 대기 중 인터럽트", e);
+            }
+        }
+
+        private volatile LocalBucket tokenBucket;   // fixed 방식의 분당 토큰. null = 안 셈
+
+        void configureTokens(int perMinute) {
+            tokenBucket = perMinute <= 0 ? null : io.github.bucket4j.Bucket.builder()
+                    .addLimit(Bandwidth.builder().capacity(Math.max(1, perMinute / 60)).refillGreedy(perMinute, Duration.ofMinutes(1)).build()).build();
+        }
+
+        void acquireTokens(int n) {
+            LocalBucket b = tokenBucket;
+            if (b == null) return;
+            try {
+                if (!b.asBlocking().tryConsume(n, MAX_WAIT)) throw timeout();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ExternalCallException(Reason.LOCAL_LIMIT, "속도 제한기 토큰 대기 중 인터럽트", e);
             }
         }
 

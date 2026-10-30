@@ -85,17 +85,24 @@ public class DevPracticeController {
                                                @RequestParam(required = false) Boolean countRejected,
                                                @RequestParam(defaultValue = "false") boolean overload,
                                                @RequestParam(defaultValue = "0") long sttOverloadTimeoutMs,
-                                               @RequestParam(defaultValue = "0") long llmOverloadTimeoutMs) {
+                                               @RequestParam(defaultValue = "0") long llmOverloadTimeoutMs,
+                                               @RequestParam(defaultValue = "0") int sttTokensPerMinute,
+                                               @RequestParam(defaultValue = "0") int llmTokensPerMinute) {
         boolean count = countRejected != null ? countRejected : countRejectedDefault;
         MockProvider.configure(down, limitPerSecond);
         MockProvider.configureLimits(sttPerMinute, llmPerMinute, capacity, headers);
         MockProvider.setCountRejected(count);
         MockProvider.setOverload(overload, sttOverloadTimeoutMs, llmOverloadTimeoutMs);
+        MockProvider.configureTokenLimits(sttTokensPerMinute, llmTokensPerMinute, capacity);
         log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={} countRejected={} overload={} overloadTimeout(stt={}ms, llm={}ms)",
                 down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers, count, overload, sttOverloadTimeoutMs, llmOverloadTimeoutMs);
-        return Map.of("down", down, "limitPerSecond", limitPerSecond, "sttPerMinute", sttPerMinute,
-                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers, "countRejected", count, "overload", overload,
-                "overloadTimeoutMs", sttOverloadTimeoutMs + "/" + llmOverloadTimeoutMs);
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("down", down); out.put("limitPerSecond", limitPerSecond); out.put("sttPerMinute", sttPerMinute);
+        out.put("llmPerMinute", llmPerMinute); out.put("capacity", capacity); out.put("headers", headers);
+        out.put("countRejected", count); out.put("overload", overload);
+        out.put("overloadTimeoutMs", sttOverloadTimeoutMs + "/" + llmOverloadTimeoutMs);
+        out.put("tokensPerMinute", sttTokensPerMinute + "/" + llmTokensPerMinute);
+        return out;
     }
 
     @PostMapping("/start")

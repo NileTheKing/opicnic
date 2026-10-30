@@ -24,16 +24,25 @@ case "$LADDER" in
   L3) LIMITER_MODE=fixed ;;
   L4a) LIMITER_MODE=aimd ;;
   L4b) LIMITER_MODE=header; MOCK_HEADERS=true ;;
+  # 재시도 폭풍(2단계 시나리오 + 내 한도). R1 즉시 / R2 지수+1초 jitter / R3 full jitter / R4 + AIMD / R5 + 미리 세기(요청 수 + 토큰)
+  R1) BACKOFF_MODE=immediate ;;
+  R2) BACKOFF_MODE=exponential-small-jitter ;;
+  R3) BACKOFF_MODE=full-jitter ;;
+  R4) BACKOFF_MODE=full-jitter; LIMITER_MODE=aimd ;;
+  R5) BACKOFF_MODE=full-jitter; LIMITER_MODE=fixed ;;
   *) echo "알 수 없는 사다리 단계: $LADDER"; exit 3 ;;
 esac
-if [ "$LADDER" != none ]; then STT_PM=5000; LLM_PM=10000; fi
+if [ "$LADDER" != none ]; then STT_PM=${STT_PM_OVERRIDE:-5000}; LLM_PM=${LLM_PM_OVERRIDE:-10000}; fi
+# 환경 변수 STT_TPM / LLM_TPM: 제공자(가짜) 분당 토큰 한도. R5는 우리 제한기도 같은 값으로 미리 센다
+STT_TPM=${STT_TPM:-0}; LLM_TPM=${LLM_TPM:-0}
 OUT=$HOME/opicnic-exp-results/$RUN; mkdir -p "$OUT"; chmod 777 "$OUT"
 COMPOSE="docker compose -p opicnic-exp -f docker-compose.exp.yml"
 BUCKET=opicnic-exp   # 이 스크립트는 이 버킷만 비운다(하드코딩)
 set -a; . ./.env; set +a
 export WORKER_CONCURRENCY=$SLOTS
 export OPICNIC_WORKER_BACKOFF_MODE=$BACKOFF_MODE OPICNIC_OUTBOUND_LIMITER_MODE=$LIMITER_MODE
-export OPICNIC_OUTBOUND_LIMITER_STT_PER_MINUTE=5000 OPICNIC_OUTBOUND_LIMITER_LLM_PER_MINUTE=10000
+export OPICNIC_OUTBOUND_LIMITER_STT_PER_MINUTE=${STT_PM:-5000} OPICNIC_OUTBOUND_LIMITER_LLM_PER_MINUTE=${LLM_PM:-10000}
+if [ "$LIMITER_MODE" = fixed ]; then export OPICNIC_OUTBOUND_LIMITER_STT_TOKENS_PER_MINUTE=$STT_TPM OPICNIC_OUTBOUND_LIMITER_LLM_TOKENS_PER_MINUTE=$LLM_TPM; fi
 if [ "$STORAGE" = mem ]; then export APP_R2_ACCOUNT_ID="" OPICNIC_STORAGE_MEMORY_UPLOAD_BASE=http://app:8080; fi
 if [ "$CIRCUIT" = off ]; then export OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO=2; else export OPICNIC_WORKER_CIRCUIT_FAILURE_RATIO=0.8; fi
 # 환경 변수 COUNT_RATE_LIMITED=false 면 서킷이 429를 창에서 제외(3단계 추가 실험). 기본 true
@@ -73,7 +82,7 @@ check_abort() { [ -f "$ABORT" ] && abort "감시: $(cat "$ABORT")"; }
 trap 'cleanup' EXIT
 
 log "== run $RUN stage=$STAGE slots=$SLOTS circuit=$CIRCUIT rate=$RATE ladder=$LADDER storage=$STORAGE backoff=$BACKOFF_MODE limiter=$LIMITER_MODE"
-mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark COUNT_REJECTED "$COUNT_REJECTED"; mark MOCK_OVERLOAD "$MOCK_OVERLOAD"; mark OVERLOAD_TIMEOUT_MS "$OT_STT/$OT_LLM"; mark CONGESTION "$OPICNIC_OUTBOUND_LIMITER_CONGESTION"; mark DECREASE "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_DECREASE"; mark METHOD "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_METHOD"; mark SRE_K "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_K"; mark SRE_WINDOW "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_WINDOW_SECONDS"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
+mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark COUNT_REJECTED "$COUNT_REJECTED"; mark MOCK_OVERLOAD "$MOCK_OVERLOAD"; mark STT_PM "$STT_PM"; mark LLM_PM "$LLM_PM"; mark STT_TPM "$STT_TPM"; mark LLM_TPM "$LLM_TPM"; mark STT_MOCK_DELAY_MS "${STT_MOCK_DELAY_MS:-3000}"; mark OVERLOAD_TIMEOUT_MS "$OT_STT/$OT_LLM"; mark CONGESTION "$OPICNIC_OUTBOUND_LIMITER_CONGESTION"; mark DECREASE "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_DECREASE"; mark METHOD "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_METHOD"; mark SRE_K "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_K"; mark SRE_WINDOW "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_WINDOW_SECONDS"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
 mark RUN "$RUN"; mark STAGE "$STAGE"; mark SLOTS "$SLOTS"; mark CIRCUIT "$CIRCUIT"; mark WARM_S $WARM_S; mark MEASURE_S $MEASURE_S
 mark OUTAGE_S $OUTAGE_S; mark MAX_RECOVER_S $MAX_RECOVER_S; mark RATE $RATE
 
@@ -121,7 +130,7 @@ curl -sf -m 3 "$APP/actuator/health" >/dev/null 2>&1 || abort "앱 기동 실패
 log "앱 기동 완료 (slots=$SLOTS circuit=$CIRCUIT)"
 CSRF=$(curl -s -c "$OUT/csrf.jar" "$APP/api/practice-attempts/csrf")
 TOKEN=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["token"])' "$CSRF"); HDR=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["headerName"])' "$CSRF")
-mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS&countRejected=$COUNT_REJECTED&overload=$MOCK_OVERLOAD&sttOverloadTimeoutMs=$OT_STT&llmOverloadTimeoutMs=$OT_LLM"; }
+mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS&countRejected=$COUNT_REJECTED&overload=$MOCK_OVERLOAD&sttOverloadTimeoutMs=$OT_STT&llmOverloadTimeoutMs=$OT_LLM&sttTokensPerMinute=$STT_TPM&llmTokensPerMinute=$LLM_TPM"; }
 log "mock 기본값 확인: $(mock false)"
 
 # ---- 4. 샘플러 + 부하

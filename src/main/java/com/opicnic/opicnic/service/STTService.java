@@ -80,12 +80,12 @@ public class STTService {
 
     public String sendStreamToStt(byte[] audioBytes, String filename) {
         // mock 경로도 같이 센다 — S2 호출 증폭을 지표 비율로 재기 위해 (ExternalCallMetrics 참고).
-        return limiter.call(ProviderKind.STT, () -> ExternalCallMetrics.record(meterRegistry, "stt", () -> callStt(audioBytes, filename)));
+        return limiter.call(ProviderKind.STT, CallTokens.STT, () -> ExternalCallMetrics.record(meterRegistry, "stt", () -> callStt(audioBytes, filename)));
     }
 
     private String callStt(byte[] audioBytes, String filename) {
         if (!enabled) {
-            MockProvider.admit(ProviderKind.STT);
+            MockProvider.admit(ProviderKind.STT, CallTokens.STT);
             if (mockDelayMs > 0) {
                 try { Thread.sleep(mockDelayMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
