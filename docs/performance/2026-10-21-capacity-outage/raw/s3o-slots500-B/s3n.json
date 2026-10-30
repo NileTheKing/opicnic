@@ -1,4 +1,6 @@
 {
+ "partial_cut": false,
+ "aborted": false,
  "run": "s3o-slots500-B",
  "ladder": "L4a",
  "count_rate_limited": "false",
@@ -28,6 +30,20 @@
  "post_slope_120_180_per_s": -8.5,
  "r429_first120_after_up": 0,
  "return_extrap_s": 993,
+ "full_cut": {
+  "secs": 120,
+  "pile_rate_per_s": 21.06,
+  "pile_5min": 6318,
+  "stt_ok_per_s": 23.7,
+  "llm_ok_per_s": 46.1,
+  "failed_calls_5min": 906,
+  "by_outcome": {
+   "stt/ok": 2848,
+   "score/ok": 2763,
+   "tag/ok": 2763,
+   "stt/5xx": 362
+  }
+ },
  "server_submit_p95_ms": 27.4,
  "heap_mb_max": 2996.0,
  "app_error_lines": 6,

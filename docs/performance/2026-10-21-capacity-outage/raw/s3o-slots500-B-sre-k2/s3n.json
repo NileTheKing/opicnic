@@ -1,0 +1,63 @@
+{
+ "partial_cut": false,
+ "aborted": false,
+ "run": "s3o-slots500-B-sre-k2",
+ "ladder": "L4a",
+ "count_rate_limited": "false",
+ "count_rejected": "false",
+ "warm_s": "60",
+ "outage_s": 121,
+ "base_q": 34.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 22.26,
+ "pile_5min_extrap": 6677,
+ "r429_rate_per_s": 0.0,
+ "r429_5min_extrap": 0,
+ "waste_5min_extrap": 17022,
+ "r5xx_5min_extrap": 17022,
+ "mock_overload": "true",
+ "congestion": "true",
+ "stt_ok_per_s_cut": 33.1,
+ "llm_ok_per_s_cut": 66.5,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 2439,
+ "backoff_at_up": "247,57",
+ "obs_after_up_s": 192,
+ "post_up_q_change_first120": -1392,
+ "post_slope_120_180_per_s": -8.66,
+ "r429_first120_after_up": 0,
+ "return_extrap_s": 734,
+ "full_cut": {
+  "secs": 121,
+  "pile_rate_per_s": 19.9,
+  "pile_5min": 5969,
+  "stt_ok_per_s": 34.5,
+  "llm_ok_per_s": 68.6,
+  "failed_calls_5min": 14810,
+  "by_outcome": {
+   "score/ok": 5249,
+   "stt/ok": 4176,
+   "tag/ok": 3056,
+   "score/5xx": 1971,
+   "stt/5xx": 1838,
+   "tag/5xx": 2165
+  }
+ },
+ "server_submit_p95_ms": 28.2,
+ "heap_mb_max": 2791.0,
+ "app_error_lines": 8,
+ "deadlock_lines": 4,
+ "prod_error_lines": "0",
+ "host_mem_avail_min_mb": 2517.0,
+ "calls_cut_total": {
+  "score/ok": 5249,
+  "stt/ok": 4176,
+  "tag/ok": 3056,
+  "score/5xx": 1971,
+  "stt/5xx": 1838,
+  "tag/5xx": 2165
+ }
+}

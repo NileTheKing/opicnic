@@ -1,0 +1,50 @@
+{
+ "partial_cut": true,
+ "aborted": true,
+ "run": "s3o-slots500-B-d0.5-to15000",
+ "ladder": "L4a",
+ "count_rate_limited": "false",
+ "count_rejected": "false",
+ "warm_s": "60",
+ "outage_s": 274,
+ "base_q": 38.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 26.23,
+ "pile_5min_extrap": 7868,
+ "r429_rate_per_s": 0.0,
+ "r429_5min_extrap": 0,
+ "waste_5min_extrap": 1041,
+ "r5xx_5min_extrap": 0,
+ "mock_overload": "true",
+ "congestion": "true",
+ "stt_ok_per_s_cut": 18.1,
+ "llm_ok_per_s_cut": 36.0,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 5946,
+ "backoff_at_up": null,
+ "obs_after_up_s": 0,
+ "post_up_q_change_first120": null,
+ "post_slope_120_180_per_s": null,
+ "r429_first120_after_up": 0,
+ "return_extrap_s": null,
+ "full_cut": {
+  "secs": 274,
+  "pile_rate_per_s": 21.6,
+  "pile_5min": 6480,
+  "stt_ok_per_s": 23.8,
+  "llm_ok_per_s": 47.2,
+  "failed_calls_5min": 1106,
+  "by_outcome": {
+   "score/ok": 6497,
+   "stt/ok": 6535,
+   "tag/ok": 6445,
+   "stt/timeout": 933,
+   "score/timeout": 41,
+   "tag/timeout": 37
+  }
+ },
+ "summary_error": "[Errno 2] No such file or directory: '/home/ubuntu/opicnic-exp-results/s3o-slots500-B-d0.5-to15000/summary.json'"
+}

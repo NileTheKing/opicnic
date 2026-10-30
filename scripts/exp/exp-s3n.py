@@ -14,7 +14,10 @@ for l in open(f'{D}/sampler.tsv'):
     if len(p) == 3:
         try: S[p[1]].append((float(p[0]), float(p[2])))
         except ValueError: pass
-Td, Tu = float(marks['T_DOWN']), float(marks['T_UP']); Lo = Tu - Td
+# 중단(ABORT)으로 회복 전에 끝난 실행은 마지막 표본 시각을 감소 끝으로 본다(partial_cut)
+Td = float(marks['T_DOWN'])
+_qs = [float(l.split('\t')[0]) for l in open(f'{D}/sampler.tsv') if l.split('\t')[1:2] == ['opicnic_worker_queued']]
+Tu = float(marks['T_UP']) if 'T_UP' in marks else max(_qs); Lo = Tu - Td
 base = float(marks.get('BASE_Q', 0))
 def interp(ser, t):
     if not ser: return None
@@ -40,7 +43,7 @@ def agg(c):
     r429 = sum(v for k, v in c.items() if k.endswith('/429')); ok = {k: v for k, v in c.items() if k.endswith('/ok')}
     waste = sum(v for k, v in c.items() if not k.endswith('/ok'))
     return r429, waste, sum(v for k, v in ok.items() if k.startswith('stt/')), sum(v for k, v in ok.items() if not k.startswith('stt/'))
-R = {'run': marks['RUN'], 'ladder': marks['LADDER'], 'count_rate_limited': marks.get('COUNT_RATE_LIMITED'), 'count_rejected': marks.get('COUNT_REJECTED'),
+R = {'partial_cut': 'T_UP' not in marks, 'aborted': marks.get('RESULT') == 'abort' or 'T_DRAIN' not in marks, 'run': marks['RUN'], 'ladder': marks['LADDER'], 'count_rate_limited': marks.get('COUNT_RATE_LIMITED'), 'count_rejected': marks.get('COUNT_REJECTED'),
      'warm_s': marks['WARM_S'], 'outage_s': round(Lo), 'base_q': base}
 # 감소 구간
 w0, w1 = Td + 30, Td + min(120, Lo)
@@ -60,11 +63,18 @@ R['q_at_up'] = round(interp(Q, Tu)); R['backoff_at_up'] = marks.get('BACKOFF_AT_
 # 회복 후
 tail_end = max(t for t, _ in Q)
 R['obs_after_up_s'] = round(tail_end - Tu)
-d120 = interp(Q, Tu + 120) - interp(Q, Tu)
+d120 = interp(Q, Tu + 120) - interp(Q, Tu) if tail_end >= Tu + 120 else None
 sl_p, _, _ = slope(Q, Tu + 120, Tu + 180)
-R['post_up_q_change_first120'] = round(d120); R['post_slope_120_180_per_s'] = round(sl_p, 2)
+R['post_up_q_change_first120'] = round(d120) if d120 is not None else None
+R['post_slope_120_180_per_s'] = round(sl_p, 2) if sl_p is not None else None
 r429r = agg(ext(Tu, Tu + 120))[0]; R['r429_first120_after_up'] = round(r429r)
-R['return_extrap_s'] = round(120 + (sl_o * 300 + base + d120) / -sl_p) if sl_p < 0 else None
+R['return_extrap_s'] = round(120 + (sl_o * 300 + base + d120) / -sl_p) if sl_p is not None and sl_p < 0 and d120 is not None else None
+# 감소 구간 전체(시작부터 끝까지) 평균. 타임아웃형 거절은 피드백이 늦어 처음 120초로 환산하면 틀리므로 이 값을 본다
+_c = ext(Td, Tu); _r429, _waste, _stt, _llm = agg(_c)
+R['full_cut'] = {'secs': round(Lo), 'pile_rate_per_s': round((interp(Q, Tu) - interp(Q, Td)) / Lo, 2),
+                 'pile_5min': round((interp(Q, Tu) - interp(Q, Td)) / Lo * 300), 'stt_ok_per_s': round(_stt / Lo, 1),
+                 'llm_ok_per_s': round(_llm / Lo, 1), 'failed_calls_5min': round(_waste / Lo * 300),
+                 'by_outcome': {k: round(v) for k, v in _c.items()}}
 # 원래 길이 실측
 if Lo >= 299:
     a429, awaste, _, _ = agg(ext(Td, Tu))

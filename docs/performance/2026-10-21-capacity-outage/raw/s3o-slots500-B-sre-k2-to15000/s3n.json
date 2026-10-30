@@ -1,0 +1,76 @@
+{
+ "partial_cut": false,
+ "aborted": false,
+ "run": "s3o-slots500-B-sre-k2-to15000",
+ "ladder": "L4a",
+ "count_rate_limited": "false",
+ "count_rejected": "false",
+ "warm_s": "60",
+ "outage_s": 300,
+ "base_q": 32.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 12.14,
+ "pile_5min_extrap": 3641,
+ "r429_rate_per_s": 0.0,
+ "r429_5min_extrap": 0,
+ "waste_5min_extrap": 3745,
+ "r5xx_5min_extrap": 0,
+ "mock_overload": "true",
+ "congestion": "true",
+ "stt_ok_per_s_cut": 33.3,
+ "llm_ok_per_s_cut": 65.7,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 3449,
+ "backoff_at_up": "12,1",
+ "obs_after_up_s": 224,
+ "post_up_q_change_first120": -672,
+ "post_slope_120_180_per_s": -8.85,
+ "r429_first120_after_up": 0,
+ "return_extrap_s": 459,
+ "full_cut": {
+  "secs": 300,
+  "pile_rate_per_s": 11.39,
+  "pile_5min": 3417,
+  "stt_ok_per_s": 33.9,
+  "llm_ok_per_s": 66.4,
+  "failed_calls_5min": 3522,
+  "by_outcome": {
+   "stt/ok": 10171,
+   "score/ok": 9964,
+   "tag/ok": 9960,
+   "stt/timeout": 3521,
+   "score/timeout": 1,
+   "tag/timeout": 0
+  }
+ },
+ "actual": {
+  "pile": 3417,
+  "r429_5min": 0,
+  "waste_5min": 3522,
+  "post_slope_120_300_per_s": -28.09,
+  "return_s": 239,
+  "circuit_open_ratio_first120": 0.0
+ },
+ "error_pct": {
+  "pile": 6.6,
+  "r429": 0.0,
+  "return": 92.1
+ },
+ "server_submit_p95_ms": 28.3,
+ "heap_mb_max": 2804.0,
+ "app_error_lines": 12,
+ "deadlock_lines": 6,
+ "prod_error_lines": "0",
+ "host_mem_avail_min_mb": 2335.0,
+ "calls_cut_total": {
+  "stt/ok": 10171,
+  "score/ok": 9964,
+  "tag/ok": 9960,
+  "stt/timeout": 3521,
+  "score/timeout": 1,
+  "tag/timeout": 0
+ }
+}

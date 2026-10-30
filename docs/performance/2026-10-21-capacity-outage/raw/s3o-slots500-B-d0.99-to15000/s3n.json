@@ -1,0 +1,60 @@
+{
+ "partial_cut": false,
+ "aborted": true,
+ "run": "s3o-slots500-B-d0.99-to15000",
+ "ladder": "L4a",
+ "count_rate_limited": "false",
+ "count_rejected": "false",
+ "warm_s": "60",
+ "outage_s": 300,
+ "base_q": 33.0,
+ "cut_window_s": [
+  30,
+  120
+ ],
+ "queue_slope_cut_per_s": 11.4,
+ "pile_5min_extrap": 3419,
+ "r429_rate_per_s": 0.0,
+ "r429_5min_extrap": 0,
+ "waste_5min_extrap": 3200,
+ "r5xx_5min_extrap": 0,
+ "mock_overload": "true",
+ "congestion": "true",
+ "stt_ok_per_s_cut": 33.7,
+ "llm_ok_per_s_cut": 66.8,
+ "circuit_open_ratio": 0.0,
+ "q_at_up": 3451,
+ "backoff_at_up": "10,14",
+ "obs_after_up_s": 109,
+ "post_up_q_change_first120": null,
+ "post_slope_120_180_per_s": null,
+ "r429_first120_after_up": 0,
+ "return_extrap_s": null,
+ "full_cut": {
+  "secs": 300,
+  "pile_rate_per_s": 11.4,
+  "pile_5min": 3421,
+  "stt_ok_per_s": 34.1,
+  "llm_ok_per_s": 66.2,
+  "failed_calls_5min": 3372,
+  "by_outcome": {
+   "stt/ok": 10217,
+   "score/ok": 9946,
+   "tag/ok": 9926,
+   "stt/timeout": 3334,
+   "score/timeout": 20,
+   "tag/timeout": 18
+  }
+ },
+ "actual": {
+  "pile": 3418,
+  "r429_5min": 0,
+  "waste_5min": 3372,
+  "circuit_open_ratio_first120": 0.0
+ },
+ "error_pct": {
+  "pile": 0.0,
+  "r429": 0.0
+ },
+ "summary_error": "[Errno 2] No such file or directory: '/home/ubuntu/opicnic-exp-results/s3o-slots500-B-d0.99-to15000/summary.json'"
+}
