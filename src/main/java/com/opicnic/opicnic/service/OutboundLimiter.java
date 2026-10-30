@@ -39,6 +39,11 @@ import java.util.function.Supplier;
 // "덜 보내면 나아지는가"로 나눈다: 1초 동안 5xx·타임아웃과 성공이 섞여 있으면 일부만 받아주는 것이니 혼잡 속도에 congestion-decrease(기본 0.5)를 곱하고,
 // 5xx가 없으면 한도의 2%씩 올린다. 전부 실패면 손대지 않는다 — 완전 장애는 서킷 몫이고, 여기서 줄이면 복구 뒤에도 바닥에서 천천히 올라온다.
 // 실제로 보내는 속도 = min(한도 쪽 속도, 혼잡 속도). 두 신호를 한 속도에 섞으면 어느 쪽이 줄였는지 모르게 되어 따로 둔다.
+// 혼잡 방식(congestion-method)은 두 가지. aimd(기본)는 위 규칙. sre는 Google SRE 책 "Handling Overload"의 client-side throttling:
+// 최근 congestion-window-seconds(기본 10초) 동안 보내려 한 수(requests)와 받아들여진 수(accepts)로, 보내기 전에
+// max(0, (requests - K x accepts) / (requests + 1)) 확률로 스스로 거절한다(K = congestion-k, 기본 2. 받아주는 양의 K배까지만 보낸다).
+// 스스로 거절은 LOCAL_LIMIT(서킷에 안 셈, 워커가 백오프로 다시 집음). 429는 한도 쪽 몫이라 requests·accepts 어느 쪽에도 넣지 않는다.
+// 책은 2분 창을 쓰지만 시즌 규모(초당 수십 건)면 10초에도 표본이 충분하고, 2분이면 회복 뒤에도 감소 구간을 2분간 기억한다.
 // 같은 종류 호출이 최근 2초 안에 성공했으면 그 5xx는 CONGESTED로 바꿔 던진다 — 서킷이 과부하 5xx까지 세면 제한기가 반응하기 전에
 // 열리고(빠른 거절이 창을 채운다), 열린 30초 동안 혼잡 속도가 다시 올라 닫히자마자 또 몰린다(2026-10-29 과부하 실험 B 첫 실행).
 @Component
@@ -88,8 +93,20 @@ public class OutboundLimiter {
                            @Value("${opicnic.outbound.limiter.llm-per-minute:10000}") int llmPerMinute,
                            @Value("${opicnic.outbound.limiter.congestion:false}") boolean congestion,
                            @Value("${opicnic.outbound.limiter.congestion-decrease:0.5}") double congestionDecrease,
+                           @Value("${opicnic.outbound.limiter.congestion-method:aimd}") String congestionMethod,
+                           @Value("${opicnic.outbound.limiter.congestion-k:2.0}") double congestionK,
+                           @Value("${opicnic.outbound.limiter.congestion-window-seconds:10}") int congestionWindowSeconds,
                            MeterRegistry registry) {
-        this(Mode.parse(sttMode), Mode.parse(llmMode), sttPerMinute, llmPerMinute, congestion, congestionDecrease, registry);
+        this(Mode.parse(sttMode), Mode.parse(llmMode), sttPerMinute, llmPerMinute, congestion, congestionDecrease,
+                parseSre(congestionMethod), congestionK, congestionWindowSeconds, registry);
+    }
+
+    private static boolean parseSre(String method) {
+        return switch (method == null ? "aimd" : method.trim().toLowerCase()) {
+            case "aimd" -> false;
+            case "sre" -> true;
+            default -> throw new IllegalArgumentException("opicnic.outbound.limiter.congestion-method: aimd|sre (받은 값: " + method + ")");
+        };
     }
 
     OutboundLimiter(Mode mode, int sttPerMinute, int llmPerMinute, MeterRegistry registry) {
@@ -106,11 +123,19 @@ public class OutboundLimiter {
 
     OutboundLimiter(Mode sttMode, Mode llmMode, int sttPerMinute, int llmPerMinute, boolean congestion, double congestionDecrease,
                     MeterRegistry registry) {
+        this(sttMode, llmMode, sttPerMinute, llmPerMinute, congestion, congestionDecrease, false, 2.0, 10, registry);
+    }
+
+    OutboundLimiter(Mode sttMode, Mode llmMode, int sttPerMinute, int llmPerMinute, boolean congestion, double congestionDecrease,
+                    boolean sre, double sreK, int sreWindowSeconds, MeterRegistry registry) {
+        if (sre && !(sreK >= 1 && sreWindowSeconds >= 1)) {
+            throw new IllegalArgumentException("opicnic.outbound.limiter.congestion-k >= 1, congestion-window-seconds >= 1 (받은 값: " + sreK + ", " + sreWindowSeconds + ")");
+        }
         if (!(congestionDecrease > 0 && congestionDecrease < 1)) {
             throw new IllegalArgumentException("opicnic.outbound.limiter.congestion-decrease: 0과 1 사이 (받은 값: " + congestionDecrease + ")");
         }
-        this.stt = new Lane(sttMode, sttPerMinute, congestion, congestionDecrease);
-        this.llm = new Lane(llmMode, llmPerMinute, congestion, congestionDecrease);
+        this.stt = new Lane(sttMode, sttPerMinute, congestion, congestionDecrease, congestion && sre ? new Throttle(sreK, sreWindowSeconds) : null);
+        this.llm = new Lane(llmMode, llmPerMinute, congestion, congestionDecrease, congestion && sre ? new Throttle(sreK, sreWindowSeconds) : null);
         if (sttMode == Mode.AIMD || llmMode == Mode.AIMD || congestion) {
             ticker = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "outbound-limiter-ticker");
@@ -122,12 +147,17 @@ public class OutboundLimiter {
             ticker = null;
         }
         if (sttMode != Mode.OFF || llmMode != Mode.OFF || congestion) {
-            log.info("[Limiter] stt={} {}/min, llm={} {}/min, congestion={} (decrease {})", sttMode, sttPerMinute, llmMode, llmPerMinute, congestion, congestionDecrease);
+            log.info("[Limiter] stt={} {}/min, llm={} {}/min, congestion={} ({})", sttMode, sttPerMinute, llmMode, llmPerMinute, congestion,
+                    sre ? "sre K=" + sreK + " window=" + sreWindowSeconds + "s" : "aimd decrease " + congestionDecrease);
             if (registry != null) {
                 registry.gauge("opicnic.outbound.limiter.rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "stt")), stt, l -> l.ratePerMinute);
                 registry.gauge("opicnic.outbound.limiter.rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "llm")), llm, l -> l.ratePerMinute);
                 registry.gauge("opicnic.outbound.limiter.congestion_rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "stt")), stt, l -> l.congestionRatePerMinute);
                 registry.gauge("opicnic.outbound.limiter.congestion_rate", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "llm")), llm, l -> l.congestionRatePerMinute);
+                if (sre) {
+                    registry.gauge("opicnic.outbound.limiter.sre_reject_probability", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "stt")), stt, l -> l.throttle.probability());
+                    registry.gauge("opicnic.outbound.limiter.sre_reject_probability", java.util.List.of(io.micrometer.core.instrument.Tag.of("kind", "llm")), llm, l -> l.throttle.probability());
+                }
             }
         }
     }
@@ -149,6 +179,10 @@ public class OutboundLimiter {
         Lane lane = lane(kind);
         Mode mode = lane.mode;
         if (mode == Mode.OFF && !lane.congestion) return call.get();
+        if (lane.throttle != null && lane.throttle.shouldReject()) {
+            lane.throttle.record(false);
+            throw new ExternalCallException(Reason.LOCAL_LIMIT, "혼잡 제한(SRE) 스스로 거절", null);
+        }
         lane.acquire();
         HEADERS.remove();
         try {
@@ -157,11 +191,13 @@ public class OutboundLimiter {
             if (lane.congestion) {
                 lane.tickOk.incrementAndGet();
                 lane.lastOkNanos = System.nanoTime();
+                if (lane.throttle != null) lane.throttle.record(true);
             }
             return result;
         } catch (ExternalCallException e) {
             if (lane.congestion && e.reason() == Reason.UNAVAILABLE) {
                 lane.tickOverload.incrementAndGet();
+                if (lane.throttle != null) lane.throttle.record(false);
                 if (System.nanoTime() - lane.lastOkNanos < RECENT_SUCCESS_NANOS) {
                     throw new ExternalCallException(Reason.CONGESTED, e.getMessage(), e);
                 }
@@ -182,7 +218,7 @@ public class OutboundLimiter {
             if (lane.mode == Mode.AIMD && now - lane.last429Nanos >= TimeUnit.SECONDS.toNanos(1)) {
                 lane.setRate(lane.ratePerMinute + Math.max(1, lane.base * 2 / 100));
             }
-            if (lane.congestion) lane.adjustCongestion(lane.tickOk.getAndSet(0), lane.tickOverload.getAndSet(0));
+            if (lane.congestion && lane.throttle == null) lane.adjustCongestion(lane.tickOk.getAndSet(0), lane.tickOverload.getAndSet(0));
         }
     }
 
@@ -215,6 +251,7 @@ public class OutboundLimiter {
         final long base;                 // 원래 한도(분당). 0 이하면 제한 없음
         final boolean congestion;
         final double congestionDecrease;
+        final Throttle throttle;          // congestion-method=sre일 때만
         final LocalBucket bucket;
         volatile long ratePerMinute;              // 한도 쪽(429·헤더) 속도
         volatile long congestionRatePerMinute;    // 혼잡(과부하 5xx) 속도. 버킷은 둘 중 작은 값
@@ -227,7 +264,8 @@ public class OutboundLimiter {
         volatile long lastAdjustNanos = Long.MIN_VALUE / 2;
         volatile long lastOkNanos = Long.MIN_VALUE / 2;
 
-        Lane(Mode mode, long base, boolean congestion, double congestionDecrease) {
+        Lane(Mode mode, long base, boolean congestion, double congestionDecrease, Throttle throttle) {
+            this.throttle = throttle;
             this.mode = mode;
             this.base = base;
             this.congestion = congestion;
@@ -319,6 +357,58 @@ public class OutboundLimiter {
             lastAdjustNanos = now;
             double perSecond = h.resetSeconds() > 0 ? h.remaining() / h.resetSeconds() : base / 60.0;
             setRate(Math.round(perSecond * 60));
+        }
+    }
+
+    // SRE client-side throttling. 1초 칸 window개를 돌려 쓰며 최근 window초의 requests·accepts를 센다
+    static final class Throttle {
+        private final double k;
+        private final int window;
+        private final long[] second, requests, accepts;
+
+        Throttle(double k, int windowSeconds) {
+            this.k = k;
+            this.window = windowSeconds;
+            this.second = new long[windowSeconds];
+            this.requests = new long[windowSeconds];
+            this.accepts = new long[windowSeconds];
+            java.util.Arrays.fill(second, Long.MIN_VALUE);
+        }
+
+        static double rejectProbability(long requests, long accepts, double k) {
+            return Math.max(0, (requests - k * accepts) / (requests + 1));
+        }
+
+        private static long nowSecond() {
+            return TimeUnit.NANOSECONDS.toSeconds(System.nanoTime());
+        }
+
+        synchronized void record(boolean accepted) {
+            long s = nowSecond();
+            int i = (int) Math.floorMod(s, (long) window);
+            if (second[i] != s) {
+                second[i] = s;
+                requests[i] = 0;
+                accepts[i] = 0;
+            }
+            requests[i]++;
+            if (accepted) accepts[i]++;
+        }
+
+        synchronized double probability() {
+            long s = nowSecond(), r = 0, a = 0;
+            for (int i = 0; i < window; i++) {
+                if (s - second[i] < window) {
+                    r += requests[i];
+                    a += accepts[i];
+                }
+            }
+            return rejectProbability(r, a, k);
+        }
+
+        boolean shouldReject() {
+            double p = probability();
+            return p > 0 && java.util.concurrent.ThreadLocalRandom.current().nextDouble() < p;
         }
     }
 }

@@ -341,4 +341,37 @@ class OutboundLimiterTest {
         assertThatThrownBy(() -> new OutboundLimiter(OutboundLimiter.Mode.OFF, OutboundLimiter.Mode.OFF, 60, 60, true, 1.0, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("SRE 거절 확률: max(0, (requests - K x accepts) / (requests + 1)). 다 받아들여지면 0, 하나도 안 받아들여지면 1에 가깝다")
+    void sreRejectProbability() {
+        assertThat(OutboundLimiter.Throttle.rejectProbability(100, 100, 2)).isEqualTo(0.0);
+        assertThat(OutboundLimiter.Throttle.rejectProbability(100, 50, 2)).isEqualTo(0.0);     // 받아주는 양의 2배까지는 거절 안 함
+        assertThat(OutboundLimiter.Throttle.rejectProbability(100, 40, 2)).isCloseTo(20.0 / 101, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(OutboundLimiter.Throttle.rejectProbability(100, 0, 2)).isCloseTo(100.0 / 101, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(OutboundLimiter.Throttle.rejectProbability(0, 0, 2)).isEqualTo(0.0);
+    }
+
+    @Test
+    @DisplayName("SRE: 5xx가 이어지면 보내기 전에 스스로 거절(LOCAL_LIMIT)하고, 429는 세지 않는다")
+    void sreThrottleRejectsLocallyAfterOverload() {
+        var limiter = new OutboundLimiter(OutboundLimiter.Mode.AIMD, OutboundLimiter.Mode.AIMD, 600000, 600000, true, 0.5, true, 2.0, 10, null);
+        limiter.shutdown();
+        // 429만 많이 와도 SRE는 반응하지 않는다(한도 쪽 몫)
+        for (int i = 0; i < 200; i++) {
+            try { limiter.call(ProviderKind.LLM, () -> { throw rateLimited(null); }); } catch (ExternalCallException ignored) { }
+        }
+        assertThat(limiter.call(ProviderKind.LLM, () -> "ok")).isEqualTo("ok");
+        // STT는 5xx만 200번 -> 거절 확률 약 200/201
+        int local = 0, sent = 0;
+        for (int i = 0; i < 400; i++) {
+            try {
+                limiter.call(ProviderKind.STT, () -> { throw overloaded(); });
+            } catch (ExternalCallException e) {
+                if (e.reason() == Reason.LOCAL_LIMIT) local++; else sent++;
+            }
+        }
+        assertThat(local).isGreaterThan(300);   // 처음 몇 번만 실제로 보내고 나머지는 스스로 거절
+        assertThat(sent).isLessThan(100);
+    }
 }
