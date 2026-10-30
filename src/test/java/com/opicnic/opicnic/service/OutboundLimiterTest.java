@@ -374,4 +374,19 @@ class OutboundLimiterTest {
         assertThat(local).isGreaterThan(300);   // 처음 몇 번만 실제로 보내고 나머지는 스스로 거절
         assertThat(sent).isLessThan(100);
     }
+
+    @Test
+    @DisplayName("가짜 제공자 overload 타임아웃: 거절을 그 시간만큼 기다린 뒤 읽기 타임아웃으로 낸다(번역하면 UNAVAILABLE)")
+    void mockProviderOverloadTimeout() {
+        MockProvider.setOverload(true, 300, 0);
+        MockProvider.configureLimits(60, 0, 1.0, false);   // 초당 1, 버스트 5
+        for (int i = 0; i < 5; i++) MockProvider.admit(ProviderKind.STT);
+        long t0 = System.nanoTime();
+        RuntimeException e = null;
+        try { MockProvider.admit(ProviderKind.STT); } catch (RuntimeException x) { e = x; }
+        assertThat(Duration.ofNanos(System.nanoTime() - t0).toMillis()).isGreaterThanOrEqualTo(280L);
+        assertThat(e).isInstanceOf(org.springframework.web.client.ResourceAccessException.class);
+        assertThat(ExternalCallMetrics.translate(e)).isInstanceOfSatisfying(ExternalCallException.class, x -> assertThat(x.reason()).isEqualTo(Reason.UNAVAILABLE));
+        assertThat(ExternalCallMetrics.outcomeOf(e)).isEqualTo("timeout");
+    }
 }

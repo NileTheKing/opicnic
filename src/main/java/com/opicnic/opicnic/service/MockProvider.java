@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 //     overload=true면 토큰이 없을 때 429 대신 503 "model is overloaded"로 거절한다 — 제공자 사정으로 받아주는 양이 준 것은
 //     실제로 이렇게 온다(Gemini API 503, OpenAI 503 server_is_overloaded). 과부하 거절은 내 한도와 무관하니 countRejected와 상관없이
 //     토큰을 쓰지 않고 한도 헤더도 주지 않는다. 기본 false.
+//     overloadTimeoutMs(종류별, 0 = 끔)를 주면 과부하 거절을 503 대신 그 시간만큼 기다린 뒤 읽기 타임아웃으로 낸다 — 과부하가 응답 지연으로
+//     나타나 우리 read-timeout에 걸리는 경우. 기다리는 동안 호출한 쪽(워커 슬롯)이 묶인다.
 public final class MockProvider {
 
     private static final String HDR_REMAINING = "x-ratelimit-remaining-requests";
@@ -30,6 +32,8 @@ public final class MockProvider {
     private static volatile boolean headers;
     private static volatile boolean countRejected;
     private static volatile boolean overload;
+    private static volatile long sttOverloadTimeoutMs;
+    private static volatile long llmOverloadTimeoutMs;
     private static long windowSecond;
     private static int windowCount;
     private static final Lane STT = new Lane();
@@ -56,7 +60,13 @@ public final class MockProvider {
     }
 
     public static void setOverload(boolean overload) {
+        setOverload(overload, 0, 0);
+    }
+
+    public static void setOverload(boolean overload, long sttTimeoutMs, long llmTimeoutMs) {
         MockProvider.overload = overload;
+        MockProvider.sttOverloadTimeoutMs = Math.max(0, sttTimeoutMs);
+        MockProvider.llmOverloadTimeoutMs = Math.max(0, llmTimeoutMs);
     }
 
     // 테스트용: 종류별 현재 토큰 잔고(음수 = 거절 빚)
@@ -77,6 +87,12 @@ public final class MockProvider {
         Lane.Result r = lane.take();
         if (r == null) return;   // 이 종류는 한도 없음
         if (!r.admitted && overload) {
+            long wait = kind == ProviderKind.STT ? sttOverloadTimeoutMs : llmOverloadTimeoutMs;
+            if (wait > 0) {
+                try { Thread.sleep(wait); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                throw new org.springframework.web.client.ResourceAccessException("I/O error (mock provider overloaded): Read timed out",
+                        new java.net.SocketTimeoutException("Read timed out"));
+            }
             throw HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", HttpHeaders.EMPTY,
                     "{\"error\":{\"code\":503,\"message\":\"The model is overloaded. Please try again later.\",\"status\":\"UNAVAILABLE\"}}"
                             .getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);

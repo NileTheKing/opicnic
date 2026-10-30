@@ -42,6 +42,8 @@ export OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED=${COUNT_RATE_LIMITED:-true}
 COUNT_REJECTED=${COUNT_REJECTED:-false}
 # 환경 변수 MOCK_OVERLOAD=true 면 가짜 제공자가 한도 초과를 429 대신 과부하 503으로 거절(거절은 한도를 쓰지 않음). 기본 false
 MOCK_OVERLOAD=${MOCK_OVERLOAD:-false}
+# 환경 변수 OVERLOAD_TIMEOUT_STT_MS / OVERLOAD_TIMEOUT_LLM_MS 면 과부하 거절을 그 시간 뒤 읽기 타임아웃으로(기본 0 = 바로 503)
+OT_STT=${OVERLOAD_TIMEOUT_STT_MS:-0}; OT_LLM=${OVERLOAD_TIMEOUT_LLM_MS:-0}
 # 환경 변수 CONGESTION=true 면 우리 제한기의 혼잡 제한(5xx와 성공이 섞이면 속도를 줄임)을 켠다. 기본 false
 export OPICNIC_OUTBOUND_LIMITER_CONGESTION=${CONGESTION:-false}
 # 환경 변수 DECREASE 면 혼잡 시 속도에 곱하는 값(기본 0.5)
@@ -71,7 +73,7 @@ check_abort() { [ -f "$ABORT" ] && abort "감시: $(cat "$ABORT")"; }
 trap 'cleanup' EXIT
 
 log "== run $RUN stage=$STAGE slots=$SLOTS circuit=$CIRCUIT rate=$RATE ladder=$LADDER storage=$STORAGE backoff=$BACKOFF_MODE limiter=$LIMITER_MODE"
-mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark COUNT_REJECTED "$COUNT_REJECTED"; mark MOCK_OVERLOAD "$MOCK_OVERLOAD"; mark CONGESTION "$OPICNIC_OUTBOUND_LIMITER_CONGESTION"; mark DECREASE "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_DECREASE"; mark METHOD "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_METHOD"; mark SRE_K "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_K"; mark SRE_WINDOW "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_WINDOW_SECONDS"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
+mark COUNT_RATE_LIMITED "$OPICNIC_WORKER_CIRCUIT_COUNT_RATE_LIMITED"; mark COUNT_REJECTED "$COUNT_REJECTED"; mark MOCK_OVERLOAD "$MOCK_OVERLOAD"; mark OVERLOAD_TIMEOUT_MS "$OT_STT/$OT_LLM"; mark CONGESTION "$OPICNIC_OUTBOUND_LIMITER_CONGESTION"; mark DECREASE "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_DECREASE"; mark METHOD "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_METHOD"; mark SRE_K "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_K"; mark SRE_WINDOW "$OPICNIC_OUTBOUND_LIMITER_CONGESTION_WINDOW_SECONDS"; mark LADDER "$LADDER"; mark STORAGE "$STORAGE"; mark BACKOFF_MODE "$BACKOFF_MODE"; mark LIMITER_MODE "$LIMITER_MODE"
 mark RUN "$RUN"; mark STAGE "$STAGE"; mark SLOTS "$SLOTS"; mark CIRCUIT "$CIRCUIT"; mark WARM_S $WARM_S; mark MEASURE_S $MEASURE_S
 mark OUTAGE_S $OUTAGE_S; mark MAX_RECOVER_S $MAX_RECOVER_S; mark RATE $RATE
 
@@ -119,7 +121,7 @@ curl -sf -m 3 "$APP/actuator/health" >/dev/null 2>&1 || abort "앱 기동 실패
 log "앱 기동 완료 (slots=$SLOTS circuit=$CIRCUIT)"
 CSRF=$(curl -s -c "$OUT/csrf.jar" "$APP/api/practice-attempts/csrf")
 TOKEN=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["token"])' "$CSRF"); HDR=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["headerName"])' "$CSRF")
-mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS&countRejected=$COUNT_REJECTED&overload=$MOCK_OVERLOAD"; }
+mock() { curl -sf -m 5 -b "$OUT/csrf.jar" -H "$HDR: $TOKEN" -X POST "$APP/api/practice-attempts/mock-provider?down=$1&limitPerSecond=0&sttPerMinute=$STT_PM&llmPerMinute=$LLM_PM&capacity=${2:-1.0}&headers=$MOCK_HEADERS&countRejected=$COUNT_REJECTED&overload=$MOCK_OVERLOAD&sttOverloadTimeoutMs=$OT_STT&llmOverloadTimeoutMs=$OT_LLM"; }
 log "mock 기본값 확인: $(mock false)"
 
 # ---- 4. 샘플러 + 부하

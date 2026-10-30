@@ -83,16 +83,19 @@ public class DevPracticeController {
                                                @RequestParam(defaultValue = "1.0") double capacity,
                                                @RequestParam(defaultValue = "false") boolean headers,
                                                @RequestParam(required = false) Boolean countRejected,
-                                               @RequestParam(defaultValue = "false") boolean overload) {
+                                               @RequestParam(defaultValue = "false") boolean overload,
+                                               @RequestParam(defaultValue = "0") long sttOverloadTimeoutMs,
+                                               @RequestParam(defaultValue = "0") long llmOverloadTimeoutMs) {
         boolean count = countRejected != null ? countRejected : countRejectedDefault;
         MockProvider.configure(down, limitPerSecond);
         MockProvider.configureLimits(sttPerMinute, llmPerMinute, capacity, headers);
         MockProvider.setCountRejected(count);
-        MockProvider.setOverload(overload);
-        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={} countRejected={} overload={}",
-                down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers, count, overload);
+        MockProvider.setOverload(overload, sttOverloadTimeoutMs, llmOverloadTimeoutMs);
+        log.warn("[DEV] mock 제공자 변경: down={} limitPerSecond={} sttPerMinute={} llmPerMinute={} capacity={} headers={} countRejected={} overload={} overloadTimeout(stt={}ms, llm={}ms)",
+                down, limitPerSecond, sttPerMinute, llmPerMinute, capacity, headers, count, overload, sttOverloadTimeoutMs, llmOverloadTimeoutMs);
         return Map.of("down", down, "limitPerSecond", limitPerSecond, "sttPerMinute", sttPerMinute,
-                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers, "countRejected", count, "overload", overload);
+                "llmPerMinute", llmPerMinute, "capacity", capacity, "headers", headers, "countRejected", count, "overload", overload,
+                "overloadTimeoutMs", sttOverloadTimeoutMs + "/" + llmOverloadTimeoutMs);
     }
 
     @PostMapping("/start")
