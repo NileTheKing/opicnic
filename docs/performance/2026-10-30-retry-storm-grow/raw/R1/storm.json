@@ -1,0 +1,31 @@
+{
+ "run": "storm-slots500-R1",
+ "ladder": "R1",
+ "outage_s": 300,
+ "q_at_up": 13928,
+ "after_up_window_s": 178,
+ "calls_after_up": 27117,
+ "429_pct_after_up": 8.0,
+ "by_kind": {
+  "score": {
+   "calls": 8218,
+   "429_pct": 0.0
+  },
+  "stt": {
+   "calls": 10681,
+   "429_pct": 20.3
+  },
+  "tag": {
+   "calls": 8218,
+   "429_pct": 0.0
+  }
+ },
+ "peak_calls_per_s": 211.2,
+ "calls_whole_run": 32585,
+ "calls_during_outage": 5468,
+ "drain_s_actual": null,
+ "drain_s_extrap": 1526,
+ "circuit_open_ratio_outage": 0.98,
+ "circuit_open_ratio_after_up": 0.19,
+ "aborted": true
+}
