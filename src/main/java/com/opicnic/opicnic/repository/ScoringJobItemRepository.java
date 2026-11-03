@@ -3,7 +3,9 @@ package com.opicnic.opicnic.repository;
 import com.opicnic.opicnic.domain.job.ScoringJobItem;
 import com.opicnic.opicnic.domain.job.ScoringJobItemStatus;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ScoringJobItemRepository extends JpaRepository<ScoringJobItem, Long> {
 
@@ -40,6 +43,12 @@ public interface ScoringJobItemRepository extends JpaRepository<ScoringJobItem, 
     default int claim(Long id) {
         return claim(id, ScoringJobItemStatus.QUEUED, ScoringJobItemStatus.PROCESSING, LocalDateTime.now());
     }
+
+    // 마무리(DONE/실패 기록) 직전에 문항 행을 잠그고 읽는다. 회수(requeueStale)·다시 집기(claim)도 같은 행을 UPDATE하므로
+    // 이 락 아래서 본 status·attempts는 커밋까지 안 바뀐다 — "아직 내가 집은 그 시도인가"를 확인하고 쓰기 위해
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from ScoringJobItem i where i.id = :id")
+    Optional<ScoringJobItem> findByIdForUpdate(@Param("id") Long id);
 
     // 워커가 죽어 PROCESSING에 멈춘 문항 회수. 재시작 직후와 주기적으로 부른다.
     @Transactional

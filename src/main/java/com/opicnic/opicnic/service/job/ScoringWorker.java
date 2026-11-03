@@ -193,15 +193,21 @@ public class ScoringWorker {
             if (feedback.isFailed()) throw new IllegalStateException(feedback.getErrorMessage());
 
             long t2 = System.currentTimeMillis();
-            tx.executeWithoutResult(s -> {
+            boolean held = Boolean.TRUE.equals(tx.execute(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();   // 마무리 직렬화
-                ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
+                ScoringJobItem item = itemRepository.findByIdForUpdate(itemId).orElseThrow();
+                if (!item.isHeldBy(ctx.attempts())) return false;
                 FeedbackResult saved = persistence.saveOne(feedback, job);
                 item.markDone(saved == null ? null : saved.getId());
                 job.refreshCompletion();
                 recordJobDurationIfFinished(job);
-            });
+                return true;
+            }));
             tSave = System.currentTimeMillis() - t2;
+            if (!held) {
+                log.warn("[Worker] 문항 {} 시도 {}: 회수된 뒤 끝나 결과를 버림", ctx.questionIndex(), ctx.attempts());
+                return;
+            }
             circuit.record(true);
             meterRegistry.counter("opicnic.worker.items", "outcome", "done").increment();
             log.info("[Worker] 문항 {} DONE ({}ms = read {} + stt {} + grade {} + save {}, 시도 {})", ctx.questionIndex(),
@@ -218,7 +224,8 @@ public class ScoringWorker {
             final Duration nextBackoff = backoff;
             ScoringJobItemStatus after = tx.execute(s -> {
                 ScoringJob job = jobRepository.findByIdForUpdate(ctx.jobId()).orElseThrow();
-                ScoringJobItem item = itemRepository.findById(itemId).orElseThrow();
+                ScoringJobItem item = itemRepository.findByIdForUpdate(itemId).orElseThrow();
+                if (!item.isHeldBy(ctx.attempts())) return null;
                 item.markFailed(e.getMessage(), kind, nextBackoff, ctx.deadline());
                 job.markProcessing();
                 if (item.getStatus() == ScoringJobItemStatus.FAILED) {
@@ -227,6 +234,10 @@ public class ScoringWorker {
                 }
                 return item.getStatus();
             });
+            if (after == null) {
+                log.warn("[Worker] 문항 {} 시도 {}: 회수된 뒤 실패해 기록하지 않음", ctx.questionIndex(), ctx.attempts());
+                return;
+            }
             // 녹음 파일 문제는 제공자 상태와 무관하다 — 서킷(제공자 장애 감지)에 섞지 않는다
             // 우리 속도 제한기가 못 기다려 준 것(LOCAL_LIMIT)도 제공자 장애가 아니므로 서킷에 섞지 않는다
             if (countsAgainstCircuit(kind, e, circuitCountRateLimited)) circuit.record(false);

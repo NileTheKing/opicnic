@@ -82,6 +82,12 @@ public class ScoringJobItem {
         this.status = ScoringJobItemStatus.QUEUED;
     }
 
+    // 이 시도(claim 때 올린 attempts)가 아직 이 문항을 쥐고 있는가. 5분 넘게 걸려 회수(requeueStale)된 뒤
+    // 다른 워커가 다시 집었으면 attempts가 올라가 있거나 상태가 바뀌어 있다 — 늦게 끝난 쪽은 결과를 쓰지 않는다
+    public boolean isHeldBy(int attempt) {
+        return status == ScoringJobItemStatus.PROCESSING && attempts == attempt;
+    }
+
     public void markDone(Long feedbackResultId) {
         this.status = ScoringJobItemStatus.DONE;
         this.feedbackResultId = feedbackResultId;

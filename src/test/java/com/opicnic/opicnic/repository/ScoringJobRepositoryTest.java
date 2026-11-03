@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // ADR-0001 잡 테이블의 핵심 전이가 실제 DB에서 성립하는지. 워커가 이 규칙에 기댄다:
 // (1) claim은 정확히 한 번만 성공 (2) 실패는 3회까지 QUEUED로 돌아가고 3회째 FAILED
 // (3) 전 문항이 끝나야 attempt가 닫히고, FAILED가 있으면 COMPLETED_WITH_FAILURES
-// (4) PROCESSING에 오래 멈춘 문항은 requeueStale로 회수
+// (4) PROCESSING에 오래 멈춘 문항은 requeueStale로 회수 (5) 회수 뒤 다시 집히면 옛 시도는 그 문항을 쥐고 있지 않다
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
@@ -183,5 +183,21 @@ class ScoringJobRepositoryTest {
         assertThat(itemRepository.requeueStale(LocalDateTime.now().minusMinutes(5))).isEqualTo(0); // 방금 집은 건 회수 안 함
         assertThat(itemRepository.requeueStale(LocalDateTime.now().plusMinutes(1))).isEqualTo(1);  // 기준 시각을 미래로 두면 회수
         assertThat(itemRepository.findById(itemId).orElseThrow().getStatus()).isEqualTo(ScoringJobItemStatus.QUEUED);
+    }
+
+    @Test
+    void requeuedAndReclaimedItemIsNoLongerHeldByOldAttempt() {
+        ScoringJob job = queuedJob(1);
+        Long itemId = jobRepository.findById(job.getId()).orElseThrow().getItems().get(0).getId();
+        itemRepository.claim(itemId);                                       // 시도 1이 집음
+        assertThat(itemRepository.findById(itemId).orElseThrow().isHeldBy(1)).isTrue();
+
+        itemRepository.requeueStale(LocalDateTime.now().plusMinutes(1));   // 시도 1이 오래 걸려 회수됨
+        assertThat(itemRepository.findById(itemId).orElseThrow().isHeldBy(1)).isFalse();
+
+        itemRepository.claim(itemId);                                       // 다른 워커가 시도 2로 다시 집음
+        ScoringJobItem item = itemRepository.findByIdForUpdate(itemId).orElseThrow();
+        assertThat(item.isHeldBy(1)).isFalse();                             // 늦게 끝난 시도 1은 결과를 쓰지 않는다
+        assertThat(item.isHeldBy(2)).isTrue();
     }
 }
