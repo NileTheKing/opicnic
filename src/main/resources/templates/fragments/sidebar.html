@@ -5,6 +5,19 @@
 <body>
 <th:block th:fragment="sidebar">
 
+<!-- 시도 시작은 상태를 만들므로 POST다. a[data-post]를 누르면 이 폼(CSRF 토큰 포함)으로 보낸다 -->
+<form id="post-link-form" method="post" th:action="@{/}" class="hidden"></form>
+<script>
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[data-post]');
+        if (!link) return;
+        e.preventDefault();
+        const form = document.getElementById('post-link-form');
+        form.action = link.href;
+        form.submit();
+    });
+</script>
+
 <!-- 데스크탑 사이드바 -->
 <div class="hidden md:flex w-56 bg-white border-r border-gray-100 flex-col h-screen sticky top-0 shrink-0">
 

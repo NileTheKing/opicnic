@@ -95,7 +95,7 @@
                                     title="내 주제에서 제거">
                                 <i class="fa-solid fa-xmark text-[9px]"></i>
                             </button>
-                            <a th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
+                            <a data-post th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
                                class="flex flex-col items-center gap-2.5 w-full">
                                 <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
                                     <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-gray-500'"></i>
@@ -127,7 +127,7 @@
                           th:text="${#lists.size(group.value)} + '개'"></span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <a th:each="topic : ${group.value}"
+                    <a data-post th:each="topic : ${group.value}"
                        th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
                        th:with="icon=${topicIcons[topic]}"
                        class="topic-card relative bg-amber-50 rounded-2xl border border-amber-200 p-4 flex flex-col items-center gap-2.5 text-center">
@@ -175,7 +175,7 @@
                             title="내 주제에 추가">
                         <i class="fa-solid fa-plus text-[9px]"></i>
                     </button>
-                    <a th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
+                    <a data-post th:href="@{/practice/combo(topic=${topic.name()},difficulty=${preferredDifficulty.name()})}"
                        class="flex flex-col items-center gap-2.5 w-full">
                         <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center">
                             <i th:class="'fa-solid ' + ${icon != null ? icon : 'fa-circle-question'} + ' text-xl text-gray-400'"></i>
@@ -266,7 +266,7 @@
                 title="내 주제에서 제거">
                 <i class="fa-solid fa-xmark text-[9px]"></i>
             </button>
-            <a href="/practice/combo?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}"
+            <a data-post href="/practice/combo?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}"
                class="flex flex-col items-center gap-2.5 w-full">
                 <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
                     <i class="fa-solid ${icon} text-xl text-gray-500"></i>

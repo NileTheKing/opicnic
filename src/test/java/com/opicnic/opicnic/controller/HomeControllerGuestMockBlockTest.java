@@ -15,7 +15,6 @@ import com.opicnic.opicnic.service.job.ScoringJobService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.ui.ExtendedModelMap;
 
 import java.util.Map;
 import java.util.Optional;
@@ -38,7 +37,7 @@ class HomeControllerGuestMockBlockTest {
             memberRepository, surveyProfileRepository, Mockito.mock(QuestionSetRepository.class), mockExamService,
             new TopicCatalog(), attemptService, new Random(), Mockito.mock(FeedbackResultRepository.class),
             Mockito.mock(ExamScheduleRepository.class), new ExamPlanService(), Mockito.mock(CoachingService.class),
-            Mockito.mock(ScoringJobService.class));
+            Mockito.mock(ScoringJobService.class), Mockito.mock(com.opicnic.opicnic.service.ComboPracticeService.class));
 
     private OAuth2User user(String provider) {
         OAuth2User user = Mockito.mock(OAuth2User.class);
@@ -53,7 +52,7 @@ class HomeControllerGuestMockBlockTest {
                 .thenReturn(Optional.of(Member.builder().id(1L).provider("guest").providerId("pid").build()));
         when(surveyProfileRepository.findByMemberId(1L)).thenReturn(Optional.of(Mockito.mock(com.opicnic.opicnic.domain.SurveyProfile.class)));
 
-        String view = controller.mockExam(user("guest"), new ExtendedModelMap());
+        String view = controller.mockExam(user("guest"));
 
         assertThat(view).isEqualTo("redirect:/?guestMock=true");
         verify(mockExamService, never()).createMockExam(any());
@@ -71,6 +70,6 @@ class HomeControllerGuestMockBlockTest {
                         com.opicnic.opicnic.domain.enums.PracticeMode.MOCK_EXAM, null, null,
                         java.time.Instant.now(), com.opicnic.opicnic.domain.enums.AttemptStatus.IN_PROGRESS));
 
-        assertThat(controller.mockExam(user("kakao"), new ExtendedModelMap())).isEqualTo("practice/question");
+        assertThat(controller.mockExam(user("kakao"))).isEqualTo("redirect:/practice/attempts/a");
     }
 }

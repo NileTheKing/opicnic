@@ -16,10 +16,10 @@ import com.opicnic.opicnic.service.TopicCatalog;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,15 +38,14 @@ public class PracticeComboController {
     private final SurveyProfileRepository surveyProfileRepository;
     private final TopicCatalog topicCatalog;
     private final PracticeAttemptService practiceAttemptService;
-    private final com.opicnic.opicnic.service.guest.GuestQuotaService guestQuotaService;
     private final Random random;
 
-    @GetMapping(params = "topic")
+    @PostMapping(params = "topic")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
     public String startByTopic(
             @RequestParam String topic,
             @RequestParam String difficulty,
-            @AuthenticationPrincipal OAuth2User oAuth2User,
-            Model model) {
+            @AuthenticationPrincipal OAuth2User oAuth2User) {
         try {
             SurveyTopic surveyTopic = SurveyTopic.valueOf(topic);
             if (!topicCatalog.practiceTopics().contains(surveyTopic)
@@ -54,18 +53,18 @@ public class PracticeComboController {
                 return "redirect:/?invalidPractice=true";
             }
             ComboQuestionsResult combo = feedbackService.getComboQuestions(topic, difficulty);
-            return renderQuestion(combo, findMember(oAuth2User).getId(), model);
+            return startAttempt(combo, findMember(oAuth2User).getId());
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("콤보 연습 시작 불가: {}", e.getMessage());
             return "redirect:/?invalidPractice=true";
         }
     }
 
-    @GetMapping(params = "category")
+    @PostMapping(params = "category")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
     public String startByCategory(
             @RequestParam String category,
-            @AuthenticationPrincipal OAuth2User oAuth2User,
-            Model model) {
+            @AuthenticationPrincipal OAuth2User oAuth2User) {
         try {
             Member member = findMember(oAuth2User);
             SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId()).orElseThrow();
@@ -76,21 +75,18 @@ public class PracticeComboController {
             SurveyTopic picked = userTopics.get(random.nextInt(userTopics.size()));
             ComboQuestionsResult combo = comboPracticeService.getComboQuestionsByCategory(
                     picked, profile.getPreferredDifficulty(), category);
-            return renderQuestion(combo, member.getId(), model);
+            return startAttempt(combo, member.getId());
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("카테고리 콤보 연습 시작 불가: {}", e.getMessage());
             return "redirect:/?invalidPractice=true";
         }
     }
 
-    private String renderQuestion(ComboQuestionsResult combo, Long memberId, Model model) {
+    private String startAttempt(ComboQuestionsResult combo, Long memberId) {
         PracticeAttempt attempt = practiceAttemptService.createAttempt(
                 combo.questions(), memberId, PracticeMode.COMBO,
                 combo.comboPatternKey(), combo.comboCategory());
-        model.addAttribute("questions", combo.questions());
-        model.addAttribute("attemptId", attempt.attemptId());
-        guestQuotaService.addStartAttributes(memberId, combo.questions().size(), model);
-        return "practice/question";
+        return "redirect:/practice/attempts/" + attempt.attemptId();
     }
 
     private Member findMember(OAuth2User oAuth2User) {

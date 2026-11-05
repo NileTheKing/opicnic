@@ -6,6 +6,7 @@ import com.opicnic.opicnic.domain.SurveyProfile;
 import com.opicnic.opicnic.domain.attempt.PracticeAttempt;
 import com.opicnic.opicnic.domain.enums.PracticeMode;
 import com.opicnic.opicnic.domain.enums.SurveyTopic;
+import com.opicnic.opicnic.dto.ComboQuestionsResult;
 import com.opicnic.opicnic.dto.QuestionDto;
 import com.opicnic.opicnic.repository.ExamScheduleRepository;
 import com.opicnic.opicnic.repository.FeedbackResultRepository;
@@ -13,6 +14,7 @@ import com.opicnic.opicnic.repository.MemberRepository;
 import com.opicnic.opicnic.repository.QuestionSetRepository;
 import com.opicnic.opicnic.repository.SurveyProfileRepository;
 import com.opicnic.opicnic.service.CoachingService;
+import com.opicnic.opicnic.service.ComboPracticeService;
 import com.opicnic.opicnic.service.ExamPlanService;
 import com.opicnic.opicnic.service.MockExamService;
 import com.opicnic.opicnic.service.TopicCatalog;
@@ -20,11 +22,14 @@ import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import com.opicnic.opicnic.service.job.ScoringJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,6 +53,7 @@ public class HomeController {
     private final ExamPlanService examPlanService;
     private final CoachingService coachingService;
     private final ScoringJobService scoringJobService;
+    private final ComboPracticeService comboPracticeService;
 
     @GetMapping("/")
     public String home(@AuthenticationPrincipal OAuth2User user, Model model) {
@@ -100,7 +106,8 @@ public class HomeController {
     }
 
     // 선택 주제 중 랜덤 콤보
-    @GetMapping("/practice/random")
+    @PostMapping("/practice/random")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
     public String randomPractice(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();
         Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
@@ -119,27 +126,42 @@ public class HomeController {
         String difficulty = profile.getPreferredDifficulty() != null
                 ? profile.getPreferredDifficulty().name() : "LEVEL_3";
         log.info("랜덤 연습: {} ({})", topic, difficulty);
-        return "redirect:/practice/combo?topic=" + topic.name() + "&difficulty=" + difficulty;
+        return startCombo(topic, difficulty, member.getId());
     }
 
     // 돌발: 지원 주제 전체 중 랜덤
-    @GetMapping("/practice/surprise")
+    @PostMapping("/practice/surprise")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
     public String surprisePractice(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();
-        String difficulty = memberRepository.findByProviderAndProviderId(provider, user.getName())
+        Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElse(null);
+        String difficulty = java.util.Optional.ofNullable(member)
                 .flatMap(m -> surveyProfileRepository.findByMemberId(m.getId()))
                 .map(p -> p.getPreferredDifficulty() != null ? p.getPreferredDifficulty().name() : "LEVEL_3")
                 .orElse("LEVEL_3");
         List<SurveyTopic> topics = questionSetRepository.findExistingTopics(topicCatalog.surpriseTopics());
-        if (topics.isEmpty()) return "redirect:/?noTopics=true";
+        if (topics.isEmpty() || member == null) return "redirect:/?noTopics=true";
 
         SurveyTopic topic = topics.get(random.nextInt(topics.size()));
         log.info("돌발 연습: {} ({})", topic, difficulty);
-        return "redirect:/practice/combo?topic=" + topic.name() + "&difficulty=" + difficulty;
+        return startCombo(topic, difficulty, member.getId());
     }
 
-    @GetMapping("/practice/mock")
-    public String mockExam(@AuthenticationPrincipal OAuth2User user, Model model) {
+    private String startCombo(SurveyTopic topic, String difficulty, Long memberId) {
+        try {
+            ComboQuestionsResult combo = comboPracticeService.getComboQuestions(topic.name(), difficulty);
+            PracticeAttempt attempt = practiceAttemptService.createAttempt(
+                    combo.questions(), memberId, PracticeMode.COMBO, combo.comboPatternKey(), combo.comboCategory());
+            return "redirect:/practice/attempts/" + attempt.attemptId();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            log.warn("콤보 연습 시작 불가: {}", e.getMessage());
+            return "redirect:/?invalidPractice=true";
+        }
+    }
+
+    @PostMapping("/practice/mock")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
+    public String mockExam(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();
         Member member = memberRepository.findByProviderAndProviderId(provider, user.getName()).orElseThrow();
         SurveyProfile profile = surveyProfileRepository.findByMemberId(member.getId())
@@ -153,12 +175,10 @@ public class HomeController {
         try {
             List<QuestionDto> questions = mockExamService.createMockExam(profile);
             PracticeAttempt attempt = practiceAttemptService.createAttempt(questions, member.getId(), PracticeMode.MOCK_EXAM, null, null);
-            model.addAttribute("questions", questions);
-            model.addAttribute("attemptId", attempt.attemptId());
+            return "redirect:/practice/attempts/" + attempt.attemptId();
         } catch (IllegalStateException e) {
             log.warn("모의고사 시작 불가: {}", e.getMessage());
             return "redirect:/?noTopics=true";
         }
-        return "practice/question";
     }
 }

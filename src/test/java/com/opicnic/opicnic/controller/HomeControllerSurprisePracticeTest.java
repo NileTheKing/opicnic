@@ -45,7 +45,8 @@ class HomeControllerSurprisePracticeTest {
         HomeController controller = new HomeController(
                 memberRepository, surveyProfileRepository, questionSetRepository, mockExamService,
                 topicCatalog, practiceAttemptService, new Random(), feedbackResultRepository,
-                examScheduleRepository, examPlanService, coachingService, Mockito.mock(ScoringJobService.class));
+                examScheduleRepository, examPlanService, coachingService, Mockito.mock(ScoringJobService.class),
+                Mockito.mock(com.opicnic.opicnic.service.ComboPracticeService.class));
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttributes()).thenReturn(Map.of("provider", "kakao"));

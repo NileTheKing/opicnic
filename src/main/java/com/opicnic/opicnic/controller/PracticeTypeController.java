@@ -13,12 +13,13 @@ import com.opicnic.opicnic.service.QuestionAssemblyService;
 import com.opicnic.opicnic.service.attempt.PracticeAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 import java.util.Random;
@@ -33,14 +34,13 @@ public class PracticeTypeController {
     private final MemberRepository memberRepository;
     private final QuestionSetRepository questionSetRepository;
     private final SurveyProfileRepository surveyProfileRepository;
-    private final com.opicnic.opicnic.service.guest.GuestQuotaService guestQuotaService;
     private final Random random;
 
-    @GetMapping("/practice/type")
+    @PostMapping("/practice/type")
+    @ResponseStatus(HttpStatus.SEE_OTHER)
     public String typePractice(
             @RequestParam String type,
-            @AuthenticationPrincipal OAuth2User oAuth2User,
-            Model model) {
+            @AuthenticationPrincipal OAuth2User oAuth2User) {
         log.info("유형별 연습 시작: type={}", type);
         try {
             QuestionType questionType = QuestionType.valueOf(type);
@@ -75,10 +75,7 @@ public class PracticeTypeController {
             PracticeAttempt attempt = practiceAttemptService.createAttempt(
                     List.of(question), memberId, PracticeMode.COMBO, null, null);
 
-            model.addAttribute("questions", List.of(question));
-            model.addAttribute("attemptId", attempt.attemptId());
-            guestQuotaService.addStartAttributes(memberId, 1, model);
-            return "practice/question";
+            return "redirect:/practice/attempts/" + attempt.attemptId();
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("유형별 연습 시작 불가: {}", e.getMessage());
             return "redirect:/?invalidPractice=true";

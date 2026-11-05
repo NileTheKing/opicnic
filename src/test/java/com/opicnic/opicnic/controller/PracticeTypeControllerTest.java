@@ -44,7 +44,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
+                questionSetRepository, surveyProfileRepository, new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");
@@ -64,9 +64,7 @@ class PracticeTypeControllerTest {
         when(practiceAttemptService.createAttempt(any(), any(), any(), any(), any()))
                 .thenReturn(new PracticeAttempt("attempt-1", List.of(1L), 1L, PracticeMode.COMBO,
                         null, null, Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS));
-
-        org.springframework.ui.Model model = Mockito.mock(org.springframework.ui.Model.class);
-        controller.typePractice("TYPE_1", user, model);
+        controller.typePractice("TYPE_1", user);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<SurveyTopic>> captor = ArgumentCaptor.forClass(List.class);
@@ -84,7 +82,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
+                questionSetRepository, surveyProfileRepository, new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");
@@ -94,9 +92,7 @@ class PracticeTypeControllerTest {
         when(memberRepository.findByProviderAndProviderId("kakao", "provider-id-1"))
                 .thenReturn(Optional.of(member));
         when(surveyProfileRepository.findByMemberId(1L)).thenReturn(Optional.empty());
-
-        org.springframework.ui.Model model = Mockito.mock(org.springframework.ui.Model.class);
-        String result = controller.typePractice("TYPE_1", user, model);
+        String result = controller.typePractice("TYPE_1", user);
 
         assertThat(result).isEqualTo("redirect:/?invalidPractice=true");
         verify(questionSetRepository, never()).findExistingTopics(any());
@@ -116,7 +112,7 @@ class PracticeTypeControllerTest {
 
         PracticeTypeController controller = new PracticeTypeController(
                 questionAssemblyService, practiceAttemptService, memberRepository,
-                questionSetRepository, surveyProfileRepository, Mockito.mock(com.opicnic.opicnic.service.guest.GuestQuotaService.class), new Random());
+                questionSetRepository, surveyProfileRepository, new Random());
 
         OAuth2User user = Mockito.mock(OAuth2User.class);
         when(user.getAttribute("provider")).thenReturn("kakao");
@@ -140,11 +136,9 @@ class PracticeTypeControllerTest {
         when(practiceAttemptService.createAttempt(any(), any(), any(), any(), any()))
                 .thenReturn(new PracticeAttempt("attempt-1", List.of(2L), 1L, PracticeMode.COMBO,
                         null, null, Instant.now().plusSeconds(3600), AttemptStatus.IN_PROGRESS));
+        String result = controller.typePractice("TYPE_1", user);
 
-        org.springframework.ui.Model model = Mockito.mock(org.springframework.ui.Model.class);
-        String result = controller.typePractice("TYPE_1", user, model);
-
-        assertThat(result).isEqualTo("practice/question");
+        assertThat(result).isEqualTo("redirect:/practice/attempts/attempt-1");
         verify(questionAssemblyService, never()).assembleSingle(SurveyTopic.PARK_GOING, QuestionType.TYPE_1);
         verify(questionAssemblyService).assembleSingle(SurveyTopic.BEACH_GOING, QuestionType.TYPE_1);
     }

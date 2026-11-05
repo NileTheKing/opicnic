@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,6 +42,14 @@ public class PracticeAttemptService {
         );
         store.save(attempt);
         return attempt;
+    }
+
+    public Optional<PracticeAttempt> findAttempt(String attemptId) {
+        return store.findById(attemptId);
+    }
+
+    public List<QuestionDto> questionsOf(PracticeAttempt attempt) {
+        return attempt.questionIds().stream().map(this::questionById).toList();
     }
 
     // ScoringJobItem.questionId(null = 자기소개) → QuestionDto. questionCache는 questionId 기준(REVIEW-08 참고).

@@ -51,7 +51,7 @@
                         <div class="bg-white rounded-full h-2 transition-all"
                              th:style="'width: ' + ${todayProgressPct} + '%'"></div>
                     </div>
-                    <a href="/practice/random" class="mt-4 flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 rounded-xl py-2.5 text-sm font-semibold transition-colors">
+                    <a data-post href="/practice/random" class="mt-4 flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 rounded-xl py-2.5 text-sm font-semibold transition-colors">
                         콤보 연습하기 <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
                 </div>
@@ -78,7 +78,7 @@
                     <h2 class="text-sm font-bold text-gray-800 mb-1">한동안 안 한 유형이 있어요</h2>
                     <p class="text-xs text-gray-400 mb-4">D-day 기준 방치 기간이 길수록 위에 표시돼요</p>
                     <div class="flex flex-col gap-2">
-                        <a th:each="t : ${avoidedTypes}"
+                        <a data-post th:each="t : ${avoidedTypes}"
                            th:href="@{/practice/type(type=${t.typeKey()})}"
                            class="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:opacity-90"
                            th:classappend="${t.weak()} ? 'bg-rose-50' : 'bg-gray-50'">
