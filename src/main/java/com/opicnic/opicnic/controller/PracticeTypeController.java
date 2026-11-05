@@ -36,7 +36,7 @@ public class PracticeTypeController {
     private final SurveyProfileRepository surveyProfileRepository;
     private final Random random;
 
-    @PostMapping("/practice/type")
+    @PostMapping(path = "/practice/attempts", params = "mode=type")
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String typePractice(
             @RequestParam String type,

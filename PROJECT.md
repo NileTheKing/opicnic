@@ -11,7 +11,7 @@ OPIcnic 코드베이스 지도. 컨트롤러/서비스를 처음부터 grep하�
 진입점 셋이 모두 같은 화면·같은 채점 경로를 탄다. 서버는 오디오 파일을 받지 않는다(브라우저 → R2 직접).
 
 ```
-PracticeComboController (/practice/combo) · PracticeTypeController (/practice/type) · HomeController (/practice/mock)
+POST /practice/attempts?mode=... (PracticeComboController · PracticeTypeController · HomeController) → 303 → PracticeAttemptViewController (GET /practice/attempts/{id})
   → PracticeAttemptService.createAttempt()   // attemptId 발급, questionIds(+콤보 패턴/카테고리)를 Caffeine에 저장. 아직 약속 전
   → question.html 렌더링 (녹음 후 submitAsync(): 아래 ①②③ 후 /practice/result/{id}로 이동)
 ScoringJobApiController
@@ -48,7 +48,7 @@ CoachingController (POST /analytics/coaching)
 ### 3. 모의고사 조립
 
 ```
-HomeController (/practice/mock)
+HomeController (POST /practice/attempts?mode=mock)
   → MockExamService.createMockExam(profile)
       → TopicCatalog (배경설문 22개 vs 돌발 23개 풀 구분)
       → OpicComboPatternProvider (난이도별 ComboPattern)
@@ -60,14 +60,15 @@ HomeController (/practice/mock)
 
 | 컨트롤러 | 베이스 경로 | 성격 | 역할 |
 |---|---|---|---|
-| `HomeController` | `/` | View | 홈, `/practice/random`, `/practice/surprise`, `/practice/mock` 진입점 |
+| `HomeController` | `/` | View | 홈, `POST /practice/attempts?mode=random|surprise|mock` 시도 시작 |
 | `AuthController` | `/auth` | View | 로그인 페이지, 테스트용 인증 확인 |
 | `GuestLoginController` | `/auth/guest` (POST) | View | "로그인 없이 둘러보기". `opicnic.guest.enabled=false`면 404. 새 게스트 회원 + 카카오와 같은 모양의 OAuth2User 인증을 세션에 저장 |
 | `OnboardingController` | `/onboarding` | View | 최초 가입 후 배경설문 |
 | `MyPageController` | `/mypage` | View | 설정, 배경설문 수정, 관심 주제 토글 |
 | `TopicsController` | `/practice/topics` | View | 주제 탐색 화면 |
-| `PracticeComboController` | `/practice/combo` | View | 주제/카테고리 기반 콤보 연습 시작 |
-| `PracticeTypeController` | `/practice/type` | View | 유형별 연습 (`?type=TYPE_N`, 주제는 랜덤·유형 고정, 구현 완료) |
+| `PracticeComboController` | `POST /practice/attempts?mode=combo` | View | 주제/카테고리 기반 콤보 시도 시작(303) |
+| `PracticeAttemptViewController` | `GET /practice/attempts/{id}` | View | 시도의 문제 화면. 읽기만 함(새로고침해도 같은 문제) |
+| `PracticeTypeController` | `POST /practice/attempts?mode=type` | View | 유형별 연습 (`&type=TYPE_N`, 주제는 랜덤·유형 고정, 구현 완료) |
 | `PracticeFocusController` | `/practice/focus` | View | 집중 연습 모드 (구상 단계) |
 | `ExamController` | `/exam` | View | 시험 준비 계획 (학습 스케줄) |
 | `AnalyticsController` | `/analytics` | View | 학습분석 탭 (현황판, A) |

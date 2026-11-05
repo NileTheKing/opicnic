@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 
-// dev 전용 화면 진입점. /practice/mock은 카카오 로그인이 필요해 브라우저에서 비동기 제출 흐름(question.html →
+// dev 전용 화면 진입점. POST /practice/attempts?mode=mock은 카카오 로그인이 필요해 브라우저에서 비동기 제출 흐름(question.html →
 // R2 → /api/scoring-jobs → 결과 화면)을 손으로 확인하기 어렵다. DevPracticeController./start-mock의 화면 버전.
 @Controller
 @Profile("dev")

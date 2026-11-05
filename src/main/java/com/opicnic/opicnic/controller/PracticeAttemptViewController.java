@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-// 시도 하나의 문제 화면. 시작(POST /practice/combo 등)이 시도를 만들고 303으로 여기로 보낸다 —
+// 시도 하나의 문제 화면. 시작(POST /practice/attempts?mode=...)이 시도를 만들고 303으로 여기로 보낸다 —
 // 읽기만 하므로 새로고침해도 문제가 바뀌거나 시도가 새로 쌓이지 않는다.
 @Controller
 @RequiredArgsConstructor

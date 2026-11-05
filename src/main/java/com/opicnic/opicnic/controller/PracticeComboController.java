@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Random;
 
 @Controller
-@RequestMapping("/practice/combo")
+@RequestMapping("/practice/attempts")
 @RequiredArgsConstructor
 @Slf4j
 public class PracticeComboController {
@@ -40,7 +40,7 @@ public class PracticeComboController {
     private final PracticeAttemptService practiceAttemptService;
     private final Random random;
 
-    @PostMapping(params = "topic")
+    @PostMapping(params = {"mode=combo", "topic"})
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String startByTopic(
             @RequestParam String topic,
@@ -60,7 +60,7 @@ public class PracticeComboController {
         }
     }
 
-    @PostMapping(params = "category")
+    @PostMapping(params = {"mode=combo", "category"})
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String startByCategory(
             @RequestParam String category,

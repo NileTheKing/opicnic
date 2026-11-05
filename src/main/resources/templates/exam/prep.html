@@ -90,7 +90,7 @@
                     <p class="text-[11px] text-gray-400 mb-0.5">약한 순 추천 · 기록 기반</p>
                     <th:block th:each="combo, stat : ${startableWeakCombos}">
                         <a data-post th:if="${stat.index < 2}"
-                           th:href="@{/practice/combo(category=${combo.category()})}"
+                           th:href="@{/practice/attempts(mode='combo',category=${combo.category()})}"
                            class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors group">
                             <div>
                                 <div class="flex items-center gap-2 mb-0.5">
@@ -134,7 +134,7 @@
                     <p class="text-[11px] text-gray-400 mb-0.5">약한 순 추천 · 기록 기반</p>
                     <th:block th:each="type, stat : ${plan.weakTypes()}">
                         <a data-post th:if="${stat.index < 2}"
-                           th:href="@{/practice/type(type=${type.typeKey()})}"
+                           th:href="@{/practice/attempts(mode='type',type=${type.typeKey()})}"
                            class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors group">
                             <div class="flex items-center gap-2">
                                 <span th:if="${type.count() == 0}"
@@ -153,7 +153,7 @@
             </div>
 
             <!-- 모의고사 카드 -->
-            <a data-post href="/practice/mock"
+            <a data-post href="/practice/attempts?mode=mock"
                class="flex items-center justify-between bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors group mb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">

@@ -106,7 +106,7 @@ public class HomeController {
     }
 
     // 선택 주제 중 랜덤 콤보
-    @PostMapping("/practice/random")
+    @PostMapping(path = "/practice/attempts", params = "mode=random")
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String randomPractice(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();
@@ -130,7 +130,7 @@ public class HomeController {
     }
 
     // 돌발: 지원 주제 전체 중 랜덤
-    @PostMapping("/practice/surprise")
+    @PostMapping(path = "/practice/attempts", params = "mode=surprise")
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String surprisePractice(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();
@@ -159,7 +159,7 @@ public class HomeController {
         }
     }
 
-    @PostMapping("/practice/mock")
+    @PostMapping(path = "/practice/attempts", params = "mode=mock")
     @ResponseStatus(HttpStatus.SEE_OTHER)
     public String mockExam(@AuthenticationPrincipal OAuth2User user) {
         String provider = user.getAttributes().get("provider").toString();

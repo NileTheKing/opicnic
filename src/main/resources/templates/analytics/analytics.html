@@ -139,7 +139,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <a data-post th:each="stat, iterStat : ${typeStats}"
-                       th:href="@{/practice/type(type=${stat.typeKey()})}"
+                       th:href="@{/practice/attempts(mode='type',type=${stat.typeKey()})}"
                        class="border rounded-xl p-3 flex flex-col gap-2 hover:shadow-sm transition-shadow group"
                        th:classappend="${iterStat.index < 3 and stat.count() > 0} ? 'border-rose-200 bg-rose-50' : (${stat.count() == 0} ? 'border-gray-100 bg-gray-50' : 'border-gray-100')">
                         <div class="flex items-center justify-between">

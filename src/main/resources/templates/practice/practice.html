@@ -27,7 +27,8 @@
 
             <div class="bg-white shadow-md rounded-lg p-6">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">맞춤 연습</h2>
-                <form id="customPracticeForm" th:action="@{/practice/combo}" method="post">
+                <form id="customPracticeForm" th:action="@{/practice/attempts}" method="post">
+                    <input type="hidden" name="mode" value="combo"/>
                     <div class="mb-4">
                         <label for="topicSelect" class="block text-gray-700 mb-2">주제</label>
                         <select id="topicSelect" name="topic" class="w-full border rounded-lg px-3 py-2 text-gray-700">

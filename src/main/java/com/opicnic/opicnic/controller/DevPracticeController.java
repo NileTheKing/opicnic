@@ -123,7 +123,7 @@ public class DevPracticeController {
         ));
     }
 
-    // 유형 연습(1문항) 측정용. 실제 흐름(PracticeTypeController /practice/type)은 로그인한 회원의 관심 주제 중
+    // 유형 연습(1문항) 측정용. 실제 흐름(PracticeTypeController mode=type)은 로그인한 회원의 관심 주제 중
     // 하나를 고르지만, dev 부하테스트엔 회원이 없으므로 주제를 파라미터로 받는다. 이후 경로는 동일(memberId=null).
     @PostMapping("/start-type")
     public ResponseEntity<?> startTypeAttempt(@RequestParam String topic,
@@ -139,7 +139,7 @@ public class DevPracticeController {
         ));
     }
 
-    // S1(모의고사 15문항) 측정용. 실제 흐름(HomeController./practice/mock)은 로그인한 회원의
+    // S1(모의고사 15문항) 측정용. 실제 흐름(HomeController mode=mock)은 로그인한 회원의
     // SurveyProfile로 MockExamService.createMockExam()을 부르는데, dev 부하테스트엔 로그인 세션이
     // 없으므로 온보딩 기본값 수준의 고정 프로필로 대신한다(영속화하지 않음, memberId=null과 동일한 이유).
     @PostMapping("/start-mock")

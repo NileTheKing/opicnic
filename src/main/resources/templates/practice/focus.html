@@ -52,7 +52,7 @@
             <div th:unless="${userTopics == null or #lists.isEmpty(userTopics)}"
                  class="grid grid-cols-2 gap-2 mb-5">
                 <a data-post th:each="topic : ${userTopics}"
-                   th:href="@{/practice/combo(topic=${topic.name()},difficulty=${difficulty})}"
+                   th:href="@{/practice/attempts(mode='combo',topic=${topic.name()},difficulty=${difficulty})}"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <span class="text-sm font-medium text-gray-700 group-hover:text-brand-700"
                           th:text="${topic.label}"></span>
@@ -65,7 +65,7 @@
                 <p class="text-xs font-semibold text-gray-400 mb-2">다른 주제</p>
                 <div class="grid grid-cols-2 gap-2">
                     <a data-post th:each="topic : ${otherTopics}"
-                       th:href="@{/practice/combo(topic=${topic.name()},difficulty=${difficulty})}"
+                       th:href="@{/practice/attempts(mode='combo',topic=${topic.name()},difficulty=${difficulty})}"
                        class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 transition-all group">
                         <span class="text-sm text-gray-400 group-hover:text-gray-600"
                               th:text="${topic.label}"></span>
@@ -79,7 +79,7 @@
         <div id="panel-combo" class="hidden">
             <p class="text-xs text-gray-400 mb-3">콤보 패턴 선택 · 내 주제 중 랜덤으로 연습</p>
             <div class="space-y-2">
-                <a data-post href="/practice/combo?category=C1"
+                <a data-post href="/practice/attempts?mode=combo&category=C1"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -90,7 +90,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/combo?category=C2"
+                <a data-post href="/practice/attempts?mode=combo&category=C2"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -101,7 +101,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/combo?category=C3"
+                <a data-post href="/practice/attempts?mode=combo&category=C3"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -113,7 +113,7 @@
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a data-post th:if="${supportedComboCategories == null or supportedComboCategories.contains('C4')}"
-                   href="/practice/combo?category=C4"
+                   href="/practice/attempts?mode=combo&category=C4"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -125,7 +125,7 @@
                     <i class="fa-solid fa-chevron-right text-xs text-gray-300 group-hover:text-gray-400"></i>
                 </a>
                 <a data-post th:if="${supportedComboCategories == null or supportedComboCategories.contains('C5')}"
-                   href="/practice/combo?category=C5"
+                   href="/practice/attempts?mode=combo&category=C5"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-5 py-4 transition-all group">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -147,7 +147,7 @@
         <div id="panel-type" class="hidden">
             <p class="text-xs text-gray-400 mb-3">문제 유형 선택 · 내 주제 중 랜덤으로 1문항 연습</p>
             <div class="grid grid-cols-2 gap-2">
-                <a data-post href="/practice/type?type=TYPE_1"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_1"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 1</p>
@@ -155,7 +155,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_2"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_2"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 2</p>
@@ -163,7 +163,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_3"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_3"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 3</p>
@@ -171,7 +171,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_4"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_4"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 4</p>
@@ -179,7 +179,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_5"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_5"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 5</p>
@@ -187,7 +187,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_6"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_6"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 6</p>
@@ -195,7 +195,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_7"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_7"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 7</p>
@@ -203,7 +203,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_8"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_8"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 8</p>
@@ -211,7 +211,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_9"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_9"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 9</p>
@@ -219,7 +219,7 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 group-hover:text-gray-400"></i>
                 </a>
-                <a data-post href="/practice/type?type=TYPE_10"
+                <a data-post href="/practice/attempts?mode=type&type=TYPE_10"
                    class="flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-100 hover:border-brand-200 rounded-2xl px-4 py-3.5 transition-all group">
                     <div>
                         <p class="text-[10px] text-gray-400 mb-0.5">유형 10</p>
