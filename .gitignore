@@ -40,7 +40,6 @@ out/
 docker/nginx/nginx.conf
 # deploy.sh가 생성 — Discord 웹훅 URL이 들어가므로 커밋 금지
 docker/alertmanager/alertmanager.yml
-package-lock.json
 
 # Environment variables
 .env
@@ -77,3 +76,7 @@ __pycache__/
 
 # Cloudflare wrangler 로컬 캐시(계정 ID 등)
 .wrangler/
+
+### Tailwind 빌드 결과 (npm run build:css) ###
+node_modules/
+src/main/resources/static/css/app.css

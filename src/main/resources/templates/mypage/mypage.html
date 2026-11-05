@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지 - OPIcnic</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sel-card:has(input:checked) {
             border-color: rgb(99 102 241) !important;
@@ -41,6 +40,7 @@
         input:checked + .toggle-slider { background: rgb(99 102 241); }
         input:checked + .toggle-slider:before { transform: tranbrandX(20px); }
     </style>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body class="bg-gray-50 min-h-screen font-sans flex">
 

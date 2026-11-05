@@ -11,6 +11,8 @@
 .gitignore
 
 # 빌드 산출물 (컨테이너 안에서 다시 빌드하므로 불필요)
+node_modules/
+src/main/resources/static/css/app.css
 .gradle
 build/
 out/

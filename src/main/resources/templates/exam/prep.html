@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>시험 준비 - OPIcnic</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
     <style>
@@ -17,6 +16,7 @@
         .sel-card { transition: all 150ms ease; }
         .sel-card:not(:has(input:checked)):hover { border-color: rgb(125 172 213); }
     </style>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body class="bg-gray-50 min-h-screen">
 

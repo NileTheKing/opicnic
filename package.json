@@ -1,0 +1,10 @@
+{
+  "name": "opicnic",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i src/main/css/app.css -o src/main/resources/static/css/app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

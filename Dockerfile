@@ -1,7 +1,16 @@
+# CSS stage: 템플릿에서 쓰는 Tailwind 클래스만 뽑아 app.css를 만든다
+FROM node:22-alpine AS css
+WORKDIR /app
+COPY package.json package-lock.json tailwind.config.js ./
+COPY src/main/css src/main/css
+COPY src/main/resources/templates src/main/resources/templates
+RUN npm ci && npm run build:css
+
 # Build stage
 FROM gradle:8.13-jdk21 AS build
 WORKDIR /app
 COPY . .
+COPY --from=css /app/src/main/resources/static/css/app.css src/main/resources/static/css/app.css
 RUN ./gradlew bootJar --no-daemon -x test
 
 # Run stage

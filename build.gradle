@@ -124,3 +124,9 @@ tasks.named('test') {
 		testLogging { showStandardStreams = true }
 	}
 }
+
+// 로컬 bootRun용 app.css. 배포 이미지는 Dockerfile의 css 단계가 만든다(gradle 이미지에 node가 없어 bootJar에는 걸지 않는다)
+tasks.register('buildCss', Exec) {
+	commandLine 'sh', '-c', '[ -d node_modules ] || npm ci; npm run build:css'
+}
+tasks.named('bootRun') { dependsOn 'buildCss' }

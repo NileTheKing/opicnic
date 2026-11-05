@@ -13,6 +13,18 @@ spring:
       connect-timeout: 5s # Groq(STT/LLM) 등 외부 API 공통 연결 타임아웃
       read-timeout: 60s # 응답 대기 상한 — 무한 대기로 스레드가 걸려있는 것을 방지
 
+  # app.css 주소에 내용 해시를 붙인다(th:href가 /css/app-해시.css로 바꿔 줌). 내용이 바뀌면 주소도 바뀌므로 브라우저·Cloudflare에 오래 캐시해도 옛 CSS가 남지 않는다
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /css/**
+      cache:
+        cachecontrol:
+          max-age: 365d
+          cache-public: true
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
